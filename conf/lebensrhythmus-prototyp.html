@@ -384,7 +384,7 @@ function seed(){
     {id:'ty7',name:'Fokusarbeit',emoji:'🎯',ampel:'gelb'}
   ];
   return {
-    meta:{v:4,intro:false,dirty:false},
+    meta:{v:4,intro:false,dirty:false,pulled:false},
     settings:{aids:{mit:true,focus:true,year:true},
       slotTimes:{0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}},
       liveSync:{on:true,interval:60}},
@@ -719,7 +719,11 @@ function capsuleICS(json){
   return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VJOURNAL','UID:'+CAP_UID,'DTSTAMP:'+icsStamp(),'SUMMARY:'+icsEsc('Theo Kapsel'),'X-LR-TS:'+json.ts,'X-LR-STATE:'+icsEsc(JSON.stringify(json)),'CATEGORIES:LR-STATE','END:VJOURNAL','END:VCALENDAR'].join('\r\n');
 }
 function adoptCapsule(o){
-  if(!o||!o.ts||o.ts<=(S.capsuleTs||0))return false;
+  /* Neugerät: vor dem ersten Lesen ist der Server die Wahrheit — das eigene
+     capsuleTs wurde nur lokal generiert (save() beim Verbinden) und darf die
+     Server-Kapsel nicht überstimmen. */
+  if(!o||!o.ts)return false;
+  if(S.meta.pulled!==false&&o.ts<=(S.capsuleTs||0))return false;
   if(o.motto)S.motto=o.motto;
   if(Array.isArray(o.inbox))S.inbox=o.inbox;
   if(Array.isArray(o.areas))S.areas=o.areas;
@@ -987,7 +991,9 @@ async function pushAll(){
   registerSynced(main); registerSynced(ph); registerSynced(tds);
   try{
     const cobj=capsuleJson(); const cstr=JSON.stringify(cobj);
-    if(cstr!==SYNC.capJson){
+    /* Neugeräte-Schutz: wer noch nie aus dem Kalender gelesen hat, darf seine
+       (leere) Kapsel nicht über die volle Server-Kapsel schreiben. */
+    if(S.meta.pulled!==false&&cstr!==SYNC.capJson){
       const r=await wdFetch(cal+encodeURIComponent(CAP_UID)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:capsuleICS(cobj)});
       if(r.ok){SYNC.capJson=cstr; ok++}
     }
@@ -1028,7 +1034,10 @@ async function syncCycle(){
       SYNC.msg='Companion-Ziel ('+px.target+') ≠ eingetragene URL — bitte anpassen'; return;
     }
     const rev=S.capsuleTs||0;
-    if(S.meta.dirty){
+    /* Neugeräte-Schutz: ein frisch verbundenes Gerät ist zwar „dirty“ (nur durch
+       das Speichern der Verbindung) — aber es darf nicht VOR dem ersten Lesen
+       seine leere Kapsel hochschreiben, sonst plättet sie die volle Server-Kapsel. */
+    if(S.meta.dirty && S.meta.pulled!==false){
       const pr=await pushAll();
       SYNC.msg='geschrieben '+pr.ok+(pr.fail?' / ✖ '+pr.fail:'');
       if((S.capsuleTs||0)!==rev)S.meta.dirty=true; /* während des Pushes weitereditiert */
@@ -1046,12 +1055,17 @@ async function syncCycle(){
       const pr=processRemote(txt);
       const tr=processTodos(txt);
       const cp=processCapsule(txt);
+      if(!S.meta.pulled)S.meta.pulled=true; /* ab jetzt darf dieses Gerät schreiben */
       let txt2='';
       if(cal2){const r2=await wdFetch(cal2+'?export',{method:'GET'}); if(r2.ok){txt2=await r2.text(); importICS(txt2)}}
       reconcileDeleted([txt,txt2]);
       SYNC.last=new Date();
       SYNC.msg=(SYNC.msg?SYNC.msg+' · ':'')+'gelesen'+(pr.placed?' · '+pr.placed+' eingeordnet':'')+(pr.queued?' · 📥 '+pr.queued+' zuzuordnen':'')+(tr.updated?' · '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?' · '+tr.imported+' Aufgaben aus Kalender':'')+(cp.adopted?' · Kapsel übernommen':'');
       saveQuiet();
+      if(S.meta.dirty){ /* Erstverbindung: das Nachzieh-Schreiben läuft im selben Zyklus (Dirty-Konvention halten) */
+        const pr2=await pushAll();
+        SYNC.msg=(SYNC.msg?SYNC.msg+' · ':'')+'geschrieben '+pr2.ok+(pr2.fail?' / ✖ '+pr2.fail:'');
+      }
       if(!$('#overlay').classList.contains('on'))render();
     }else{
       SYNC.msg='Lesen scheiterte (HTTP '+r.status+')';
@@ -2608,9 +2622,11 @@ const ACT={
     if(ph.length)await putAll(ph,cal2||cal);
     if(tds.length)await putAll(tds,cal);
     registerSynced(main); registerSynced(ph); registerSynced(tds); saveQuiet();
+    let capSkip=false;
     try{
       const cobj=capsuleJson(); const cstr=JSON.stringify(cobj);
-      if(cstr!==SYNC.capJson){
+      if(S.meta.pulled===false){capSkip=true} /* Erstverbindung: erst lesen, dann schreiben */
+      else if(cstr!==SYNC.capJson){
         const r=await wdFetch(cal+encodeURIComponent(CAP_UID)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:capsuleICS(cobj)});
         if(r.ok||r.status===201||r.status===204){ok++; SYNC.capJson=cstr}
         else{fail++; if(!lastS){lastS=r.status; lastT=await wdBody(r)}}
@@ -2618,6 +2634,7 @@ const ACT={
     }catch(e){fail++}
     if(ok)ui.wdMsg='✔ '+ok+' Objekte geschrieben (per UID überschrieben — wiederholtes Schreiben ist gefahrlos).'+(cal2?' Phasen liegen im zweiten Kalender und sind dort transparent (nicht „besetzt").':'')+' To-dos als VTODO, Kapsel (Motto/Kiste/Struktur) als VJOURNAL.'+(fail?' ✖ '+fail+' fehlgeschlagen: '+wdHuman(lastS,lastT):'');
     else ui.wdMsg='✖ Schreiben nicht möglich. '+wdHuman(lastS||0,lastT);
+    if(capSkip)ui.wdMsg+=' Kapsel (Motto/Kiste/Bereiche/Typen) bewusst übersprungen — dieses Gerät hat noch nie aus dem Kalender gelesen; nach dem ersten Lesen wird sie automatisch mitgeschrieben (Schutz vor Überschreiben).';
     render();
   },
   async wdPull(){
@@ -2632,6 +2649,7 @@ const ACT={
       const res=importICS(txt);
       const tr=processTodos(txt);
       const cp=processCapsule(txt);
+      if(!S.meta.pulled)S.meta.pulled=true; /* ab jetzt darf dieses Gerät schreiben */
       const c=wdCfg();
       let txt2='';
       if(c.cal2&&c.cal2!==c.cal){const r2=await wdFetch(c.cal2+'?export',{method:'GET'}); if(r2.ok){txt2=await r2.text(); const p2=importICS(txt2); res.phases+=p2.phases}}
