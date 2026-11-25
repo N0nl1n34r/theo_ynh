@@ -6,16 +6,34 @@ Theo auf der eigenen YunoHost-Maschine installieren — YunoHost übernimmt dabe
 
 ## Installation (einmalig, ~2 Minuten)
 
+**Weg 1 · aus einem GitHub-Repo** — der Repo-Name **muss auf `_ynh` enden** (Unterstrich: `theo_ynh`, nicht `theo-ynh` — sonst lehnt YunoHost die URL ab), und `manifest.toml` muss direkt in der Repo-Wurzel liegen:
+
 ```bash
-# 1) vom Arbeitsrechner aus:
-tar czf theo-ynh.tar.gz theo-ynh
-scp theo-ynh.tar.gz ADMIN@MASCHINE:~          # ADMIN = dein YunoHost-Benutzer
+# einmalig hochladen (vom Arbeitsrechner, aus dem entpackten theo_ynh/):
+git init && git add -A && git commit -m "Theo als YunoHost-App"
+git branch -M main
+git remote add origin https://github.com/N0nl1n34r/theo_ynh.git
+git push -u origin main
+
+# installieren — auf der YunoHost-Maschine:
+sudo yunohost app install https://github.com/N0nl1n34r/theo_ynh
+# (Webadmin: Anwendungen → Installieren → Benutzerdefinierte App → dieselbe URL)
+```
+
+Später genügt für Updates ein neuer `git push` + `sudo yunohost app upgrade theo` (YunoHost merkt sich die Repo-URL). Ohne Git geht das Hochladen auch im GitHub-Webinterface („uploading an existing file") — die Ordner `scripts/` und `conf/` mithochladen, damit die Struktur stimmt.
+
+**Weg 2 · per Datei (ohne Git/Repo):**
+
+```bash
+# vom Arbeitsrechner aus:
+tar czf theo_ynh.tar.gz theo_ynh
+scp theo_ynh.tar.gz ADMIN@MASCHINE:~          # ADMIN = dein YunoHost-Benutzer
 ssh ADMIN@MASCHINE
 
-# 2) auf der Maschine:
-tar xzf theo-ynh.tar.gz
-sudo yunohost app install "$PWD/theo-ynh"
-sudo rm -r theo-ynh theo-ynh.tar.gz           # aufräumen
+# auf der Maschine:
+tar xzf theo_ynh.tar.gz
+sudo yunohost app install "$PWD/theo_ynh"
+sudo rm -r theo_ynh theo_ynh.tar.gz           # aufräumen
 ```
 
 Die Installationsfragen:
@@ -49,8 +67,8 @@ Kein Neustart nötig — der Server liest die Datei pro Anfrage, der Service-Wor
 **Ganze Paket-Version** (wenn auch Server oder nginx/systemd-Vorlagen geändert haben):
 
 ```bash
-tar czf theo-ynh.tar.gz theo-ynh && scp theo-ynh.tar.gz ADMIN@MASCHINE:~
-ssh ADMIN@MASCHINE 'tar xzf theo-ynh.tar.gz && sudo yunohost app upgrade theo -f "$PWD/theo-ynh.tar.gz" && rm -r theo-ynh theo-ynh.tar.gz'
+tar czf theo_ynh.tar.gz theo_ynh && scp theo_ynh.tar.gz ADMIN@MASCHINE:~
+ssh ADMIN@MASCHINE 'tar xzf theo_ynh.tar.gz && sudo yunohost app upgrade theo -f "$PWD/theo_ynh.tar.gz" && rm -r theo_ynh theo_ynh.tar.gz'
 ```
 
 ## Zugangsschutz (nur bei „Besucher“-Berechtigung)

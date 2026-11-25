@@ -6,8 +6,12 @@ id = "theo"
 name = "Theo"
 description.en = "Calm personal planning — week grid, projects, phases and two-way CalDAV sync"
 description.de = "Ruhige Planung — Wochenraster, Projekte, Phasen und CalDAV-Sync in beide Richtungen"
-version = "0.13~ynh1"
+version = "0.13~ynh2"
 maintainers = ["denis"]
+
+[upstream]
+license = "MIT"
+code = "https://github.com/N0nl1n34r/theo_ynh"
 
 [integration]
 yunohost = ">= 12.1"
