@@ -1,0 +1,18 @@
+#!/bin/bash
+source /usr/share/yunohost/helpers
+
+#=================================================
+# SYSTEMKONFIGURATION ENTFERNEN
+#=================================================
+ynh_script_progression "Entferne Theo-Dienst ..."
+
+if ynh_hide_warnings yunohost service status "$app" >/dev/null; then
+    yunohost service remove "$app"
+fi
+ynh_config_remove_systemd
+ynh_config_remove_nginx
+
+# install_dir und System-Benutzer deprovisioniert der YunoHost-Core
+# automatisch (Ressourcen aus manifest.toml) — hier nichts mehr zu tun.
+# Die Daten liegen ohnehin im Browser (localStorage) und in der Nextcloud.
+ynh_script_progression "Theo entfernt."

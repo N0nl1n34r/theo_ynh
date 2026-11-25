@@ -1,0 +1,21 @@
+[Unit]
+Description=Theo: ruhige Planung + CalDAV-Proxy (YunoHost-App __APP__)
+After=network.target
+
+[Service]
+Type=simple
+User=__APP__
+Group=__APP__
+WorkingDirectory=__INSTALL_DIR__/
+ExecStart=/usr/bin/python3 __INSTALL_DIR__/theo-server.py __NEXTCLOUD__ --host 127.0.0.1 --port __PORT__ --pfad __PATH__
+Restart=on-failure
+RestartSec=3
+
+# Optional: nur nötig, wenn die Hauptberechtigung "Besucher" ist (Zugang aus dem
+# offenen Internet). Dann hier aktivieren + `sudo systemctl daemon-reload &&
+# sudo systemctl restart theo` — oder besser: Berechtigung in YunoHost auf
+# "Alle Benutzer" stellen (SSO-Login genügt, keine Extra-Passwörter).
+#Environment=THEO_AUTH=benutzer:passwort
+
+[Install]
+WantedBy=multi-user.target

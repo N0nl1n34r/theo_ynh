@@ -1,0 +1,25 @@
+#!/bin/bash
+source /usr/share/yunohost/helpers
+
+#=================================================
+# DATEIEN AKTUALISIEREN
+#=================================================
+ynh_script_progression "Aktualisiere Theo-Dateien ..."
+
+SRC="${YNH_APP_BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+for f in theo-server.py lebensrhythmus-prototyp.html theo-icon.png; do
+    cp -f "$SRC/conf/$f" "$install_dir/$f"
+done
+chown -R "$app:www-data" "$install_dir"
+
+#=================================================
+# SYSTEMKONFIGURATION AUFFRISCHEN
+#=================================================
+ynh_script_progression "Frische systemd/nginx auf ..."
+ynh_config_add_systemd
+ynh_config_add_nginx
+
+ynh_script_progression "Starte Theo neu ..."
+ynh_systemctl --service="$app" --action="restart"
+
+ynh_script_progression "Upgrade von Theo abgeschlossen."

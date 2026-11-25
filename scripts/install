@@ -1,0 +1,40 @@
+#!/bin/bash
+source /usr/share/yunohost/helpers
+
+#=================================================
+# EINSTELLUNGEN
+#=================================================
+ynh_script_progression "Speichere Einstellungen ..."
+
+# Nextcloud-Ziel als App-Setting ablegen: ynh_config_add ersetzt __NEXTCLOUD__
+# in der systemd-Vorlage automatisch.
+ynh_app_setting_set --key=nextcloud --value="$nextcloud"
+
+#=================================================
+# DATEIEN
+#=================================================
+ynh_script_progression "Kopiere Theo-Dateien ..."
+
+# Paketverzeichnis auflösen (Helfer-Konvention oder Skript-Ort)
+SRC="${YNH_APP_BASEDIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+for f in theo-server.py lebensrhythmus-prototyp.html theo-icon.png; do
+    cp -f "$SRC/conf/$f" "$install_dir/$f"
+done
+chown -R "$app:www-data" "$install_dir"
+
+#=================================================
+# SYSTEM: SYSTEMD + NGINX
+#=================================================
+ynh_script_progression "Richte systemd-Dienst ein ..."
+ynh_config_add_systemd
+
+ynh_script_progression "Richte nginx-Weiterleitung ein ..."
+ynh_config_add_nginx
+
+# Dienst in YunoHost sichtbar machen (Weboberfläche, Diagnose)
+yunohost service add "$app" --description="Theo — ruhige Planung + CalDAV-Proxy"
+
+ynh_script_progression "Starte Theo ..."
+ynh_systemctl --service="$app" --action="start"
+
+ynh_script_progression "Installation von Theo abgeschlossen."

@@ -1,0 +1,2886 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theo — Alpha</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐣</text></svg>">
+<meta name="theme-color" content="#FBF9F2">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./theo-icon.png">
+<script>
+/* PWA: Service-Worker nur über HTTP(S) registrieren (nicht als Datei, nicht in Sandbox-Vorschauen) */
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){try{navigator.serviceWorker.register('./sw.js').catch(function(){})}catch(e){}}
+</script>
+<style>
+:root{
+  --bg:#F6F3ED; --panel:#FFFFFF; --ink:#3A362D; --sub:#8A8478; --line:#E7E1D4; --soft:#F1EDE3;
+  --rot:#D96A5B; --orange:#E09B4C; --gelb:#D8B44C; --gruen:#7CA982; --neutral:#B5AFA4;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; font-size:15px; line-height:1.45}
+button{font:inherit; color:inherit}
+h1{font-size:23px; font-weight:600; letter-spacing:-.01em; margin:0}
+h3{font-size:16.5px; margin:0 0 2px}
+.sub{color:var(--sub); font-size:13px}
+.dim{color:var(--sub); font-style:italic}
+.strike{text-decoration:line-through; opacity:.55}
+
+/* ---------- Layout ---------- */
+#wrap{display:grid; grid-template-columns:236px minmax(0,1fr); min-height:100vh}
+#nav{background:#F2EEE5; border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:4px}
+.logo{display:flex; align-items:center; gap:9px; font-weight:700; font-size:16px; padding:4px 10px 16px}
+.logo .leaf{font-size:20px}
+.navbtn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px; border:none; background:transparent; border-radius:12px; cursor:pointer; font-size:14.5px; position:relative}
+.navbtn:hover{background:#EAE5D9}
+.navbtn.on{background:#FFF; box-shadow:0 1px 3px rgba(80,70,40,.08); font-weight:600}
+.navdot{width:7px; height:7px; border-radius:50%; background:#9BB89A; position:absolute; right:12px}
+.navfoot{margin-top:auto; padding:10px 12px; font-size:11.5px; color:var(--sub); line-height:1.5}
+#main{padding:26px 30px 70px; max-width:1210px; width:100%}
+#topbar{display:none}
+
+.vhead{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; flex-wrap:wrap}
+.hbtns{display:flex; gap:6px}
+.crumb{color:var(--sub); font-size:13px; cursor:pointer; margin-bottom:6px}
+.crumb:hover{color:var(--ink)}
+
+/* ---------- Buttons & inputs ---------- */
+.btn{background:#FFF; border:1px solid #DCD5C6; border-radius:11px; padding:9px 15px; cursor:pointer; font-size:14px}
+.btn:hover{background:#FBF9F4}
+.btn.primary{background:#4A453C; color:#FBF9F2; border-color:#4A453C}
+.btn.primary:hover{background:#3B372F}
+.btn.ghost{background:transparent; border-color:transparent; color:var(--sub)}
+.btn.ghost:hover{color:var(--ink); background:#EFEAE0}
+.btn.danger{border-color:#E4B9B2; color:#A44B3F}
+.btn.mini{padding:5px 11px; font-size:12.5px; border-radius:9px}
+.inp{width:100%; border:1px solid #DCD5C6; border-radius:11px; padding:9px 12px; font:inherit; font-size:14px; background:#FFF; color:var(--ink)}
+.inp:focus{outline:2px solid #C8D8C4; outline-offset:1px}
+.inp.slim{width:auto; padding:7px 9px; font-size:13px}
+.inp.grow{flex:1}
+.inp.big{font-size:16.5px; font-weight:600}
+label.f{display:block; font-size:12.5px; color:var(--sub); margin:12px 0 5px}
+.row2{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
+.checkrow{display:flex; align-items:center; gap:9px; margin:12px 0; font-size:14px; cursor:pointer}
+
+/* ---------- Chips & dots ---------- */
+.chip{display:inline-flex; align-items:center; gap:7px; background:#FFF; border:1px solid var(--line); border-radius:999px; padding:6px 13px; font-size:13px; cursor:pointer}
+.chip:hover{background:#FBF9F4}
+.chip.mini{padding:3px 10px; font-size:12px}
+.chips{display:flex; flex-wrap:wrap; gap:7px; margin:6px 0}
+.dot{width:11px; height:11px; border-radius:50%; display:inline-block; border:2px solid #FFF; box-shadow:0 0 0 1.5px rgba(60,55,40,.12); flex:none}
+.dot.rot{background:var(--rot)} .dot.orange{background:var(--orange)} .dot.gelb{background:var(--gelb)} .dot.gruen{background:var(--gruen)} .dot.none{background:var(--neutral)}
+.ampRow{display:flex; gap:7px; flex-wrap:wrap}
+.ampB{display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid #E3DCCD; border-radius:12px; background:#FFF; cursor:pointer; font-size:13.5px}
+.ampB.sel{border-color:#7E8F79; box-shadow:0 0 0 1.5px #7E8F79 inset; background:#F4F6F1}
+.legend{display:flex; align-items:center; gap:9px; flex-wrap:wrap; color:var(--sub); font-size:12px; margin-top:18px}
+.legend .dot{width:9px; height:9px}
+
+/* ---------- Orientierungshilfen ---------- */
+.orient{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+.orient .mini2{border:none; background:#F1EDE3; border-radius:7px; padding:2px 8px; cursor:pointer; font-size:12px}
+.orient .mini2:hover{background:#E7E1D4}
+
+/* ---------- Wochenraster ---------- */
+.sugg{display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#EEF4EC; border:1px solid #D6E4D4; border-radius:14px; padding:12px 15px; font-size:13.5px; margin-bottom:12px}
+.intro{background:#FDFBF6; border:1px solid var(--line); border-radius:14px; padding:14px 16px; font-size:13.5px; margin-bottom:14px}
+.intro ul{margin:8px 0 10px; padding-left:18px; color:#5C564A}
+.wgrid{display:grid; grid-template-columns:88px repeat(7,minmax(0,1fr)); gap:7px}
+.dh{font-size:12.5px; font-weight:600; color:#6F6A5F; padding:5px 4px; text-align:center; border-radius:10px}
+.dh.today{background:#EFEAE0}
+.sl{font-size:11.5px; color:var(--sub); padding:8px 4px; text-align:right}
+.sl .ico{font-size:15px; display:block; text-align:center; margin-bottom:3px}
+.slot{min-height:106px; border-radius:14px; position:relative; display:flex; flex-direction:column; gap:6px}
+.slot.free{border:1.6px dashed #D9D3C6; align-items:center; justify-content:center; color:#A49E91; cursor:pointer; background:rgba(255,255,255,.4); gap:2px}
+.slot.free:hover{border-color:#B9B2A2; color:#75705F; background:#FFF}
+.slot.free .plus{font-size:17px; line-height:1}
+.slot.free .fl{font-size:11px}
+.slot.drop{outline:2px solid #9BC4A9; outline-offset:2px}
+.card{background:#FFF; border:1px solid #ECE6D9; border-radius:14px; padding:10px 12px; box-shadow:0 1px 2px rgba(80,70,40,.05); font-size:13.5px}
+.card.appt.stacked{margin-top:6px; border-left:3px solid #B7AE9C; background:#FDFBF6; font-size:12.5px; padding:8px 10px}
+.block{border-left:3px solid var(--ac,#C9C2B2); cursor:pointer; flex:1}
+.block.done{opacity:.5}
+.appt{background:#FBF8F1; cursor:pointer; flex:1}
+.brow{display:flex; align-items:center; gap:8px}
+.bico{font-size:15px}
+.bttl{font-weight:600; flex:1}
+.btime{font-size:12px; color:var(--sub); font-variant-numeric:tabular-nums}
+.bnote{font-size:12px; color:var(--sub); margin-top:4px}
+.bsrc{font-size:11px; color:#A49E91; margin-top:4px}
+.tchip{display:flex; align-items:center; gap:6px; margin-top:6px; font-size:12.5px; cursor:pointer}
+.noamp{font-size:11px; color:#A49E91; border:1px dashed #D9D3C6; border-radius:8px; padding:1px 7px}
+.wmobile{display:none}
+.daychips{display:flex; gap:6px; overflow-x:auto; padding:2px 0 8px}
+.daychips .chip{flex:none}
+.daychips .chip.on{background:#4A453C; color:#FBF9F2; border-color:#4A453C}
+.mdayView .slot{min-height:88px; margin-bottom:10px}
+.mslotLabel{font-size:12px; color:var(--sub); margin:14px 0 5px; display:flex; gap:7px; align-items:center}
+
+/* ---------- Jahresansicht ---------- */
+.ygrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(238px,1fr)); gap:12px}
+.mcard{padding:12px}
+.mname{font-weight:600; font-size:13.5px; margin-bottom:7px}
+.mrow{display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:3px}
+.mwd{font-size:9px; color:#A9A394; text-align:center}
+.mcell{aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:10.5px; border-radius:5px; color:#75705F}
+.mcell.ph{color:#3D3A33}
+.mcell.today{box-shadow:inset 0 0 0 1.6px #8A8578; font-weight:700}
+.phchip{display:flex; align-items:center; gap:10px; width:100%; border:1px solid var(--line); border-radius:12px; padding:10px 13px; background:#FFF; cursor:pointer; margin-bottom:8px; text-align:left}
+.phchip:hover{background:#FBF9F4}
+.phbar{width:15px; height:15px; border-radius:4.5px; background:var(--c); flex:none}
+.phmeta{font-size:11.5px; color:var(--sub)}
+.phlist{margin-top:16px}
+.swatches{display:flex; gap:5px; flex-wrap:wrap}
+.sw{width:19px; height:19px; border-radius:6px; border:none; background:var(--c); cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sw.sel{outline:2px solid #4A453C; outline-offset:1.5px}
+
+/* ---------- Bereiche & Projekte ---------- */
+.areaGrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin-bottom:18px}
+.area{border-left:3px solid var(--ac); padding:13px 14px}
+.ahead{display:flex; align-items:center; gap:9px; margin-bottom:8px}
+.aemo{font-size:19px}
+.aname{font-weight:600; flex:1}
+.acount{font-size:11.5px; color:var(--sub)}
+.chip.proj{border-left:3px solid var(--c)}
+.pc{color:var(--sub); font-size:11px}
+.phead{display:flex; align-items:center; gap:10px; margin-top:2px}
+.emoBtn{border:1px solid var(--line); background:#FFF; border-radius:11px; font-size:17px; padding:7px 10px; cursor:pointer}
+.tabs{display:flex; gap:6px; margin:12px 0; flex-wrap:wrap}
+.tab{border:1px solid var(--line); background:#FFF; border-radius:999px; padding:6px 14px; cursor:pointer; font-size:13px}
+.tab.on{background:#4A453C; color:#FBF9F2; border-color:#4A453C}
+.tab.off{color:var(--sub); border-style:dashed; cursor:default; background:transparent}
+.trow{display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid #F0EBE0; flex-wrap:wrap}
+.trow:last-child{border-bottom:none}
+.tt{flex:1; min-width:140px}
+.xbtn{border:none; background:transparent; color:#B3AC9D; cursor:pointer; font-size:13px; padding:4px 7px; border-radius:8px}
+.xbtn:hover{background:#F0EBE0; color:#8A8478}
+.note{background:#F7F4EC; border-radius:10px; padding:9px 12px; font-size:13px; margin:10px 0; color:#5C564A}
+
+/* ---------- Kanban ---------- */
+.kscroll{overflow-x:auto; padding-bottom:6px}
+.kb{display:grid; grid-template-columns:repeat(5,minmax(186px,1fr)); gap:12px; min-width:930px}
+.kcol{background:var(--soft); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:8px; min-height:150px}
+.kcol.drop{outline:2px solid #9BC4A9; outline-offset:2px}
+.kname{font-size:12.5px; font-weight:600; color:#6F6A5F; display:flex; justify-content:space-between; padding:0 3px}
+.kcard{cursor:grab}
+.kadd{background:transparent; border:1px dashed #D9D3C6; border-radius:11px; padding:8px 10px; font:inherit; font-size:13px; color:var(--ink); width:100%}
+.chip.on{background:#4A453C; color:#FBF9F2; border-color:#4A453C}
+/* ---------- Gantt ---------- */
+.ganttWrap{overflow-x:auto; padding-bottom:8px}
+.gantt{min-width:fit-content}
+.gcap{font-size:12px; color:var(--sub); margin:8px 0 4px; display:flex; gap:14px; flex-wrap:wrap}
+.gcap .gi{display:inline-flex; align-items:center; gap:6px}
+.ghead{display:flex; align-items:flex-end}
+.gheadLbl{width:220px; flex:none; font-size:11px; color:var(--sub); padding:4px}
+.gheadTrack{display:flex}
+.gday{width:36px; flex:none; text-align:center; font-size:9.5px; color:#A9A394; padding:3px 0; border-left:1px solid #F0EBE0}
+.gday.wknd{background:#F4F1E9}
+.gday.today{color:#8A6B5C; font-weight:700}
+.grow{display:flex; align-items:center; border-top:1px solid #F0EBE0}
+.growLbl{width:220px; flex:none; font-size:12.5px; padding:6px 8px; display:flex; align-items:center; gap:6px; min-height:38px}
+.growTrack{position:relative; height:38px}
+.gcell{position:absolute; top:0; bottom:0; width:36px; border-left:1px solid #F4F0E7}
+.gcell.wknd{background:#F7F4EC}
+.gbar{position:absolute; top:8px; height:22px; border-radius:8px; background:#CBB389; cursor:grab; display:flex; align-items:center; padding:0 8px; font-size:11px; color:#3A362D; white-space:nowrap; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.gbar .gbt{pointer-events:none}
+.gtoday{position:absolute; top:0; bottom:0; width:2px; background:#C98D76; opacity:.75; pointer-events:none}
+.gdue{position:absolute; top:11px; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:9px solid #4A453C; pointer-events:none; transform:translateX(-6px)}
+.gmove{display:flex; gap:3px; margin-left:auto}
+.gmove .xbtn{padding:2px 6px}
+
+/* ---------- Eingangskiste ---------- */
+.capCard{padding:14px 16px; margin-bottom:14px}
+.capKinds{display:flex; gap:6px; margin-bottom:9px; flex-wrap:wrap}
+.capKinds .chip.on{background:#4A453C; color:#FBF9F2; border-color:#4A453C}
+.inbItem{margin-bottom:9px}
+.inbKind{font-size:11.5px; color:var(--sub); margin-bottom:2px}
+.inbText{font-size:14px}
+.inbActs{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap}
+
+/* ---------- Konfiguration ---------- */
+.cfgList{display:flex; flex-direction:column; gap:8px; margin-bottom:12px}
+.cfgRow{display:flex; align-items:center; gap:9px; background:#FFF; border:1px solid #ECE6D9; border-radius:13px; padding:9px 12px; flex-wrap:wrap}
+.fh{font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#9B9587; margin:20px 0 8px}
+.fh2{font-size:13px; font-weight:600; color:#6F6A5F; margin:10px 0 2px}
+.sw2{width:20px; height:20px; border-radius:6px; border:none; background:var(--c); cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sw2.sel{outline:2px solid #4A453C; outline-offset:1.5px}
+.emogrid{display:grid; grid-template-columns:repeat(8,1fr); gap:6px; margin-top:12px}
+.emogrid button{font-size:19px; padding:7px; border:1px solid var(--line); background:#FFF; border-radius:10px; cursor:pointer}
+.emogrid button:hover{background:#F4F0E7}
+.statusline{background:#F4F1E9; border-radius:11px; padding:10px 13px; font-size:13px; margin-bottom:10px; color:#5C564A}
+
+/* ---------- Sheets & Toast ---------- */
+#overlay{position:fixed; inset:0; background:rgba(45,40,30,.38); display:none; align-items:center; justify-content:center; z-index:50; padding:16px}
+#overlay.on{display:flex}
+.sheet{background:#FDFCF8; border-radius:18px; width:100%; max-width:560px; max-height:87vh; overflow:auto; padding:20px 22px; box-shadow:0 14px 44px rgba(40,35,20,.2)}
+.shead{margin-bottom:6px}
+.stack{display:flex; flex-direction:column; gap:7px; margin-top:10px}
+.typeB{display:flex; align-items:center; gap:11px; width:100%; padding:11px 13px; border:1px solid #E7E1D4; border-radius:13px; background:#FFF; cursor:pointer; text-align:left; font-size:14px}
+.typeB:hover{background:#F7F4EC}
+.sheetBtns{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap}
+.daySec{margin-top:14px}
+.daySecT{font-size:13px; font-weight:600; color:#6F6A5F; margin-bottom:6px}
+.pickRow{display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid #F0EBE0; font-size:13.5px}
+.pickRow .lbl{width:130px; color:var(--sub); font-size:12.5px}
+.pickRow .st{flex:1; font-size:12.5px; color:#B3AC9D}
+#toast{position:fixed; left:50%; bottom:20px; transform:translateX(-50%) translateY(16px); background:#3A362D; color:#F7F4EC; border-radius:12px; padding:11px 17px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:60; max-width:92vw}
+#toast.show{opacity:1; transform:translateX(-50%)}
+
+/* ---------- Deadlines & Anstehend ---------- */
+.duechip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;border-radius:8px;padding:2px 8px;background:#F4F1E9;color:#6F6A5F;border:1px solid #E7E1D4;cursor:pointer;flex:none}
+.duechip.past{background:#F3E9E4;color:#8A6B5C;border-color:#E4CFC4}
+.upcard{margin-top:16px}
+.uprow{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid #F0EBE0;flex-wrap:wrap}
+.uprow:last-child{border-bottom:none}
+.upT{flex:1;min-width:150px}
+.upP{font-size:11px;color:var(--sub)}
+.firstStep{font-size:12px;color:var(--sub);font-style:italic}
+code{background:#F1EDE3;border-radius:5px;padding:1px 5px;font-size:11.5px}
+/* ---------- Jahres-Klick (Airbnb-Stil) ---------- */
+.mcell{cursor:pointer}
+.mcell:hover{filter:brightness(.96)}
+.mcell.sel{box-shadow:inset 0 0 0 2px #4A453C;font-weight:700;color:#3D3A33}
+.yhint{background:#FDF6E7;border:1px solid #EAD9A6;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+/* ---------- Suche & Filter ---------- */
+.capTools{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.capTools .inp{flex:1;min-width:160px;max-width:320px}
+/* ---------- Sortieren in der Konfiguration ---------- */
+.grip{color:#B3AC9D;font-size:14px;cursor:grab;user-select:none;padding:0 2px}
+.arrows{display:flex;gap:3px}
+.arrows .xbtn{padding:3px 6px}
+.cfgRow.drop{outline:2px solid #9BC4A9;outline-offset:2px}
+.colorInp{width:27px;height:27px;border:1px solid var(--line);border-radius:7px;padding:1px;background:#FFF;cursor:pointer;flex:none}
+.mottoInp{border:none;background:transparent;border-bottom:1.5px dashed #D9D3C6;font-size:15px;font-weight:600;color:var(--ink);padding:3px 4px;width:240px;max-width:100%;font-family:inherit}
+.mottoInp:focus{outline:none;border-bottom-color:#B9B2A2}
+.agRow{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid #F0EBE0;flex-wrap:wrap;cursor:pointer;border-radius:8px}
+.agRow:hover{background:#FBF9F4}
+.agD{font-size:12px;color:var(--sub);width:88px;flex:none;font-variant-numeric:tabular-nums}
+.agT{flex:1;min-width:140px}
+.lbl{font-size:12px;color:var(--sub);width:96px;flex:none}
+.wdStatus{background:#F4F1E9;border-radius:11px;padding:10px 13px;font-size:13px;color:#5C564A;margin-bottom:10px;line-height:1.5}
+.spancont{border:1.5px dashed #E0D9CA;color:#B3AC9D;font-size:11px;align-items:flex-start;justify-content:flex-start;padding:9px 11px;background:rgba(255,255,255,.35);cursor:default}
+
+/* ---------- Responsive ---------- */
+@media(max-width:940px){
+  #wrap{grid-template-columns:1fr}
+  #nav{position:fixed; top:0; left:0; right:0; z-index:40; transform:translateY(-108%); transition:transform .25s ease; height:auto; border-right:none; border-bottom:1px solid var(--line); box-shadow:0 10px 26px rgba(40,35,20,.12); padding:14px 16px 12px}
+  #nav.open{transform:none}
+  .logo{padding:2px 10px 10px}
+  .navfoot{display:none}
+  #topbar{display:flex; position:fixed; top:0; left:0; right:0; height:54px; align-items:center; justify-content:space-between; padding:0 14px; background:rgba(246,243,237,.94); backdrop-filter:blur(8px); z-index:35; border-bottom:1px solid var(--line)}
+  #topbar .burger{border:1px solid var(--line); background:#FFF; border-radius:11px; padding:7px 12px; cursor:pointer; font-size:15px}
+  #main{padding:70px 16px 60px; max-width:640px}
+  .wgrid{display:none}
+  .wmobile{display:block}
+  .sheet{max-height:82vh; border-radius:18px 18px 8px 8px}
+  #overlay{align-items:flex-end}
+  .kb{min-width:560px}
+}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div style="display:flex;align-items:center;gap:8px;font-weight:700"><span style="font-size:18px">🐣</span> Theo</div>
+  <button class="burger" data-act="toggleMenu">☰</button>
+</div>
+<div id="wrap">
+  <nav id="nav">
+    <div class="logo"><span class="leaf">🐣</span> Theo</div>
+    <button class="navbtn" data-act="nav" data-v="woche">🗓️ Woche</button>
+    <button class="navbtn" data-act="nav" data-v="jahr">🍂 Jahr</button>
+    <button class="navbtn" data-act="nav" data-v="bereiche">🧩 Bereiche</button>
+    <button class="navbtn" data-act="nav" data-v="eingang">🧺 Eingangskiste</button>
+    <button class="navbtn" data-act="nav" data-v="konfig">⚙️ Konfiguration</button>
+    <div class="navfoot">Prototyp · Nov 2026<br>Deine Daten bleiben auf deinem Gerät.</div>
+  </nav>
+  <main id="main"></main>
+</div>
+<div id="overlay" data-act="backdrop"></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ================= Hilfsfunktionen ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const MONNAMES=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const DAYSHORT=['Mo','Di','Mi','Do','Fr','Sa','So'];
+function dayIdx(d){return (d.getDay()+6)%7}
+function mondayOf(d){const x=new Date(d); x.setHours(12,0,0,0); x.setDate(x.getDate()-dayIdx(x)); return x}
+function addDays(d,n){const x=new Date(d); x.setDate(x.getDate()+n); return x}
+function fmtDate(d){return DAYSHORT[dayIdx(d)]+', '+d.getDate()+'.'+(d.getMonth()+1)+'.'}
+function fmtDateLong(d){return DAYSHORT[dayIdx(d)]+', '+d.getDate()+'. '+MONNAMES[d.getMonth()]}
+function isoWeek(d){const x=new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate()+3-dayIdx(x)); const w1=new Date(x.getFullYear(),0,4); return 1+Math.round(((x-w1)/86400000-3+dayIdx(w1))/7)}
+function parseISO(s){const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2])}
+function uid(){return 'x'+Math.random().toString(36).slice(2,9)}
+function todayISO(){return iso(new Date())}
+
+const SLOTS=[{label:'Vormittag',ico:'🌅'},{label:'Mittag & Nachmittag',ico:'☀️'},{label:'Abend',ico:'🌙'}];
+const AMP={rot:{c:'#D96A5B',label:'Sehr intensiv'},orange:{c:'#E09B4C',label:'Intensiv'},gelb:{c:'#D8B44C',label:'Tunnelrisiko'},gruen:{c:'#7CA982',label:'Erholung'},none:{c:'#B5AFA4',label:'Neutral'}};
+const AMPKEYS=['rot','orange','gelb','gruen'];
+const PHC=['#CBB389','#9B93C4','#6FA8A0','#A3B98F','#C98D76','#8FAECB','#D9A0AB','#A8A29B'];
+const EMOJIS=['🌿','🫧','🤲','🫂','🛋️','🌅','🌊','🧭','🕯️','🧺','🚶','🌀','🎯','📅','🤝','💻','🛠️','🏡','🎨','📚','🍳','🚴','🧠','💬','🌱','📝','🚪','🍽️','😴','🛁','🎸','☕','🧘','🛌','🚿','🎧','🎹','🧩','🪴','🌾','🌙','⭐','🔥','💧','🏔️','🚲','🧶','✏️','📊','🗂️','📞','🛒','🏥','⚖️','🎓','🧾','🗓️','⏳','🌈','🐣','📮','🔗','🍵','🥾','🪑'];
+const INBKINDS={gedanke:['💭','Gedanke'],aufgabe:['✅','Aufgabe'],idee:['💡','Idee'],sonstiges:['📎','Sonstiges']};
+const AIDS={mit:'🎯 MIT für den Tag',focus:'🧭 Wochenfokus',year:'🍂 Jahresthema anzeigen'};
+const FBL={ok:'✔ hat funktioniert',bad:'✖ hat nicht funktioniert',none:'— nichts Besonderes'};
+const KCOLS=[['offen','Offen'],['arbeit','In Arbeit'],['pending','Pending (delegiert)'],['backlog','Backlog'],['fertig','Erledigt']];
+function kanOf(t){if(t.done)return 'fertig'; return (t.kanban&&t.kanban!=='fertig')?t.kanban:'offen'}
+function setKan(tid,col){
+  const f=findTodo(tid); if(!f||!KCOLS.some(k=>k[0]===col))return;
+  f.t.kanban=col;
+  if(col==='fertig'){f.t.done=true; if(f.t.planned){const bl=getBlocksW(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl)bl.done=true}}
+  else{f.t.done=false}
+  save();
+}
+function estDays(t){
+  if(!t.est)return 0;
+  if(t.est.mode==='pert'){const v=(+t.est.to||0)+4*(+t.est.tm||0)+(+t.est.tp||0); return v?v/6:0}
+  return +t.est.simple||0;
+}
+function fmtEst(t){
+  const e=estDays(t); if(!e)return '';
+  return '≈'+(Math.round(e*10)/10)+' T'+(t.est.mode==='pert'?' (PERT)':'');
+}
+function apTimeStr(t0,t1){return t0?(t1?t0+'–'+t1:t0):'—'}
+
+/* ================= Zustand ================= */
+let S=null;
+const ui={route:{view:'woche'},anchor:mondayOf(new Date()),year:new Date().getFullYear(),mobileDay:dayIdx(new Date()),projTab:'list',suggestion:null,pickCtx:null,ampCtx:null,emojiCtx:null,inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,menuOpen:false,wdCals:null,wdMsg:'',agRange:'woche',pickerWeek:null,pickerTitle:''};
+
+let storeOk=false;
+try{localStorage.setItem('__lr','1'); localStorage.removeItem('__lr'); storeOk=true}catch(e){}
+function normalizeState(x){
+  if(!x.meta)x.meta={};
+  if(!x.settings)x.settings={};
+  if(!x.settings.aids)x.settings.aids={mit:true,focus:true,year:true};
+  if(!x.settings.slotTimes)x.settings.slotTimes={0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}};
+  if(!x.settings.liveSync)x.settings.liveSync={on:true,interval:60};
+  if(!x.unmapped)x.unmapped=[];
+  if(!x.mapped)x.mapped={};
+  if(!x.ignored)x.ignored={};
+  if(!x.motto)x.motto={};
+  if(!x.synced)x.synced={};
+  if(!x.tomb)x.tomb={};
+  if(!x.capsuleTs)x.capsuleTs=0;
+  if(x.meta.dirty===undefined)x.meta.dirty=false;
+  return x;
+}
+function save(){if(!storeOk)return; try{if(S){S.meta.dirty=true; S.capsuleTs=Date.now()} localStorage.setItem('theo-state',JSON.stringify(S))}catch(e){} schedulePush()}
+function saveQuiet(){if(!storeOk)return; try{localStorage.setItem('theo-state',JSON.stringify(S))}catch(e){}}
+function load(){if(!storeOk)return null; try{const r=localStorage.getItem('theo-state'); return r?JSON.parse(r):null}catch(e){return null}}
+
+function seed(){
+  /* Ab Rev 8: keine Demo-Daten mehr — Theo startet leer und zeigt nur, was wirklich synchronisiert wird.
+     Behalten wird nur das Blocktypen-Vokabular (Teil des Ampel-Systems), das ist Konfiguration, kein Demo-Inhalt. */
+  const types=[
+    {id:'ty1',name:'Regeneration',emoji:'🌿',ampel:'gruen'},
+    {id:'ty2',name:'Runterkommen',emoji:'🕯️',ampel:'gruen'},
+    {id:'ty3',name:'Vorbereitung',emoji:'🧺',ampel:'none'},
+    {id:'ty4',name:'Anfahrt & Übergang',emoji:'🚶',ampel:'none'},
+    {id:'ty5',name:'Nachbereitung',emoji:'🫧',ampel:'none'},
+    {id:'ty6',name:'1:1-Termin',emoji:'🤝',ampel:'rot',asAppt:true},
+    {id:'ty7',name:'Fokusarbeit',emoji:'🎯',ampel:'gelb'}
+  ];
+  return {
+    meta:{v:4,intro:false,dirty:false},
+    settings:{aids:{mit:true,focus:true,year:true},
+      slotTimes:{0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}},
+      liveSync:{on:true,interval:60}},
+    areas:[],projects:[],types,
+    tasks:[],inbox:[],blocks:{},appts:{},phases:[],
+    mit:{},focus:{},motto:{},unmapped:[],mapped:{},ignored:{},capsuleTs:0,synced:{},tomb:{}
+  };
+}
+function seedFrom(old){
+  /* Neuer leerer Start — aber Verbindungseinstellungen (URL/Nutzer/App-Passwort/Kalender) bleiben erhalten,
+     damit nach dem Leeren alles über den Live-Sync aus dem echten Kalender zurückkommt. */
+  const s=seed();
+  const w=old&&old.settings?old.settings.webdav:null;
+  if(w&&w.url)s.settings.webdav=w;
+  return s;
+}
+
+/* ================= Datenhelfer ================= */
+function wk(){return iso(ui.anchor)}
+function projOf(id){return S.projects.find(p=>p.id===id)||null}
+function areaOfId(id){return S.areas.find(a=>a.id===id)||null}
+function areaOf(p){return areaOfId(p&&p.areaId)}
+function typeOf(id){return S.types.find(t=>t.id===id)||null}
+function findTodo(tid){for(const p of S.projects){const t=p.todos.find(x=>x.id===tid); if(t)return {t:t,p:p}} return null}
+function blocksFor(w){return S.blocks[w]||(S.blocks[w]={})}
+function apsFor(w){return S.appts[w]||(S.appts[w]={})}
+function mitOf(d){return S.mit[d]||null}
+function relDue(due){
+  if(!due)return '';
+  const t=todayISO();
+  if(due===t)return 'heute';
+  if(due===iso(addDays(new Date(),1)))return 'morgen';
+  if(due<t)return 'seit '+fmtDate(parseISO(due));
+  return fmtDate(parseISO(due));
+}
+function dueChip(due,extra){
+  const r=relDue(due); if(!r)return '';
+  return '<button class="duechip'+(due<todayISO()?' past':'')+'" '+(extra||'')+'>🕐 '+esc(r)+'</button>';
+}
+function allDeadlineItems(){
+  const out=[];
+  for(const p of S.projects)for(const t of p.todos){if(t.due&&!t.done&&!t.delegated&&!t.planned)out.push({kind:'todo',t:t,p:p})}
+  for(const t of S.tasks){if(t.due&&!t.done&&!t.delegated&&!t.planned)out.push({kind:'task',t:t,p:null})}
+  out.sort((a,b)=>a.t.due<b.t.due?-1:1);
+  return out;
+}
+function plannedWithDue(){
+  let n=0;
+  for(const p of S.projects)n+=p.todos.filter(t=>t.due&&!t.done&&!t.delegated&&t.planned).length;
+  n+=S.tasks.filter(t=>t.due&&!t.done&&!t.delegated&&t.planned).length;
+  return n;
+}
+function delegatedCount(){
+  let n=0;
+  for(const p of S.projects)n+=p.todos.filter(t=>t.delegated).length;
+  n+=S.tasks.filter(t=>t.delegated).length;
+  return n;
+}
+function icsUid(kind,id){return 'theo-'+kind+'-'+id+'@theo-app'}
+/* Blockzeitfenster im Kalender (konfigurierbar) */
+function slotWin(s){
+  const st=(S&&S.settings&&S.settings.slotTimes)||{};
+  return st[s]||{s:['09:00','14:00','19:00'][s],e:['12:00','17:00','22:00'][s]};
+}
+function parseClock(t){
+  if(!t)return null;
+  const m=String(t).match(/(\d{1,2}):(\d{2})\s*[–—-]\s*(\d{1,2}):(\d{2})/);
+  if(m)return [pad(+m[1])+':'+m[2],pad(+m[3])+':'+m[4]];
+  const m2=String(t).match(/(\d{1,2}):(\d{2})/);
+  if(m2)return [pad(+m2[1])+':'+m2[2],null];
+  return null;
+}
+function toMin(hm){return +hm.slice(0,2)*60+ +hm.slice(3,5)}
+function mapSlotForTime(start,end){
+  let best=-1,bestOv=0;
+  for(let s=0;s<3;s++){
+    const w=slotWin(s);
+    const cs=start?toMin(start):toMin(w.s);
+    const ce=end?toMin(end):toMin(w.e);
+    const ov=Math.max(0,Math.min(toMin(w.e),ce)-Math.max(toMin(w.s),cs));
+    if(ov>bestOv){bestOv=ov;best=s}
+  }
+  return best;
+}
+function evTimes(date,slot,span,time){
+  const sw=slotWin(slot);
+  const pc=parseClock(time);
+  const lastSlot=Math.min(2,slot+(span||1)-1);
+  const ew=slotWin(lastSlot);
+  const st=pc?pc[0]:sw.s;
+  const en=pc?(pc[1]||sw.e):ew.e;
+  return {start:icsD(date)+'T'+st.replace(':','')+'00',end:icsD(date)+'T'+en.replace(':','')+'00'};
+}
+function icsEsc(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n')}
+function icsD(dstr){return String(dstr).replace(/-/g,'')}
+function icsStats(){let nb=0,na=0,nf=0;for(const w in S.blocks){for(const k in S.blocks[w]){nb++;if(S.blocks[w][k].fb)nf++}}for(const w in S.appts){for(const k in S.appts[w]){na++;if(S.appts[w][k].fb)nf++}}return 'Enthalten: '+nb+' Blöcke · '+na+' Termine · '+Object.keys(S.mit).length+' MITs · '+S.phases.length+' Phasen · '+nf+' Rückmeldung(en) — als VEVENTs mit Kategorien LR-* und X-LR-Feldern (inkl. X-LR-SPAN, X-LR-FB, X-LR-FBNOTE für spätere Auswertung).'}
+function buildEvents(only){
+  const stamp=iso(new Date()).replace(/-/g,'')+'T120000Z';
+  const evs=[];
+  function ev(o){
+    if(only==='phases'&&o.cat[0]!=='LR-PHASE')return;
+    if(only==='main'&&o.cat[0]==='LR-PHASE')return;
+    const L=['BEGIN:VEVENT','UID:'+o.uid,'DTSTAMP:'+stamp];
+    if(o.dtstart)L.push('DTSTART:'+o.dtstart,'DTEND:'+o.dtend);
+    else L.push('DTSTART;VALUE=DATE:'+icsD(o.start),'DTEND;VALUE=DATE:'+icsD(o.end));
+    L.push('SUMMARY:'+icsEsc(o.sum));
+    if(o.transp)L.push('TRANSP:TRANSPARENT');
+    if(o.desc)L.push('DESCRIPTION:'+icsEsc(o.desc));
+    L.push('CATEGORIES:'+o.cat.join(','));
+    for(const k in o.x)L.push('X-LR-'+k+':'+icsEsc(o.x[k]));
+    L.push('END:VEVENT');
+    evs.push({uid:o.uid.split('@')[0],lines:L});
+  }
+  for(const w in S.blocks){const bs=S.blocks[w];
+    for(const k in bs){const bl=bs[k];const p=k.split('|');
+      const date=iso(addDays(parseISO(w),+p[0]));
+      const cat=['LR-BLOCK']; if(bl.ampel)cat.push('LR-'+String(bl.ampel).toUpperCase());
+      const tm=evTimes(date,+p[1],bl.span||1,bl.t0?apTimeStr(bl.t0,bl.t1):null);
+      ev({uid:icsUid('block',w+'-'+p[0]+'-'+p[1]),dtstart:tm.start,dtend:tm.end,
+        sum:(bl.title||'Block')+' · '+SLOTS[+p[1]].label,
+        desc:(bl.note||'')+(bl.done?' (erledigt)':''),cat:cat,
+        x:{KIND:bl.kind||'typ',SLOT:p[1],SPAN:String(bl.span||1),DATE:date,WEEK:w,DAY:p[0],PROJECT:bl.projectId||'',TODO:bl.todoId||'',TYPE:bl.typeId||'',FB:bl.fb||'',FBNOTE:bl.fbNote||''}});
+    }
+  }
+  for(const w in S.appts){const aps=S.appts[w];
+    for(const k in aps){const ap=aps[k];
+      if(ap.remoteUid)continue;
+      const date=iso(addDays(parseISO(w),+ap.day));
+      const cat=['LR-APPT']; if(ap.ampel)cat.push('LR-'+String(ap.ampel).toUpperCase());
+      const tm=evTimes(date,+ap.slot,ap.span||1,ap.time);
+      ev({uid:icsUid('appt',w+'-'+ap.day+'-'+ap.slot),dtstart:tm.start,dtend:tm.end,
+        sum:ap.title,desc:'Uhrzeit: '+ap.time,cat:cat,
+        x:{KIND:'appt',SLOT:String(ap.slot),SPAN:String(ap.span||1),DATE:date,WEEK:w,DAY:String(ap.day),TIME:ap.time,SRC:ap.src||'',FB:ap.fb||'',FBNOTE:ap.fbNote||''}});
+    }
+  }
+  for(const d in S.mit){const m=S.mit[d];
+    ev({uid:icsUid('mit',d),start:d,end:iso(addDays(parseISO(d),1)),sum:'MIT: '+m.text,desc:'',transp:true,cat:['LR-MIT'],x:{KIND:'mit',DATE:d,MITDONE:m.done?'1':'0'}});
+  }
+  for(const p of S.phases){
+    ev({uid:icsUid('phase',p.id),start:p.start,end:iso(addDays(parseISO(p.end),1)),sum:p.title,desc:p.desc||'',transp:true,cat:['LR-PHASE'],x:{KIND:'phase',START:p.start,END:p.end,COLOR:p.color}});
+  }
+  return evs.map(e=>({uid:e.uid,text:'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Theo//Prototyp//DE\r\nCALSCALE:GREGORIAN\r\n'+e.lines.join('\r\n')+'\r\nEND:VCALENDAR'}));
+}
+function buildICS(){
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','CALSCALE:GREGORIAN','X-WR-CALNAME:Theo'];
+  buildEvents().forEach(e=>{e.text.split('\r\n').slice(4).forEach(l=>L.push(l))});
+  L.push('END:VCALENDAR');
+  return L.join('\r\n');
+}
+/* Gespiegelte Fremdtermine: bei Zeit-Änderung in Theo wird das Original im CalDAV-Server aktualisiert */
+function mirrorICS(ap,date){
+  const tm=evTimes(date,ap.slot,ap.span||1,ap.t0&&ap.t1?ap.t0+'–'+ap.t1:(ap.t0||ap.time));
+  const stamp=iso(new Date()).replace(/-/g,'')+'T'+pad(new Date().getUTCHours())+pad(new Date().getUTCMinutes())+'00Z';
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VEVENT','UID:'+ap.remoteUid,'DTSTAMP:'+stamp,'DTSTART:'+tm.start,'DTEND:'+tm.end,'SUMMARY:'+icsEsc(ap.title),'TRANSP:OPAQUE','CATEGORIES:LR-MIRROR','END:VEVENT','END:VCALENDAR'].join('\r\n');
+}
+async function wdPutRemote(ap,date){
+  const c=wdCfg();
+  if(!ap.remoteUid||!c.cal)return;
+  try{
+    const r=await wdFetch(c.cal+encodeURIComponent(ap.remoteUid)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:mirrorICS(ap,date)});
+    toast(r.ok?'Aktualisierung im Kalender übernommen.':'Kalender-Update scheiterte (HTTP '+r.status+').');
+  }catch(e){toast('Kalender-Update nicht möglich (Netzwerk).')}
+}
+/* Fremde Einträge automatisch in die Woche einsortieren.
+   Regel (R9): Die Zuordnung darf NIE scheitern — ist kein Slot frei, teilt sich der Eintrag
+   einen belegten Slot (er hat echte Uhrzeiten und verdrängt nichts). */
+function autoAssign(f){
+  const w=iso(mondayOf(parseISO(f.date))), d=dayIdx(parseISO(f.date));
+  const pc=parseClock(f.time);
+  const prefer=pc?mapSlotForTime(pc[0],pc[1]):-1;
+  const order=prefer>=0?[prefer,0,1,2].filter((v,i,a)=>a.indexOf(v)===i):[0,1,2];
+  for(const s of order){
+    if(!apsFor(w)[d+'|'+s]&&!blocksFor(w)[d+'|'+s])return {w:w,d:d,s:s};
+  }
+  return {w:w,d:d,s:prefer>=0?prefer:0,stack:true};
+}
+function stackAppt(w,d,s,ap){
+  const key=d+'|'+s;
+  let occ=apsFor(w)[key]||blocksFor(w)[key];
+  if(!occ){const cov=coveredByW(w,d,s); if(cov){occ=apsFor(w)[d+'|'+cov.slot]||blocksFor(w)[d+'|'+cov.slot]; if(occ)s=cov.slot}}
+  if(occ){occ.stack=occ.stack||[]; occ.stack.push(ap)}
+  else apsFor(w)[key]=ap;
+  return s;
+}
+function takeRemote(f,place,srcLabel){
+  const pc=parseClock(f.time);
+  const ap={id:uid(),day:place.d,slot:place.s,title:f.title,time:f.time||'—',ampel:null,src:'',areaId:null,span:1,typeId:null,remoteUid:f.uid};
+  if(pc){ap.t0=pc[0]; if(pc[1])ap.t1=pc[1]}
+  if(place.stack)stackAppt(place.w,place.d,place.s,ap);
+  else apsFor(place.w)[place.d+'|'+place.s]=ap;
+  S.mapped[f.uid]={w:place.w,day:place.d,slot:place.s,auto:1};
+  wdAssignWriteback(ap,String(place.s),true);
+}
+/* Zuordnung in den Kalender zurückschreiben: das FREMDE Event selbst bekommt
+   CATEGORIES:LR-ASSIGNED + X-LR-SLOT — Summary und Uhrzeiten bleiben exakt gleich. */
+async function wdAssignWriteback(ap,slotTag,quiet){
+  const c=wdCfg(); if(!ap.remoteUid||!c.cal)return;
+  try{
+    const href=c.cal+encodeURIComponent(ap.remoteUid)+'.ics';
+    const r=await wdFetch(href,{method:'GET'});
+    if(!r.ok){if(!quiet)toast('Markierung im Kalender nicht möglich (HTTP '+r.status+').'); return}
+    const lines=(await r.text()).replace(/\r/g,'').split('\n');
+    const out=[]; let inEv=false, hasCat=false, touched=false;
+    for(const l of lines){
+      const tr=l.trim();
+      if(tr==='BEGIN:VEVENT'){inEv=true; hasCat=false; out.push(l); continue}
+      if(tr==='END:VEVENT'){
+        out.push('X-LR-SLOT:'+slotTag);
+        if(!hasCat)out.push('CATEGORIES:LR-ASSIGNED');
+        inEv=false; out.push(l); touched=true; continue}
+      if(inEv){
+        if(/^CATEGORIES/i.test(l)){hasCat=true; out.push(/LR-ASSIGNED/i.test(l)?l:l+',LR-ASSIGNED'); continue}
+        if(/^X-LR-SLOT/i.test(l))continue;
+      }
+      out.push(l);
+    }
+    if(!touched){if(!quiet)toast('Eintrag für die Markierung nicht gefunden.'); return}
+    const p=await wdFetch(href,{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:out.join('\r\n')});
+    if(!quiet)toast(p.ok?'Zuordnung im Kalender markiert — Titel und Uhrzeiten unverändert.':'Markierung nicht möglich (HTTP '+p.status+').');
+  }catch(e){if(!quiet)toast('Markierung nicht möglich (Netzwerk).')}
+}
+function processRemote(txt){
+  let placed=0,queued=0;
+  for(const f of classifyRemote(txt)){
+    const pl=autoAssign(f);
+    if(pl){takeRemote(f,pl,'Kalender (Nextcloud)'); placed++}
+    else if(!S.unmapped.some(x=>x.uid===f.uid)){S.unmapped.push(f); queued++}
+  }
+  return {placed:placed,queued:queued};
+}
+function parseICSAll(text){
+  const raw=String(text).replace(/\r/g,'').split('\n');
+  const lines=[];
+  for(const l of raw){if((l[0]===' '||l[0]==='\t')&&lines.length)lines[lines.length-1]+=l.slice(1); else lines.push(l)}
+  const evs=[],todos=[],journals=[]; let cur=null;
+  for(const l of lines){
+    const tr=l.trim();
+    if(tr.indexOf('BEGIN:')===0){const v=tr.slice(6).trim().toUpperCase(); cur=(v==='VEVENT'||v==='VTODO'||v==='VJOURNAL')?{}:null}
+    else if(tr.indexOf('END:')===0){const v=tr.slice(4).trim().toUpperCase(); if(cur){if(v==='VEVENT')evs.push(cur); else if(v==='VTODO')todos.push(cur); else if(v==='VJOURNAL')journals.push(cur)} cur=null}
+    else if(cur!==null){const m=l.indexOf(':'); if(m<1)continue; const name=l.slice(0,m).toUpperCase(); const val=l.slice(m+1); if(name)cur[name]=val}
+  }
+  return {evs:evs,todos:todos,journals:journals};
+}
+function parseICS(text){return parseICSAll(text).evs}
+function fromIcsDate(v){
+  const s=String(v||'');
+  if(s.length>=8&&/^\d{8}/.test(s))return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
+  return null;
+}
+function fromIcsHM(v){
+  const s=String(v||'');
+  if(s.length>=15&&s.indexOf('T')>0)return s.slice(9,11)+':'+s.slice(11,13);
+  return null;
+}
+/* ================= VTODO-Sync (Vorhaben/To-dos als CalDAV-Aufgaben) ================= */
+function icsStamp(){return iso(new Date()).replace(/-/g,'')+'T'+pad(new Date().getUTCHours())+pad(new Date().getUTCMinutes())+'00Z'}
+function icsUnesc(s){return String(s||'').replace(/\\\\/g,'\u0000').replace(/\\n/g,'\n').replace(/\\;/g,';').replace(/\\,/g,',').replace(/\u0000/g,'\\')}
+function todoICS(t,p){
+  const done=!!t.done, kan=kanOf(t);
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VTODO','UID:'+icsUid('todo',t.id),'DTSTAMP:'+icsStamp(),'SUMMARY:'+icsEsc(t.title),'STATUS:'+(done?'COMPLETED':(kan==='arbeit'?'IN-PROCESS':'NEEDS-ACTION'))];
+  if(done){L.push('PERCENT-COMPLETE:100','COMPLETED:'+icsStamp())}
+  if(t.due)L.push('DUE;VALUE=DATE:'+t.due.replace(/-/g,''));
+  if(t.firstStep)L.push('DESCRIPTION:'+icsEsc('Erster Schritt: '+t.firstStep));
+  if(t.start)L.push('X-LR-START:'+t.start);
+  if(t.delegated)L.push('X-LR-DEL:'+icsEsc(t.delegated));
+  L.push('X-LR-KAN:'+kan);
+  if(t.est&&t.est.mode==='pert')L.push('X-LR-EST:PERT,'+(+t.est.to||0)+','+(+t.est.tm||0)+','+(+t.est.tp||0));
+  else if(t.est&&t.est.simple)L.push('X-LR-EST:SIMPLE,'+(+t.est.simple||0));
+  if(p)L.push('X-LR-PROJECT:'+p.id);
+  L.push('CATEGORIES:LR-TODO','END:VTODO','END:VCALENDAR');
+  return {uid:icsUid('todo',t.id),text:L.join('\r\n')};
+}
+function buildTodos(){
+  const out=[];
+  for(const p of S.projects)for(const t of p.todos)out.push(todoICS(t,p));
+  for(const t of S.tasks)out.push(todoICS(t,null));
+  return out;
+}
+function applyServerTodo(t,e){
+  let due=''; for(const k in e){if(k.toUpperCase().indexOf('DUE')===0)due=e[k]}
+  if(e.SUMMARY)t.title=icsUnesc(e.SUMMARY);
+  t.due=fromIcsDate(due)||null;
+  const kan=(e['X-LR-KAN']||'').trim();
+  if(/COMPLETED/i.test(e.STATUS||'')){t.done=true; t.kanban='fertig'}
+  else{t.done=false; t.kanban=kan&&KCOLS.some(k=>k[0]===kan)?kan:'offen'}
+  if(e['X-LR-START']!==undefined)t.start=fromIcsDate(e['X-LR-START'])||null;
+  if(e['X-LR-DEL']!==undefined)t.delegated=icsUnesc(e['X-LR-DEL']).trim()||null;
+  const est=(e['X-LR-EST']||'').trim();
+  if(est){const pp=est.split(','); if(pp[0]==='PERT')t.est={mode:'pert',to:+pp[1]||0,tm:+pp[2]||0,tp:+pp[3]||0}; else if(pp[0]==='SIMPLE')t.est={mode:'simple',simple:+pp[1]||0}}
+  else t.est=null;
+  const dsc=e.DESCRIPTION?icsUnesc(e.DESCRIPTION):'';
+  const fs=dsc.replace(/^Erster Schritt:\s*/,'').trim();
+  t.firstStep=fs||null;
+}
+function processTodos(text){
+  const res=parseICSAll(text); let upd=0,imp=0;
+  for(const e of res.todos){
+    const u=(e.UID||'').trim(); if(!u)continue;
+    if(tombDead(u)){wdDeleteUid(u); continue} /* Grabstein: gelöscht — Import überspringen, DELETE wiederholen */
+    let t=null;
+    const m=u.match(/^theo-todo-(.+)@theo-app$/);
+    if(m){const f=findTodo(m[1]); if(f)t=f.t; else{const st=S.tasks.find(x=>x.id===m[1]); if(st)t=st}}
+    if(!t){t=S.tasks.find(x=>x.remoteUid===u)||null;
+      if(!t)for(const p of S.projects){const tt=p.todos.find(x=>x.remoteUid===u); if(tt){t=tt; break}}}
+    if(t){applyServerTodo(t,e); upd++}
+    else if(m)continue; /* eigenes theo-todo-UID, lokal nicht (mehr) vorhanden → nicht wiederbeleben */
+    else{
+      let due=''; for(const k in e){if(k.toUpperCase().indexOf('DUE')===0)due=e[k]}
+      const dsc=e.DESCRIPTION?icsUnesc(e.DESCRIPTION):'';
+      const nt={id:uid(),title:e.SUMMARY?icsUnesc(e.SUMMARY):'Aufgabe (aus Kalender)',done:/COMPLETED/i.test(e.STATUS||''),planned:null,due:fromIcsDate(due)||null,remoteUid:u};
+      if(nt.done)nt.kanban='fertig';
+      const fs=dsc.replace(/^Erster Schritt:\s*/,'').trim();
+      if(fs)nt.firstStep=fs;
+      S.tasks.push(nt); imp++;
+    }
+  }
+  return {updated:upd,imported:imp};
+}
+/* ================= Theo-Kapsel (Motto, Eingangskiste, Bereiche, Projekte, Typen als VJOURNAL) ================= */
+function capsuleJson(){
+  return {
+    /* stabil, wenn nie lokal gespeichert wurde — sonst würde die Kapsel in JEDEM Sync-Zyklus als „geändert“ gelten */
+    ts:S.capsuleTs||0,
+    motto:S.motto,inbox:S.inbox,areas:S.areas,types:S.types,focus:S.focus,
+    projects:S.projects.map(p=>{const q={}; for(const k in p)q[k]=p[k]; q.todos=[]; return q}),
+    settings:{aids:S.settings.aids,slotTimes:S.settings.slotTimes,liveSync:S.settings.liveSync},
+    mapped:S.mapped,ignored:S.ignored,tomb:S.tomb
+  };
+}
+const CAP_UID='theo-state@theo-app';
+function capsuleICS(json){
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VJOURNAL','UID:'+CAP_UID,'DTSTAMP:'+icsStamp(),'SUMMARY:'+icsEsc('Theo Kapsel'),'X-LR-TS:'+json.ts,'X-LR-STATE:'+icsEsc(JSON.stringify(json)),'CATEGORIES:LR-STATE','END:VJOURNAL','END:VCALENDAR'].join('\r\n');
+}
+function adoptCapsule(o){
+  if(!o||!o.ts||o.ts<=(S.capsuleTs||0))return false;
+  if(o.motto)S.motto=o.motto;
+  if(Array.isArray(o.inbox))S.inbox=o.inbox;
+  if(Array.isArray(o.areas))S.areas=o.areas;
+  if(Array.isArray(o.types))S.types=o.types;
+  if(o.focus)S.focus=o.focus;
+  if(Array.isArray(o.projects))S.projects=o.projects.map(p=>{const local=S.projects.find(x=>x.id===p.id); const q={todos:local?local.todos:[]}; for(const k in p)if(k!=='todos')q[k]=p[k]; return q});
+  if(o.settings){if(o.settings.aids)S.settings.aids=o.settings.aids; if(o.settings.slotTimes)S.settings.slotTimes=o.settings.slotTimes; if(o.settings.liveSync)S.settings.liveSync=o.settings.liveSync}
+  if(o.mapped)S.mapped=o.mapped;
+  if(o.ignored)S.ignored=o.ignored;
+  if(o.tomb)S.tomb=o.tomb;
+  S.capsuleTs=o.ts;
+  return true;
+}
+/* ================= Lösch-Abgleich (R10) =================
+   Registry S.synced kennt jede Theo-UID, die auf dem Server gesehen/geschrieben wurde.
+   Fehlt eine UID im Export, ist das Objekt dort gelöscht worden → lokal mitlöschen.
+   Umgekehrt räumt pruneSynced beim Schreiben UIDs ab, die Theo nicht mehr erzeugt
+   (gelöschte/verschobene Blöcke, Termine, Phasen, To-dos) — nichts kommt wieder. */
+function wdDeleteUid(uid,calHref){
+  const c=wdCfg(); if(!c.cal)return;
+  const href=(calHref||c.cal)+encodeURIComponent(uid)+'.ics';
+  try{wdFetch(href,{method:'DELETE'}).catch(()=>{})}catch(e){}
+}
+function registerSynced(evs){for(const e of evs){const u=String(e.uid||'').split('@')[0]; if(u)S.synced[u]=1}}
+async function pruneSynced(currentUids){
+  const c=wdCfg(); if(!c.cal)return;
+  const cal2=(c.cal2&&c.cal2!==c.cal)?c.cal2:null;
+  for(const uid of Object.keys(S.synced)){
+    if(currentUids.indexOf(uid)>=0)continue;
+    const href=((uid.indexOf('theo-phase-')===0&&cal2)?cal2:c.cal)+encodeURIComponent(uid)+'.ics';
+    try{await wdFetch(href,{method:'DELETE'})}catch(e){}
+    delete S.synced[uid];
+  }
+}
+function reconcileDeleted(texts){
+  const present={};
+  for(const txt of (texts||[])){
+    if(!txt)continue;
+    const res=parseICSAll(txt);
+    for(const e of res.evs){const u=String(e.UID||'').split('@')[0]; if(u)present[u]=1}
+    for(const e of res.todos){const u=String(e.UID||'').split('@')[0]; if(u)present[u]=1}
+  }
+  let m;
+  const allKeys=[].concat(Object.keys(S.synced),Object.keys(S.tomb).filter(k=>!S.synced[k]));
+  for(const uid of allKeys){
+    if(present[uid])continue;
+    if((m=uid.match(/^theo-block-(\d{4}-\d{2}-\d{2})-(\d)-(\d)$/))){
+      const occ=blocksFor(m[1])[m[2]+'|'+m[3]];
+      if(occ&&icsUid('block',m[1]+'-'+m[2]+'-'+m[3]).split('@')[0]===uid)delete blocksFor(m[1])[m[2]+'|'+m[3]];
+    }else if((m=uid.match(/^theo-appt-(\d{4}-\d{2}-\d{2})-(\d)-(\d)$/))){
+      const occ=apsFor(m[1])[m[2]+'|'+m[3]];
+      if(occ&&icsUid('appt',m[1]+'-'+m[2]+'-'+m[3]).split('@')[0]===uid)delete apsFor(m[1])[m[2]+'|'+m[3]];
+    }else if((m=uid.match(/^theo-mit-(\d{4}-\d{2}-\d{2})$/))){
+      delete S.mit[m[1]];
+    }else if((m=uid.match(/^theo-phase-(.+)$/))){
+      S.phases=S.phases.filter(p=>p.id!==m[1]);
+    }else if((m=uid.match(/^theo-todo-(.+)$/))){
+      const f=findTodo(m[1]);
+      if(f){
+        if(f.t.planned){const bl=blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl&&bl.todoId===m[1])delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]}
+        f.p.todos=f.p.todos.filter(x=>x.id!==m[1]);
+      }else S.tasks=S.tasks.filter(x=>x.id!==m[1]);
+    }
+    delete S.synced[uid];
+    delete S.tomb[uid]; /* Server hat die Abwesenheit bestätigt — Grabstein abgeräumt */
+  }
+}
+/* Grabsteine: gelöschte Theo-UIDs bleiben markiert, bis der Server ihre Abwesenheit bestätigt.
+   Damit kann ein fehlgeschlagenes DELETE (z. B. 403-Throttle) nichts „wiederbeleben“:
+   der Pull überspringt Grabstein-UIDs und versucht das DELETE erneut. */
+function tombMark(uid){if(uid)S.tomb[String(uid).split('@')[0]]=1}
+function tombDead(uid){return !!S.tomb[String(uid||'').split('@')[0]]}
+function processCapsule(text){
+  const res=parseICSAll(text);
+  for(const j of res.journals){
+    const u=(j.UID||'').trim();
+    if(u!==CAP_UID&&!/LR-STATE/i.test(j.CATEGORIES||''))continue;
+    const raw=j['X-LR-STATE']; if(!raw)continue;
+    let obj=null; try{obj=JSON.parse(icsUnesc(raw))}catch(e){continue}
+    if(!obj)continue;
+    if(adoptCapsule(obj))return {adopted:true,ts:obj.ts};
+    return {adopted:false,ts:obj.ts};
+  }
+  return {adopted:false,ts:0};
+}
+/* Fremde (nicht-Theo-)Kalendereinträge für den Zuordnungs-Assistenten erkennen */
+function classifyRemote(text){
+  const evs=parseICS(text);
+  const foreign=[];
+  for(const e of evs){
+    let dt='',de='',cats='';
+    for(const k in e){
+      const ku=k.toUpperCase();
+      if(ku.indexOf('DTSTART')===0)dt=e[k];
+      else if(ku.indexOf('DTEND')===0)de=e[k];
+      else if(ku==='CATEGORIES')cats=e[k];
+    }
+    /* LR-ASSIGNED (Zuordnungs-Markierung) bewusst NICHT überspringen: andere Geräte sollen
+       den Eintrag ebenfalls zuordnen können; auf diesem Gerät verhindert S.mapped Dopplungen. */
+    if(/LR-(BLOCK|APPT|MIT|PHASE|MIRROR)/i.test(cats))continue;
+    const u=(e.UID||'').trim();
+    if(!u||S.mapped[u]||S.ignored[u])continue;
+    const date=fromIcsDate(dt);
+    if(!date)continue;
+    const hs=fromIcsHM(dt), he=fromIcsHM(de);
+    foreign.push({uid:u,date:date,title:e.SUMMARY||'Termin',time:(hs?(he?hs+'–'+he:hs):'')});
+  }
+  return foreign;
+}
+function importICS(text){
+  const c=wdCfg();
+  const evs=parseICS(text);
+  let nb=0,nm=0,np=0,na=0,skip=0;
+  const ampFromCat=c=>{const m=String(c||'').toUpperCase().match(/LR-(ROT|ORANGE|GELB|GRUEN)/); return m?m[1].toLowerCase():null};
+  for(const e of evs){
+    const cats=String(e.CATEGORIES||'').toUpperCase();
+    const x=k=>e['X-LR-'+k]||'';
+    if(cats.includes('LR-BLOCK')){
+      if(tombDead(e.UID)){skip++; wdDeleteUid(String(e.UID).split('@')[0],c.cal); continue}
+      const date=x('DATE'), slot=x('SLOT');
+      if(!date||slot===''){skip++; continue}
+      const d0=parseISO(date); const w=iso(mondayOf(d0));
+      const done=/ \(erledigt\)$/.test(e.DESCRIPTION||'');
+      const bl={id:uid(),kind:x('KIND')||'typ',title:String(e.SUMMARY||'Block').split(' · ')[0],ampel:ampFromCat(cats),note:(e.DESCRIPTION||'').replace(/ \(erledigt\)$/,''),done:done};
+      const sp=parseInt(x('SPAN'),10); if(sp>1)bl.span=Math.min(3,sp);
+      if(x('FB'))bl.fb=x('FB');
+      if(x('FBNOTE'))bl.fbNote=x('FBNOTE');
+      if(x('PROJECT'))bl.projectId=x('PROJECT');
+      if(x('TYPE'))bl.typeId=x('TYPE');
+      if(x('TODO'))bl.todoId=x('TODO');
+      if(e.UID)S.synced[String(e.UID).split('@')[0]]=1;
+      blocksFor(w)[dayIdx(d0)+'|'+slot]=bl; nb++;
+    }else if(cats.includes('LR-APPT')){
+      if(tombDead(e.UID)){skip++; wdDeleteUid(String(e.UID).split('@')[0],c.cal); continue}
+      const date=x('DATE'), slot=x('SLOT');
+      if(!date||slot===''){skip++; continue}
+      const d0=parseISO(date); const w=iso(mondayOf(d0));
+      const ap={id:uid(),day:dayIdx(d0),slot:+slot,title:e.SUMMARY||'Termin',time:x('TIME')||'—',ampel:ampFromCat(cats),src:x('SRC')||'Kalender (importiert)',areaId:null};
+      const sp2=parseInt(x('SPAN'),10); if(sp2>1)ap.span=Math.min(3,sp2);
+      if(x('FB'))ap.fb=x('FB');
+      if(x('FBNOTE'))ap.fbNote=x('FBNOTE');
+      if(e.UID)S.synced[String(e.UID).split('@')[0]]=1;
+      apsFor(w)[dayIdx(d0)+'|'+slot]=ap; na++;
+    }else if(cats.includes('LR-MIT')){
+      if(tombDead(e.UID)){skip++; wdDeleteUid(String(e.UID).split('@')[0],c.cal); continue}
+      const d=x('DATE'); if(!d){skip++; continue}
+      if(e.UID)S.synced[String(e.UID).split('@')[0]]=1;
+      S.mit[d]={text:String(e.SUMMARY||'').replace(/^MIT:\s*/i,''),done:x('MITDONE')==='1'}; nm++;
+    }else if(cats.includes('LR-PHASE')){
+      if(tombDead(e.UID)){
+        skip++;
+        const puid=String(e.UID).split('@')[0];
+        wdDeleteUid(puid,c.cal2||c.cal); wdDeleteUid(puid,c.cal); /* beide Kalender — Legacy-Lage möglich */
+        continue;
+      }
+      const st=x('START'), en=x('END');
+      if(!st||!en){skip++; continue}
+      const uidL=e.UID?String(e.UID).split('@')[0]:null;
+      if(uidL)S.synced[uidL]=1;
+      /* UID-verankert: dieselbe Phase wird aktualisiert statt als Kopie neu angelegt */
+      let pid=null;
+      if(uidL){const mm=uidL.match(/^theo-phase-(.+)$/); if(mm)pid=mm[1]}
+      const ex=pid?S.phases.find(p=>p.id===pid):null;
+      if(ex){ex.start=st; ex.end=en; ex.title=e.SUMMARY||ex.title; ex.desc=e.DESCRIPTION||''; ex.color=x('COLOR')||ex.color}
+      else if(!S.phases.some(p=>p.start===st&&p.end===en&&p.title===e.SUMMARY))S.phases.push({id:pid||uid(),start:st,end:en,title:e.SUMMARY||'Phase',desc:e.DESCRIPTION||'',color:x('COLOR')||PHC[S.phases.length%PHC.length]});
+      np++;
+    }else skip++;
+  }
+  saveQuiet();
+  return {blocks:nb,appts:na,mits:nm,phases:np,skipped:skip};
+}
+function downloadText(name,text,mime){
+  try{
+    const b=new Blob([text],{type:mime||'text/calendar'});
+    const u=URL.createObjectURL(b);
+    const a=document.createElement('a'); a.href=u; a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(u)},3000);
+    return true;
+  }catch(e){return false}
+}
+/* ================= WebDAV / CalDAV (Nextcloud) ================= */
+function wdCfg(){return S.settings.webdav||(S.settings.webdav={url:'',user:'',pass:'',cal:''})}
+function wdBase(){
+  const c=wdCfg(); let u=(c.url||'').trim().replace(/\/+$/,'');
+  if(!u)return '';
+  if(!/^https?:\/\//i.test(u)&&u.indexOf('.')>0)u='https://'+u;
+  return /remote\.php\/dav/i.test(u)?u:u+'/remote.php/dav';
+}
+function wdAuth(){
+  const c=wdCfg();
+  try{return 'Basic '+btoa(unescape(encodeURIComponent((c.user||'')+':'+(c.pass||''))))}
+  catch(e){return ''}
+}
+async function wdFetch(path,opt){
+  opt=opt||{};
+  const c=wdCfg();
+  const full=resolveDavURL(path);
+  const px=await detectProxy();
+  if(px){
+    const h={};
+    for(const k in (opt.headers||{})){if(k!=='Authorization')h[k]=opt.headers[k]}
+    const q='__dav_proxy__?url='+encodeURIComponent(full)+'&u='+encodeURIComponent(c.user||'')+'&p='+encodeURIComponent(c.pass||'');
+    return await fetch(q,{method:opt.method||'GET',headers:h,body:opt.body});
+  }
+  const h=Object.assign({'Authorization':wdAuth()},opt.headers||{});
+  return await fetch(full,{method:opt.method||'GET',headers:h,body:opt.body});
+}
+function resolveDavURL(path){
+  if(/^https?:/i.test(path))return path;
+  const base=wdBase(); let o='';
+  try{o=new URL(base).origin}catch(e){}
+  return o?o+path:path;
+}
+let PROXY=null;
+async function detectProxy(){
+  if(PROXY!==null)return PROXY;
+  try{
+    const r=await fetch('__theo_proxy__');
+    if(r.ok){
+      const j=await r.json();
+      if(j&&j.proxy){PROXY={target:j.target||''}; return PROXY}
+    }
+  }catch(e){}
+  PROXY=false; return PROXY;
+}
+async function wdBody(r){try{return await r.text()}catch(e){return ''}}
+function wdServerMsg(txt){
+  if(!txt)return '';
+  const plain=String(txt).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  return plain.length?' <span class="pc">Servermeldung: „'+esc(plain.slice(0,150))+'“</span>':'';
+}
+function appPwLink(url){
+  let host='';
+  try{host=new URL(url).origin}catch(e){try{host=new URL('https://'+url).origin}catch(x){}}
+  if(!host||host==='null')return 'Nextcloud → Persönliche Einstellungen → Sicherheit → „App-Passwörter erstellen“';
+  return '<a href="'+esc(host)+'/settings/user/security" target="_blank" rel="noopener">'+esc(host)+'/settings/user/security</a>';
+}
+function wdHuman(status,txt){
+  if(status===401)return '✖ 401 — die Anmeldung wird abgelehnt. Häufigste Ursache: das <b>Login-Passwort</b> statt eines <b>App-Passworts</b> (bei 2FA und bei vielen Hostern zwingend) oder ein Tippfehler. App-Passwort erstellen: '+appPwLink(wdCfg().url)+wdServerMsg(txt);
+  if(status===403){
+    if(/throttl|brute|zu viele/i.test(txt))return '✖ 403 — <b>Brute-Force-Schutz</b> der Nextcloud: Nach früheren Fehlversuchen ist die Anmeldung vorübergehend gesperrt — das gilt auch für jetzt richtige Passwörter. <b>15–30 Minuten warten</b>, dann einmalig mit App-Passwort versuchen ('+appPwLink(wdCfg().url)+'). Als Instanz-Admin sofort entriegelbar: <code>occ security:bruteforce:reset &lt;deine-IP&gt;</code>.'+wdServerMsg(txt);
+    return '✖ 403 — der Server verweigert den Zugriff trotz Anmeldung. Mögliche Ursachen: Brute-Force-Sperre nach früheren Fehlversuchen (kurz warten und erneut versuchen), Schutzmechanismen des Hosters, oder fehlende Rechte am Pfad. In jedem Fall ein <b>App-Passwort</b> verwenden ('+appPwLink(wdCfg().url)+').'+wdServerMsg(txt);
+  }
+  if(status===404)return '✖ 404 — Pfad nicht gefunden. Theo listet die Kalender selbstständig: Es genügt, nur die Server-Adresse (z. B. https://kai.nl.tab.digital) einzutragen — Nutzername muss dem tatsächlichen Konto entsprechen.'+wdServerMsg(txt);
+  return '✖ HTTP '+status+' — Server antwortete abweichend.'+wdServerMsg(txt);
+}
+/* ================= Live-Sync ================= */
+const SYNC={timer:null,running:false,last:null,msg:'',capJson:null};
+function syncStatusText(){
+  const ls=S.settings.liveSync||{};
+  return (ls.on?'an':'aus')+' · alle '+(ls.interval||60)+' s'+(SYNC.last?' · zuletzt '+pad(SYNC.last.getHours())+':'+pad(SYNC.last.getMinutes())+':'+pad(SYNC.last.getSeconds()):'')+(SYNC.msg?' · '+SYNC.msg:'');
+}
+/* Schreibt den aktuellen Zustand (VEVENTs, VTODOs, Kapsel, Aufräumen) — nur Push, kein Pull */
+async function pushAll(){
+  const c=wdCfg(); const cal=c.cal;
+  const cal2=(c.cal2&&c.cal2!==c.cal)?c.cal2:null;
+  const main=buildEvents('main'), ph=buildEvents('phases'), tds=buildTodos();
+  const allUids=main.concat(ph,tds).map(e=>String(e.uid).split('@')[0]);
+  let ok=0, fail=0;
+  await pruneSynced(allUids);
+  for(const ev of main){try{const r=await wdFetch(cal+encodeURIComponent(ev.uid)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:ev.text}); if(r.ok)ok++; else fail++}catch(e){fail++}}
+  if(ph.length)for(const ev of ph){const href=cal2||cal; try{const r=await wdFetch(href+encodeURIComponent(ev.uid)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:ev.text}); if(r.ok)ok++; else fail++}catch(e){fail++}}
+  for(const ev of tds){try{const r=await wdFetch(cal+encodeURIComponent(ev.uid)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:ev.text}); if(r.ok)ok++; else fail++}catch(e){fail++}}
+  registerSynced(main); registerSynced(ph); registerSynced(tds);
+  try{
+    const cobj=capsuleJson(); const cstr=JSON.stringify(cobj);
+    if(cstr!==SYNC.capJson){
+      const r=await wdFetch(cal+encodeURIComponent(CAP_UID)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:capsuleICS(cobj)});
+      if(r.ok){SYNC.capJson=cstr; ok++}
+    }
+  }catch(e){}
+  if(fail===0&&S.meta.dirty){S.meta.dirty=false; saveQuiet()}
+  return {ok:ok, fail:fail};
+}
+/* Direkter Push: jede Änderung (save()) schreibt nach kurzer Entprellung sofort */
+let pushTimer=null;
+function schedulePush(){
+  const c=wdCfg();
+  if(!c.url||!c.user||!c.pass||!c.cal)return;
+  if(pushTimer)clearTimeout(pushTimer);
+  pushTimer=setTimeout(async function(){
+    pushTimer=null;
+    if(SYNC.running){schedulePush(); return}
+    SYNC.running=true;
+    try{
+      const r=await pushAll();
+      SYNC.last=new Date();
+      SYNC.msg='⏏ direkt gepusht '+r.ok+(r.fail?' / ✖ '+r.fail:'');
+      if(!$('#overlay').classList.contains('on'))render();
+    }catch(e){SYNC.msg='Push-Fehler: '+String(e&&e.message||e)}
+    finally{SYNC.running=false}
+  },2500);
+}
+async function syncCycle(){
+  if(SYNC.running)return;
+  const c=wdCfg();
+  if(!c.url||!c.user||!c.pass||!c.cal)return;
+  const cal=c.cal;
+  const cal2=(c.cal2&&c.cal2!==c.cal)?c.cal2:null;
+  SYNC.running=true;
+  try{
+    const base=wdBase();
+    const px=await detectProxy();
+    if(px&&px.target&&base.toLowerCase().indexOf(px.target.toLowerCase())!==0){
+      SYNC.msg='Companion-Ziel ('+px.target+') ≠ eingetragene URL — bitte anpassen'; return;
+    }
+    const rev=S.capsuleTs||0;
+    if(S.meta.dirty){
+      const pr=await pushAll();
+      SYNC.msg='geschrieben '+pr.ok+(pr.fail?' / ✖ '+pr.fail:'');
+      if((S.capsuleTs||0)!==rev)S.meta.dirty=true; /* während des Pushes weitereditiert */
+    }
+    if((S.capsuleTs||0)!==rev){
+      /* Pull würde frische lokale Änderungen mit dem alten Serverstand überschreiben — nächsten Zyklus warten */
+      SYNC.last=new Date();
+      SYNC.msg=(SYNC.msg?SYNC.msg+' · ':'')+'Pull übersprungen — lokale Änderungen werden zuerst gepusht';
+      return;
+    }
+    const r=await wdFetch(cal+'?export',{method:'GET'});
+    if(r.ok){
+      const txt=await r.text();
+      importICS(txt);
+      const pr=processRemote(txt);
+      const tr=processTodos(txt);
+      const cp=processCapsule(txt);
+      let txt2='';
+      if(cal2){const r2=await wdFetch(cal2+'?export',{method:'GET'}); if(r2.ok){txt2=await r2.text(); importICS(txt2)}}
+      reconcileDeleted([txt,txt2]);
+      SYNC.last=new Date();
+      SYNC.msg=(SYNC.msg?SYNC.msg+' · ':'')+'gelesen'+(pr.placed?' · '+pr.placed+' eingeordnet':'')+(pr.queued?' · 📥 '+pr.queued+' zuzuordnen':'')+(tr.updated?' · '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?' · '+tr.imported+' Aufgaben aus Kalender':'')+(cp.adopted?' · Kapsel übernommen':'');
+      saveQuiet();
+      if(!$('#overlay').classList.contains('on'))render();
+    }else{
+      SYNC.msg='Lesen scheiterte (HTTP '+r.status+')';
+    }
+  }catch(e){SYNC.msg='Sync-Fehler: '+String(e&&e.message||e)}
+  finally{SYNC.running=false}
+}
+function startSync(){
+  if(SYNC.timer)clearInterval(SYNC.timer);
+  SYNC.timer=null;
+  const ls=S.settings.liveSync||{};
+  if(ls.on)SYNC.timer=setInterval(syncCycle,Math.max(15,ls.interval||60)*1000);
+}
+function parseCals(xml){
+  const out=[]; if(!xml)return out;
+  const parts=xml.split(/<(?:[A-Za-z0-9]+:)?response[>\s]/i);
+  for(const b of parts){
+    const rt=b.search(/<(?:[A-Za-z0-9]+:)?resourcetype/i);
+    if(rt<0)continue;
+    if(!/<(?:[A-Za-z0-9]+:)?calendar\s*\/?>/i.test(b.slice(rt)))continue;
+    const href=(b.match(/<(?:[A-Za-z0-9]+:)?href>\s*([^<]+?)\s*<\//i)||[])[1];
+    if(!href||/\.ics$/i.test(href))continue;
+    const name=(b.match(/<(?:[A-Za-z0-9]+:)?displayname>\s*([^<]+?)\s*<\//i)||[])[1];
+    out.push({href:href.endsWith('/')?href:href+'/',name:name||decodeURIComponent((href.replace(/\/+$/,'').split('/').pop()||'Kalender'))});
+  }
+  return out;
+}
+function getBlocks(){return S.blocks[wk()]||(S.blocks[wk()]={})}
+function getBlocksW(w){return S.blocks[w]||{}}
+function getAppts(){return S.appts[wk()]||(S.appts[wk()]={})}
+function setBlockW(w,d,s,bl){blocksFor(w)[d+'|'+s]=bl; save()}
+function coveredByW(w,d,s){
+  const bs=blocksFor(w),aps=apsFor(w);
+  for(let k=1;k<=2;k++){
+    const sk=s-k; if(sk<0)break;
+    const b=bs[d+'|'+sk]; if(b&&(b.span||1)>k)return {title:b.title||'Block',slot:sk};
+    const a=aps[d+'|'+sk]; if(a&&(a.span||1)>k)return {title:a.title,slot:sk};
+  }
+  return null;
+}
+function slotOccW(w,d,s){return blocksFor(w)[d+'|'+s]||apsFor(w)[d+'|'+s]||coveredByW(w,d,s)}
+function spanRoomW(w,d,s,span){
+  for(let k=1;k<span;k++){
+    const sk=s+k;
+    if(sk>2)return false;
+    if(blocksFor(w)[d+'|'+sk]||apsFor(w)[d+'|'+sk])return false;
+  }
+  return true;
+}
+function findFreeSlot(w,d,span){
+  for(let s=0;s<3;s++){
+    if(blocksFor(w)[d+'|'+s]||apsFor(w)[d+'|'+s])continue;
+    if(spanRoomW(w,d,s,span))return s;
+  }
+  return -1;
+}
+function fmtDaySlotW(w,d,s){const dt=addDays(parseISO(w),d); return fmtDate(dt)+' · '+SLOTS[s].label}
+function readSpan(){
+  const sel=document.getElementById('f-span');
+  return sel?Math.max(1,Math.min(3,parseInt(sel.value,10)||1)):1;
+}
+function phaseOf(dstr){let best=null; for(const p of S.phases){if(p.start<=dstr&&dstr<=p.end){if(!best||p.start>best.start)best=p}} return best}
+/* Alle Phasen, die an einem Tag aktiv sind — Überlappungen sind erlaubt und werden mit „ | “ angezeigt */
+function activePhases(dstr){return S.phases.filter(p=>p.start<=dstr&&dstr<=p.end).sort((a,b)=>a.start<b.start?-1:1)}
+function fmtDaySlot(d,s){const dt=addDays(ui.anchor,d); return fmtDate(dt)+' · '+SLOTS[s].label}
+function fmtPlanChip(pl){const d=addDays(parseISO(pl.wk),pl.day); return DAYSHORT[dayIdx(d)]+' '+d.getDate()+'.'+(d.getMonth()+1)+'. · '+SLOTS[pl.slot].label.split(' ')[0]}
+function isCurrentWeek(){return wk()===iso(mondayOf(new Date()))}
+
+function ampDot(v){if(!v||v==='none')return ''; return '<span class="dot '+v+'" title="'+esc(AMP[v].label)+'"></span>'}
+function ampRowSel(sel,ctxKind){
+  const eff=(ui.ampSel!=null&&ui.ampSelK===ctxKind)?ui.ampSel:sel;
+  return '<div class="ampRow">'+AMPKEYS.concat(['none']).map(v=>'<button class="ampB'+(eff===v?' sel':'')+'" data-act="ampPick" data-v="'+v+'" data-k="'+ctxKind+'"><span class="dot '+v+'"></span>'+esc(AMP[v].label)+'</button>').join('')+'</div>';
+}
+
+/* ================= Render ================= */
+function render(){
+  const nv=$('#nav'); if(nv)nv.classList.toggle('open',ui.menuOpen);
+  document.querySelectorAll('#nav .navbtn').forEach(b=>{b.classList.toggle('on',b.dataset.v===ui.route.view)});
+  const inboxDot=S.inbox.length>0;
+  const inb=document.querySelectorAll('#nav .navbtn')[3];
+  if(inb){const old=inb.querySelector('.navdot'); if(old)old.remove(); if(inboxDot){const d=document.createElement('span'); d.className='navdot'; inb.appendChild(d)}}
+  const v=ui.route.view;
+  let h='';
+  if(v==='woche')h=renderWeek();
+  else if(v==='jahr')h=renderYear();
+  else if(v==='bereiche')h=renderAreas();
+  else if(v==='projekt')h=renderProject(ui.route.id);
+  else if(v==='eingang')h=renderInbox();
+  else if(v==='konfig')h=renderConfig();
+  $('#main').innerHTML=h;
+}
+
+function renderWeek(){
+  const days=[0,1,2,3,4,5,6].map(i=>addDays(ui.anchor,i));
+  const cur=isCurrentWeek(), tI=dayIdx(new Date());
+  let h='<div class="vhead"><div><h1>Woche</h1><div class="sub">'+fmtDate(days[0])+' – '+fmtDate(days[6])+' · KW '+isoWeek(days[0])+'</div></div>'+
+    '<div class="hbtns"><input type="month" class="inp slim" data-field="weekJump" value="'+ui.anchor.toISOString().slice(0,7)+'" title="Monat wählen — springt in die erste Woche dieses Monats (z. B. Januar 2028)" style="width:150px"><button class="btn mini" data-act="weekPrev">‹ zurück</button><button class="btn mini" data-act="weekThis">Heute</button><button class="btn mini" data-act="weekNext">weiter ›</button></div></div>';
+  h+=orientBar();
+  if(ui.suggestion)h+=suggHtml();
+  if(S.unmapped.length)h+='<div class="sugg" style="background:#F4F1E9;border-color:#E7E1D4">📥 <span><b>'+S.unmapped.length+' Kalendereintrag'+(S.unmapped.length===1?'':'e')+'</b> aus Nextcloud warten auf Zuordnung.</span><button class="btn mini" data-act="openAssign">Jetzt zuordnen</button></div>';
+  if(!S.meta.intro)h+='<div class="intro"><b>🌿 Kurz gesagt.</b><ul><li>Jeder Tag hat drei Blöcke: Vormittag, Mittag &amp; Nachmittag, Abend.</li><li>Ein Block trägt meist <b>einen</b> Schwerpunkt — ein Projekt, ein Termin oder einfach Regeneration.</li><li>Alles Weitere (Projekte, MIT, Jahresphasen) ist optional. Freie Blöcke sind völlig in Ordnung.</li></ul><button class="btn mini" data-act="introOk">Alles klar</button></div>';
+  h+='<div class="wgrid"><div></div>'+days.map(d=>{
+    const m=mitOf(iso(d));
+    return '<div class="dh'+(iso(d)===todayISO()?' today':'')+'" style="cursor:pointer" data-act="editMit" data-date="'+iso(d)+'" title="MIT für diesen Tag ansehen oder setzen">'+fmtDate(d)+(m?' · 🎯':'')+'</div>';
+  }).join('');
+  for(let s=0;s<3;s++){
+    h+='<div class="sl"><span class="ico">'+SLOTS[s].ico+'</span>'+SLOTS[s].label+'</div>';
+    for(let d=0;d<7;d++)h+=slotCell(d,s,cur,tI,false);
+  }
+  h+='</div>';
+  const md=Math.min(ui.mobileDay??tI,6);
+  const mMit=mitOf(iso(days[md]));
+  h+='<div class="wmobile"><div class="daychips">'+days.map((d,i)=>'<button class="chip'+(i===md?' on':'')+'" data-act="setDay" data-day="'+i+'">'+fmtDate(d)+(iso(d)===todayISO()?' · heute':'')+'</button>').join('')+'</div>';
+  h+='<div class="orient" style="margin:2px 0 10px"><span class="chip" data-act="editMit" data-date="'+iso(days[md])+'">🎯 MIT ('+fmtDate(days[md])+'): '+(mMit?'<b class="'+(mMit.done?'strike':'')+'">'+esc(mMit.text)+'</b>':'<i class="dim">offen</i>')+' <button class="mini2" data-act="mitDone" data-date="'+iso(days[md])+'" title="erledigt umschalten">'+(mMit&&mMit.done?'↺':'✓')+'</button></span></div>';
+  for(let s=0;s<3;s++){h+='<div class="mslotLabel">'+SLOTS[s].ico+' '+SLOTS[s].label+'</div>'+slotCell(md,s,cur,tI,true)}
+  h+='</div>';
+  h+=renderUpcoming();
+  h+=renderAgenda();
+  h+='<div class="legend">Ampel — Energiequalität: <span class="dot rot"></span> sehr intensiv <span class="dot orange"></span> intensiv <span class="dot gelb"></span> Tunnelrisiko <span class="dot gruen"></span> Erholung &nbsp;·&nbsp; linke Farbfläche = Lebensbereich</div>';
+  return h;
+}
+
+function renderGantt(p){
+  const items=[];
+  for(const t of p.todos){
+    if(t.done)continue;
+    const E=estDays(t);
+    const span=Math.max(1,Math.ceil(E)||1);
+    const st=t.start||todayISO();
+    const en=iso(addDays(parseISO(st),span-1));
+    items.push({t:t,st:st,en:en,du:t.due||null,span:span,E:E});
+  }
+  const today=todayISO();
+  let min=today, max=today;
+  items.forEach(it=>{
+    if(it.st<min)min=it.st; if(it.en>max)max=it.en;
+    if(it.du){if(it.du>max)max=it.du; if(it.du<min)min=it.du}
+    if(it.st>max)max=it.st;
+  });
+  let s0=iso(addDays(parseISO(min),-2)), s1=iso(addDays(parseISO(max),4));
+  if(!items.length){s0=iso(addDays(new Date(),-2)); s1=iso(addDays(new Date(),17))}
+  const N=Math.min(140,Math.round((parseISO(s1)-parseISO(s0))/86400000)+1);
+  const D=36, LW=220;
+  let h='<div class="gcap"><span class="gi"><span style="display:inline-block;width:26px;height:10px;border-radius:5px;background:#CBB389"></span> geschätzte Dauer</span><span class="gi" style="color:#4A453C">▼ Deadline (bleibt fix)</span><span class="gi"><span style="display:inline-block;width:2px;height:12px;background:#C98D76"></span> heute</span><span class="gi">Leiste ziehen (Desktop) oder ‹ › — verschiebt nur den Start.</span></div>';
+  h+='<div class="ganttWrap"><div class="gantt" style="width:'+(LW+N*D)+'px">';
+  h+='<div class="ghead"><div class="gheadLbl">Vorhaben</div><div class="gheadTrack" style="width:'+(N*D)+'px">';
+  for(let i=0;i<N;i++){
+    const dstr=iso(addDays(parseISO(s0),i)), dt=parseISO(dstr);
+    h+='<div class="gday'+(dayIdx(dt)>=5?' wknd':'')+(dstr===today?' today':'')+'">'+dt.getDate()+'<br>'+DAYSHORT[dayIdx(dt)]+'</div>';
+  }
+  h+='</div></div>';
+  if(!items.length)h+='<div class="grow"><div class="growLbl sub" style="width:'+LW+'px">Noch keine offenen Vorhaben — Zeitachse leer.</div><div class="growTrack" style="width:'+(N*D)+'px"></div></div>';
+  items.forEach(it=>{
+    const i0=Math.round((parseISO(it.st)-parseISO(s0))/86400000);
+    const len=it.span;
+    const ar=areaOf(p);
+    h+='<div class="grow"><div class="growLbl"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1" title="'+esc(it.t.title)+'">'+esc(it.t.title)+'</span><span class="pc">'+(it.E?'≈'+(Math.round(it.E*10)/10)+' T':'—')+(it.t.delegated?' · ↗':'')+'</span><span class="gmove"><button class="xbtn" data-act="ganttMove" data-pid="'+p.id+'" data-tid="'+it.t.id+'" data-d="-1" title="1 Tag früher">‹</button><button class="xbtn" data-act="ganttMove" data-pid="'+p.id+'" data-tid="'+it.t.id+'" data-d="1" title="1 Tag später">›</button></span></div>'+
+      '<div class="growTrack" style="width:'+(N*D)+'px">';
+    for(let i=0;i<N;i++){
+      const dstr=iso(addDays(parseISO(s0),i));
+      h+='<div class="gcell'+(dayIdx(parseISO(dstr))>=5?' wknd':'')+'" style="left:'+(i*D)+'px" data-drop="g" data-date="'+dstr+'"></div>';
+    }
+    h+='<div class="gbar" style="left:'+(i0*D+2)+'px;width:'+(len*D-4)+'px;background:'+(ar?ar.color:'#CBB389')+'" draggable="true" data-drag="gtodo:'+p.id+'|'+it.t.id+'" data-act="editTodoSheet" data-kind="todo" data-id="'+it.t.id+'" title="Klicken: Vorhaben bearbeiten · ziehen oder ‹ ›: Start verschieben"><span class="gbt">'+esc(it.t.title.slice(0,Math.max(0,Math.floor((len*D-20)/6.2))))+'</span></div>';
+    if(it.du){
+      const iD=Math.round((parseISO(it.du)-parseISO(s0))/86400000);
+      if(iD>=0&&iD<N)h+='<div class="gdue" style="left:'+((iD+1)*D-8)+'px"></div>';
+    }
+    if(today>=s0&&today<=s1){
+      const iT=Math.round((parseISO(today)-parseISO(s0))/86400000);
+      h+='<div class="gtoday" style="left:'+(iT*D+D/2)+'px"></div>';
+    }
+    h+='</div></div>';
+  });
+  h+='</div></div>';
+  h+='<div class="sub" style="margin-top:8px">Die Balkenlänge folgt deiner <b>Zeitschätzung</b> (Vorhaben-Editor: einfach in Tagen oder <b>PERT: (to + 4·tm + tp) / 6</b>) — nicht der Deadline. Ohne Schätzung zählt ein Tag als Minimalmarke. Verschieben ändert <b>nur das Startdatum</b>; die ▼-Deadline bleibt stehen (überfällig wird sie weiter als Marke gezeigt).</div>';
+  return h;
+}
+
+function renderUpcoming(){
+  const items=allDeadlineItems(); const nd=delegatedCount(); const np=plannedWithDue();
+  let h='<div class="card upcard"><div class="fh2" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>🕐 Anstehend — mit Deadline, ohne Block</span><span class="pc">Deadlines sind Erwartungsanker, keine Urteile</span></div>';
+  h+='<div class="sub" style="margin-bottom:6px">Hier steht nur, was eine <b>Deadline</b> hat und noch <b>keinen Block</b> bekommen hat'+(np?' — bereits in Blöcken geplant: '+np+' (in der Wochenansicht sichtbar)':'')+'. Ohne Deadline wird hier bewusst nicht gelistet; Zeitschätzungen pro Vorhaben sind als spätere Erweiterung geplant. Bei knapper Kapazität: <b>Timeline verschieben</b>, <b>Scope anpassen</b> oder <b>delegieren</b>.</div>';
+  if(!items.length)h+='<div class="sub">Nichts mit Deadline. Auch das ist ein zulässiger Zustand.</div>';
+  items.forEach(it=>{
+    const t=it.t; const pn=it.p?(it.p.emoji+' '+it.p.name):'Einzelne Aufgabe';
+    const toggleAct=it.kind==='todo'?'toggleTodoBox':'toggleTaskBox';
+    const planAct=it.kind==='todo'?'planTodo':'planTask';
+    h+='<div class="uprow"><input type="checkbox" data-act="'+toggleAct+'" data-id="'+t.id+'"'+(t.done?' checked':'')+'>'+
+      '<span class="upT"><span'+(t.done?' class="strike"':'')+'>'+esc(t.title)+'</span>'+(t.firstStep?'<div class="firstStep">→ '+esc(t.firstStep)+'</div>':'')+'<div class="upP">'+esc(pn)+'</div></span>'+
+      dueChip(t.due,'data-act="editTodoSheet" data-kind="'+it.kind+'" data-id="'+t.id+'"')+
+      '<div class="miniBtns"><button class="btn mini" data-act="'+planAct+'" data-id="'+t.id+'" title="in einen Block überführen">→ Block</button>'+
+      '<button class="btn mini" data-act="duePlusWeek" data-kind="'+it.kind+'" data-id="'+t.id+'" title="Timeline: Deadline +1 Woche">+1 W</button>'+
+      '<button class="btn mini" data-act="editTodoSheet" data-kind="'+it.kind+'" data-id="'+t.id+'" title="Scope anpassen, delegieren, Datum ändern">✎</button></div></div>';
+  });
+  if(nd)h+='<div class="sub" style="margin-top:8px">↗ '+nd+' delegiert — in den Projekten sichtbar, zählt nicht als offener Posten.</div>';
+  return h+'</div>';
+}
+
+function renderAgenda(){
+  const t=todayISO();
+  const w0=iso(mondayOf(new Date())), wEnd=iso(addDays(parseISO(w0),6));
+  const mon=t.slice(0,7);
+  if(!ui.agRange)ui.agRange='woche';
+  const items=allApptItems();
+  const monEnd=iso(new Date(new Date().getFullYear(),new Date().getMonth()+1,0));
+  /* Zähler und Filter verwenden dieselben (inklusiven) Zeiträume — die Zahl am Chip ist immer exakt das, was die Liste zeigt */
+  const inRange=(d,r)=>{
+    if(r==='heute')return d===t;
+    if(r==='woche')return d>=w0&&d<=wEnd;
+    if(r==='monat')return d.slice(0,7)===mon;
+    return d>monEnd;
+  };
+  const counts={heute:0,woche:0,monat:0,spaeter:0};
+  items.forEach(it=>{const d=it.date; for(const r in counts)if(inRange(d,r))counts[r]++});
+  const inR=it=>inRange(it.date,ui.agRange);
+  let h='<div class="card upcard"><div class="fh2" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>📅 Termine</span><span class="pc">alle Kalendereinträge im Blick</span></div>';
+  const phsT=activePhases(todayISO());
+  if(phsT.length)h+='<div class="sub" style="margin:0 0 8px">🍂 Aktive Phase'+(phsT.length>1?'n (überlappend)':'')+': <b>'+esc(phsT.map(x=>x.title).join(' | '))+'</b></div>';
+  h+='<div class="chips">'+[['heute','Heute'],['woche','Woche'],['monat','Monat'],['spaeter','Später']].map(r=>'<button class="chip'+(ui.agRange===r[0]?' on':'')+'" data-act="agRange" data-r="'+r[0]+'">'+r[1]+' ('+counts[r[0]]+')</button>').join('')+'</div>';
+  const vis=items.filter(inR);
+  if(!vis.length)h+='<div class="sub">Keine Termine in diesem Zeitraum — ruhig hier.</div>';
+  vis.forEach(it=>{
+    if(it.bl){
+      const ty=it.bl.typeId?typeOf(it.bl.typeId):null;
+      const blTitle=it.bl.kind==='projekt'&&projOf(it.bl.projectId)?projOf(it.bl.projectId).name:(it.bl.title||'Block');
+      h+='<div class="agRow" data-act="openBlockW" data-w="'+it.w+'" data-day="'+it.day+'" data-slot="'+it.slot+'"><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+(ty?ty.emoji+' ':'')+esc(blTitle)+'</span>'+ampDot(it.bl.ampel)+'<span class="pc">'+(it.bl.t0?esc(apTimeStr(it.bl.t0,it.bl.t1)):SLOTS[it.slot].ico+' '+slotWin(it.slot).s+'–'+slotWin(it.slot).e)+(it.bl.span>1?' · '+it.bl.span+' Blöcke':'')+'</span></div>';
+    }else{
+      h+='<div class="agRow" data-act="openAppt" data-id="'+it.ap.id+'"><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+esc(it.ap.time||'')+(it.ap.span>1?' · '+it.ap.span+' Blöcke':'')+'</span></div>';
+    }
+  });
+  h+='<div class="sheetBtns"><button class="btn" data-act="newAppt">＋ Termin (auch später)</button></div></div>';
+  return h;
+}
+
+function allApptItems(){
+  const out=[];
+  for(const w in S.appts){
+    const aps=S.appts[w];
+    for(const k in aps){
+      const ap=aps[k];
+      const date=iso(addDays(parseISO(w),ap.day));
+      out.push({w:w,day:ap.day,slot:ap.slot,ap:ap,date:date});
+      if(ap.stack)ap.stack.forEach(sa=>out.push({w:w,day:sa.day,slot:sa.slot,ap:sa,date:date}));
+    }
+  }
+  /* Blocktypen mit „wie Termin“-Flag (z. B. 1:1-Termin) erscheinen ebenfalls bei Termine */
+  for(const w in S.blocks){
+    const bs=S.blocks[w];
+    for(const k in bs){
+      const bl=bs[k];
+      const ty=bl.typeId?typeOf(bl.typeId):null;
+      if(!ty||!ty.asAppt)continue;
+      const p=k.split('|');
+      const date=iso(addDays(parseISO(w),+p[0]));
+      out.push({w:w,day:+p[0],slot:+p[1],bl:bl,date:date});
+    }
+  }
+  out.sort((x,y)=>x.date<y.date?-1:(x.date>y.date?1:(x.slot-y.slot)));
+  return out;
+}
+
+function orientBar(){
+  /* Die Leiste repräsentiert die angezeigte Zeit: MIT & Phase vom angezeigten Tag
+     (Woche ohne „heute“ → Montag der Woche), Wochenfokus der angezeigten Woche. */
+  let od=todayISO();
+  if(ui.route.view==='woche'){const w0=wk(), t=todayISO(); od=(t>=w0&&t<=iso(addDays(parseISO(w0),6)))?t:w0}
+  else if(ui.route.view==='jahr')od=null;
+  const mit=od?S.mit[od]:null; const focus=S.focus[wk()]; const ph=phaseOf(od||todayISO());
+  let p='';
+  if(od&&S.settings.aids.mit)p+='<span class="chip" data-act="editMit" data-date="'+od+'">🎯 MIT ('+(od===todayISO()?'heute':fmtDate(parseISO(od)))+'): '+(mit?'<b class="'+(mit.done?'strike':'')+'">'+esc(mit.text)+'</b>':'<i class="dim">offen</i>')+' <button class="mini2" data-act="mitDone" data-date="'+od+'" title="erledigt umschalten">'+(mit&&mit.done?'↺':'✓')+'</button></span>';
+  if(S.settings.aids.focus)p+='<span class="chip" data-act="editFocus">🧭 Fokus KW ('+fmtDate(parseISO(wk()))+'): '+(focus?'<b>'+esc(focus)+'</b>':'<i class="dim">offen</i>')+'</span>';
+  const phs=od?activePhases(od):[];
+  if(S.settings.aids.year&&phs.length)p+='<span class="chip" data-act="nav" data-v="jahr">🍂 '+esc(phs.map(x=>x.title).join(' | '))+'</span>';
+  return p?'<div class="orient">'+p+'</div>':'';
+}
+
+function suggHtml(){
+  const t=ui.suggestion.target;
+  return '<div class="sugg">🟢 <span><b>Regeneration vorgeschlagen.</b> Nach deinem roten Termin wäre <b>'+esc(fmtDaySlotW(t.week,t.day,t.slot))+'</b> frei. Der Vorschlag ist unverbindlich.</span>'+
+    '<button class="btn mini" data-act="suggestAccept">Annehmen</button><button class="btn mini" data-act="suggestOther">Anders wählen</button><button class="btn mini ghost" data-act="suggestDismiss">Nicht jetzt</button></div>';
+}
+
+function stackCard(ap){
+  const ty=ap.typeId?typeOf(ap.typeId):null;
+  return '<div class="card appt stacked" data-act="openAppt" data-id="'+ap.id+'">'+
+    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+'</span>'+(ampDot(ap.ampel)||'')+'</div>'+
+    '<div class="bttl">'+esc(ap.title)+'</div>'+
+    '<div class="bsrc">📥 geteilt · '+esc(ap.src||'Kalender')+(ty?' · '+ty.emoji+' '+esc(ty.name):'')+'</div></div>';
+}
+function slotCell(d,s,cur,tI,mobile){
+  const key=d+'|'+s;
+  const ap=getAppts()[key], bl=getBlocks()[key];
+  const stack=[].concat((ap&&ap.stack)||[],(bl&&bl.stack)||[]);
+  if(ap){
+    let h='<div class="slot">'+apptCard(ap);
+    stack.forEach(sa=>{h+=stackCard(sa)});
+    return h+'</div>';
+  }
+  if(bl){
+    let h='<div class="slot" data-drop="w'+d+'s'+s+'">'+blockCard(bl,d,s);
+    stack.forEach(sa=>{h+=stackCard(sa)});
+    return h+'</div>';
+  }
+  const cov=coveredByW(wk(),d,s);
+  if(cov)return '<div class="slot spancont">┃ belegt durch „'+esc(cov.title)+'“ ('+SLOTS[cov.slot].label+')</div>';
+  return '<div class="slot free" data-drop="w'+d+'s'+s+'" data-act="openSlot" data-day="'+d+'" data-slot="'+s+'" role="button"><span class="plus">＋</span><span class="fl">belegen</span></div>';
+}
+
+function apptCard(ap){
+  const ar=ap.areaId?areaOfId(ap.areaId):null;
+  const ty=ap.typeId?typeOf(ap.typeId):null;
+  return '<div class="card appt" data-act="openAppt" data-id="'+ap.id+'">'+
+    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · über '+ap.span+' Blöcke':'')+'</span>'+(ampDot(ap.ampel)||'<span class="noamp">＋ Ampel</span>')+'</div>'+
+    '<div class="bttl">'+esc(ap.title)+'</div>'+
+    '<div class="bsrc">'+(ty?ty.emoji+' '+esc(ty.name):'')+(ar?(ty?' · ':'')+esc(ar.name):'')+(ap.fb?((ty||ar)?' · ':'')+FBL[ap.fb]:'')+'</div></div>';
+}
+
+function blockCard(bl,d,s){
+  const p=bl.projectId?projOf(bl.projectId):null;
+  const td=bl.todoId?findTodo(bl.todoId):null;
+  const ac=(p&&areaOf(p))?areaOf(p).color:'#C9C2B2';
+  const ico=bl.kind==='projekt'?(p?(p.emoji||'📋'):'📋'):(bl.kind==='task'?'☑️':(bl.typeId&&typeOf(bl.typeId)?typeOf(bl.typeId).emoji:'🕯️'));
+  const title=bl.kind==='projekt'&&p?p.name:bl.title;
+  let h='<div class="card block'+(bl.done?' done':'')+'" style="--ac:'+ac+'" draggable="true" data-drag="block:'+d+'|'+s+'" data-act="openBlock" data-day="'+d+'" data-slot="'+s+'">'+
+    '<div class="brow"><span class="bico">'+ico+'</span><span class="bttl">'+esc(title)+'</span>'+ampDot(bl.ampel)+'</div>'+
+    (bl.t0?'<div class="btime">🕐 '+esc(apTimeStr(bl.t0,bl.t1))+'</div>':'');
+  if(td)h+='<label class="tchip"><input type="checkbox" data-act="toggleTodoBox" data-id="'+td.t.id+'"'+(td.t.done?' checked':'')+'><span'+(td.t.done?' class="strike"':'')+'>'+esc(td.t.title)+'</span></label>';
+  if(bl.note)h+='<div class="bnote">→ '+esc(bl.note)+'</div>';
+  h+='<div class="bsrc">'+(bl.kind==='projekt'?'Projektblock':'Block'+(bl.done?' · erledigt':''))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+(bl.fb?' · '+FBL[bl.fb]:'')+'</div></div>';
+  return h;
+}
+
+function renderYear(){
+  const y=ui.year;
+  let h='<div class="vhead"><div><div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><h1>Jahr '+y+'</h1><input class="mottoInp" data-field="motto" data-year="'+y+'" value="'+esc((S.motto&&S.motto[y])||'')+'" placeholder="Jahresmotto … (klicken &amp; tippen)"></div><div class="sub">Datum anklicken: Details einer Phase ansehen — oder zwei Daten wählen (Start + Ende), um eine neue Phase festzulegen. Phasen sind Intentionen, sie steuern nichts automatisch.</div></div>'+
+    '<div class="hbtns"><button class="btn mini" data-act="yearPrev">‹</button><button class="btn mini" data-act="yearThis">'+(new Date().getFullYear())+'</button><button class="btn mini" data-act="yearNext">›</button></div></div>';
+  if(ui.yearSel)h+='<div class="yhint"><span>📅 Start gewählt: <b>'+esc(fmtDate(parseISO(ui.yearSel.start)))+'</b> — jetzt das Enddatum anklicken. Gleicher Tag = abbrechen.</span><button class="btn mini ghost" data-act="yearSelCancel">Abbrechen</button></div>';
+  h+='<div class="ygrid">';
+  for(let m=0;m<12;m++){
+    const first=new Date(y,m,1);
+    const len=new Date(y,m+1,0).getDate();
+    h+='<div class="card mcard"><div class="mname">'+MONNAMES[m]+'</div><div class="mrow">'+DAYSHORT.map(d=>'<div class="mwd">'+d+'</div>').join('')+'</div><div class="mrow">';
+    for(let e=0;e<dayIdx(first);e++)h+='<div></div>';
+    for(let dd=1;dd<=len;dd++){
+      const dstr=y+'-'+pad(m+1)+'-'+pad(dd);
+      const ph=phaseOf(dstr);
+      let cls='mcell'+(ph?' ph':'');
+      if(dstr===todayISO())cls+=' today';
+      if(ui.yearSel&&ui.yearSel.start===dstr)cls+=' sel';
+      h+='<div class="'+cls+'" style="'+(ph?'background:'+ph.color+';':'')+'" data-act="yearDay" data-date="'+dstr+'" title="'+(ph?esc(ph.title)+(ph.desc?' — '+esc(ph.desc):''):'Tag '+dd+'. '+MONNAMES[m]+' — anklicken für Details oder Zeiträume')+'">'+dd+'</div>';
+    }
+    h+='</div></div>';
+  }
+  h+='</div>';
+  const phs=S.phases.filter(p=>p.start.slice(0,4)==String(y)).sort((a,b)=>a.start<b.start?-1:1);
+  h+='<div class="phlist"><div class="fh">Phasen '+y+'</div>';
+  if(!phs.length)h+='<div class="sub">Noch keine Phasen in diesem Jahr — gut, dass auch das erlaubt ist. Oder direkt oben im Kalender zwei Daten anklicken.</div>';
+  phs.forEach(p=>{
+    h+='<button class="phchip" style="--c:'+p.color+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+' · '+esc(p.desc||'')+'</span></span></button>';
+  });
+  h+='<button class="btn" data-act="addPhase">＋ Phase anlegen</button></div>';
+  return h;
+}
+
+function renderAreas(){
+  let h='<div class="vhead"><div><h1>Bereiche &amp; Projekte</h1><div class="sub">Lebensbereiche halten Projekte — frei benennbar und färbbar. Projekte müssen nie „fertig" werden.</div></div></div>';
+  h+='<div class="areaGrid">';
+  S.areas.forEach(a=>{
+    const ps=S.projects.filter(p=>p.areaId===a.id);
+    h+='<div class="card area" style="--ac:'+a.color+'"><div class="ahead"><span class="aemo">'+a.emoji+'</span><span class="aname">'+esc(a.name)+'</span><span class="acount">'+ps.length+' Projekt'+(ps.length===1?'':'e')+'</span></div><div class="chips">';
+    if(!ps.length)h+='<span class="sub">noch keine Projekte — auch das ist okay</span>';
+    ps.forEach(p=>{
+      const done=p.todos.filter(t=>t.done).length;
+      h+='<button class="chip proj" style="--c:'+a.color+'" data-act="openProj" data-id="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+(p.todos.length?' <span class="pc">'+done+'/'+p.todos.length+'</span>':'')+'</button>';
+    });
+    h+='</div><div class="trow"><input class="inp slim grow" placeholder="Neues Projekt — Enter oder ＋" data-enter="addProject|'+a.id+'"><button class="btn mini" data-act="addProject" data-id="'+a.id+'">＋</button></div></div>';
+  });
+  const loose=S.projects.filter(p=>!p.areaId);
+  if(loose.length){
+    h+='<div class="card area" style="--ac:#C9C2B2"><div class="ahead"><span class="aemo">📦</span><span class="aname">Ohne Bereich</span></div><div class="chips">'+loose.map(p=>'<button class="chip proj" data-act="openProj" data-id="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div></div>';
+  }
+  h+='</div>';
+  h+='<div class="card"><div class="fh2">Einzelne Aufgaben</div><div class="sub">Auch ohne Projekt — gehören hierher, bis sie eins haben (oder immer bleiben).</div>';
+  S.tasks.forEach(t=>{
+    h+='<div class="trow"><input type="checkbox" data-act="toggleTaskBox" data-id="'+t.id+'"'+(t.done?' checked':'')+'><span class="tt'+(t.done?' strike':'')+(t.delegated?' dim':'')+'" style="cursor:pointer" data-act="editTodoSheet" data-kind="task" data-id="'+t.id+'">'+esc(t.title)+(t.delegated?' <span class="pc">↗ '+esc(t.delegated)+'</span>':'')+'</span>'+
+      dueChip(t.due,'data-act="editTodoSheet" data-kind="task" data-id="'+t.id+'"')+
+      (t.planned?'<button class="chip mini" data-act="unplanTask" data-id="'+t.id+'">📅 '+esc(fmtPlanChip(t.planned))+' ✕</button>':'<button class="chip mini" data-act="planTask" data-id="'+t.id+'">📅 planen</button>')+
+      '<button class="xbtn" data-act="delTask" data-id="'+t.id+'">✕</button></div>';
+  });
+  h+='<div class="trow"><input class="inp slim grow" placeholder="Neue Aufgabe — Enter" data-enter="addTask"><button class="btn mini" data-act="addTask">＋</button></div></div>';
+  return h;
+}
+
+function renderProject(pid){
+  const p=projOf(pid);
+  if(!p)return '<div class="sub">Projekt nicht gefunden. <button class="btn mini" data-act="nav" data-v="bereiche">← Bereiche</button></div>';
+  const a=areaOf(p);
+  const tab=(ui.projTab==='kanban'||ui.projTab==='gantt')?ui.projTab:'list';
+  let h='<div class="crumb" data-act="nav" data-v="bereiche">← Bereiche</div>';
+  h+='<div class="vhead"><div><div class="phead"><button class="emoBtn" data-act="pickEmoji" data-ctx="proj" data-id="'+p.id+'">'+(p.emoji||'📋')+'</button><input class="inp big grow" style="max-width:340px" data-field="projName" data-id="'+p.id+'" value="'+esc(p.name)+'"></div>'+
+    '<div class="sub" style="margin-top:6px">'+(a?'<span class="dot" style="background:'+a.color+'"></span> '+esc(a.name):'ohne Bereich')+(p.note?' · '+esc(p.note):'')+' · Projekt löschen: <button class="xbtn" data-act="delProj" data-id="'+p.id+'" style="vertical-align:baseline">🗑</button></div></div></div>';
+  h+='<div class="tabs"><button class="tab'+(tab==='list'?' on':'')+'" data-act="projTab" data-t="list">Liste</button>'+
+    '<button class="tab'+(tab==='kanban'?' on':'')+'" data-act="projTab" data-t="kanban">Kanban</button>'+
+    '<button class="tab'+(tab==='gantt'?' on':'')+'" data-act="projTab" data-t="gantt">Gantt</button></div>';
+  if(tab==='list'){
+    h+='<div class="card">';
+    if(!p.todos.length)h+='<div class="sub" style="padding:6px 0">Noch keine To-dos. Leere Projekte sind erlaubt — manchmal reicht der Name als Gedankenspeicher.</div>';
+    p.todos.forEach(t=>{
+      h+='<div class="trow"><input type="checkbox" data-act="toggleTodoBox" data-id="'+t.id+'"'+(t.done?' checked':'')+'><span class="tt'+(t.done?' strike':'')+(t.delegated?' dim':'')+'" style="cursor:pointer" data-act="editTodoSheet" data-kind="todo" data-id="'+t.id+'">'+esc(t.title)+(t.delegated?' <span class="pc">↗ '+esc(t.delegated)+'</span>':'')+(fmtEst(t)?' <span class="pc">'+fmtEst(t)+'</span>':'')+'</span>'+
+        '<select class="inp slim" data-field="kanState" data-tid="'+t.id+'" title="Status — Liste und Kanban sind gekoppelt">'+KCOLS.map(k=>'<option value="'+k[0]+'"'+(kanOf(t)===k[0]?' selected':'')+'>'+k[1]+'</option>').join('')+'</select>'+
+        (t.firstStep&&!t.done?'<span class="firstStep" style="flex-basis:100%">→ '+esc(t.firstStep)+'</span>':'')+
+        dueChip(t.due,'data-act="editTodoSheet" data-kind="todo" data-id="'+t.id+'"')+
+        (t.planned?'<button class="chip mini" data-act="unplanTodo" data-id="'+t.id+'" title="Planung lösen">📅 '+esc(fmtPlanChip(t.planned))+' ✕</button>':'<button class="chip mini" data-act="planTodo" data-id="'+t.id+'">📅 in Block planen</button>')+
+        '<button class="xbtn" data-act="delTodo" data-id="'+t.id+'">✕</button></div>';
+    });
+    h+='<div class="trow"><input class="inp slim grow" placeholder="Neue To-do — Enter" data-enter="addTodo|'+p.id+'"><button class="btn mini" data-act="addTodo" data-id="'+p.id+'">＋</button></div></div>';
+  }else if(tab==='kanban'){
+    h+='<div class="kscroll"><div class="kb">';
+    KCOLS.forEach(c=>{
+      const col=c[0], items=p.todos.filter(t=>kanOf(t)===col);
+      h+='<div class="kcol" data-drop="k'+col+'"><div class="kname"><span>'+c[1]+'</span><span class="pc">'+items.length+'</span></div>';
+      items.forEach(t=>{
+        h+='<div class="card kcard" draggable="true" data-drag="todo:'+p.id+'|'+t.id+'" data-act="kanCard" data-tid="'+t.id+'"><div class="brow"><span class="bttl">'+esc(t.title)+'</span>'+(t.planned?'<span class="btime">📅</span>':'')+'</div>'+
+          (t.delegated?'<div class="bnote">↗ '+esc(t.delegated)+'</div>':'')+
+          (t.planned?'<div class="bnote">📅 '+esc(fmtPlanChip(t.planned))+'</div>':'')+
+          (fmtEst(t)?'<div class="bnote">'+fmtEst(t)+(t.due?' · 🕐 '+esc(relDue(t.due)):'')+'</div>':'')+'</div>';
+      });
+      h+='<input class="kadd" placeholder="＋ Neue Karte" data-enter="kbAdd|'+p.id+'|'+col+'"></div>';
+    });
+    h+='</div></div>';
+    h+='<div class="sub" style="margin-top:8px">Karten ziehen (Desktop) oder antippen zum Verschieben. <b>Pending</b> = delegiert (↗), <b>Backlog</b> = jetzt gerade nicht relevant. Liste und Kanban teilen denselben Status.</div>';
+  }else{
+    h+=renderGantt(p);
+  }
+  return h;
+}
+
+function renderInbox(){
+  let h='<div class="vhead"><div><h1>Eingangskiste</h1><div class="sub">Hier darf alles liegen, was im Kopf herumläuft. Sortieren kann warten — nichts wird „fällig".</div></div></div>';
+  h+='<div class="card capCard"><div class="capKinds">'+Object.keys(INBKINDS).map(k=>'<button class="chip'+(ui.inbKind===k?' on':'')+'" data-act="inbKind" data-k="'+k+'">'+INBKINDS[k][0]+' '+INBKINDS[k][1]+'</button>').join('')+'</div>'+
+    '<input class="inp" id="inb-inp" placeholder="Gedanke, Aufgabe, Idee, Alltagskram …" data-enter="inbAdd"><div class="sub" style="margin-top:8px">Enter oder unten ablegen. Nichts hier muss je sortiert werden.</div>'+
+    '<div class="sheetBtns"><button class="btn primary" data-act="inbAdd">Ablegen</button></div></div>';
+  const kinds=[['alle','Alles']].concat(Object.keys(INBKINDS).map(k=>[k,INBKINDS[k][1]]));
+  const cnt=f=>f==='alle'?S.inbox.length:S.inbox.filter(i=>i.kind===f).length;
+  h+='<div class="capTools"><input class="inp" id="inb-q" placeholder="🔍 Durchsuchen …" value="'+esc(ui.inbQ)+'" data-field="inbQ"><div class="chips" style="margin:0">'+kinds.map(k=>'<button class="chip'+(ui.inbF===k[0]?' on':'')+'" data-act="inbFilter" data-f="'+k[0]+'">'+k[1]+' ('+cnt(k[0])+')</button>').join('')+'</div></div>';
+  const q=ui.inbQ.trim().toLowerCase();
+  const items=S.inbox.filter(it=>(ui.inbF==='alle'||it.kind===ui.inbF)&&(!q||it.text.toLowerCase().includes(q)));
+  if(!S.inbox.length)h+='<div class="card"><div class="sub">Alles abgeflossen oder gerade nichts Neues — beides ist okay. 🌿</div></div>';
+  else if(!items.length)h+='<div class="card"><div class="sub">Nichts gefunden — Filter lockern oder Suchbegriff ändern?</div></div>';
+  items.forEach(it=>{
+    h+='<div class="card inbItem"><div class="inbKind">'+INBKINDS[it.kind][0]+' '+INBKINDS[it.kind][1]+' · '+esc(it.ts||'')+'</div><div class="inbText">'+esc(it.text)+'</div>'+
+      '<div class="inbActs"><button class="btn mini" data-act="inbEdit" data-id="'+it.id+'" title="bearbeiten">✎</button><button class="btn mini" data-act="inbConvert" data-id="'+it.id+'" data-target="task" title="mit Einstellungen umwandeln">→ Aufgabe</button><button class="btn mini" data-act="inbConvert" data-id="'+it.id+'" data-target="todo">→ Projekt-To-do</button><button class="btn mini" data-act="inbConvert" data-id="'+it.id+'" data-target="block">→ Block</button><button class="xbtn" data-act="inbDel" data-id="'+it.id+'" title="weglassen">✕</button></div></div>';
+  });
+  return h;
+}
+
+function renderConfig(){
+  let h='<div class="vhead"><div><h1>Konfiguration</h1><div class="sub">Alles optional — das System funktioniert auch, wenn du hier nie etwas änderst.</div></div></div>';
+  h+='<div class="fh">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
+  S.areas.forEach((a,idx)=>{
+    h+='<div class="cfgRow" data-drop="reorder:area:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:area:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
+      '<button class="emoBtn" data-act="pickEmoji" data-ctx="area" data-id="'+a.id+'">'+a.emoji+'</button>'+
+      '<input class="inp slim grow" data-field="areaName" data-id="'+a.id+'" value="'+esc(a.name)+'">'+
+      '<div class="swatches">'+PHC.map(c=>'<button class="sw2'+(a.color===c?' sel':'')+'" style="--c:'+c+'" data-act="setAreaColor" data-id="'+a.id+'" data-c="'+c+'" title="'+c+'"></button>').join('')+'</div>'+
+      '<input type="color" class="colorInp" data-field="areaColor" data-id="'+a.id+'" value="'+esc(a.color)+'" title="Eigene Farbe wählen">'+
+      '<div class="arrows"><button class="xbtn" data-act="moveItem" data-k="areas" data-i="'+idx+'" data-d="-1" title="nach oben">▲</button><button class="xbtn" data-act="moveItem" data-k="areas" data-i="'+idx+'" data-d="1" title="nach unten">▼</button></div>'+
+      '<button class="xbtn" data-act="delArea" data-id="'+a.id+'" title="Bereich entfernen — mit Entscheidung, was mit Projekten & To-dos passiert">✕</button></div>';
+  });
+  h+='</div><button class="btn" data-act="addArea">＋ Bereich hinzufügen</button>';
+  h+='<div class="sub" style="margin-top:6px">Beim Entfernen eines Bereichs entscheidest du: Projekte behalten (laufen unter „Ohne Bereich“ weiter) oder endgültig löschen — To-dos gehen nie verloren, ohne dass du es gewählt hast.</div>';
+  h+='<div class="fh">Blocktypen — Vorlagen für Blöcke (▲▼ zum Sortieren)</div><div class="cfgList">';
+  S.types.forEach((t,idx)=>{
+    h+='<div class="cfgRow" data-drop="reorder:type:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:type:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
+      '<button class="emoBtn" data-act="pickEmoji" data-ctx="type" data-id="'+t.id+'">'+t.emoji+'</button>'+
+      '<input class="inp slim grow" data-field="typeName" data-id="'+t.id+'" value="'+esc(t.name)+'">'+
+      '<select class="inp slim" data-field="typeAmpel" data-id="'+t.id+'">'+['none','gruen','gelb','orange','rot'].map(v=>'<option value="'+v+'"'+(t.ampel===v?' selected':'')+'>'+AMP[v].label+'</option>').join('')+'</select>'+
+      '<label class="checkrow" style="margin:0 4px;white-space:nowrap"><input type="checkbox" data-field="typeAsAppt" data-id="'+t.id+'"'+(t.asAppt?' checked':'')+'><span title="Blöcke dieses Typs erscheinen auch unten bei „Termine“">wie Termin</span></label>'+
+      '<div class="arrows"><button class="xbtn" data-act="moveItem" data-k="types" data-i="'+idx+'" data-d="-1" title="nach oben">▲</button><button class="xbtn" data-act="moveItem" data-k="types" data-i="'+idx+'" data-d="1" title="nach unten">▼</button></div>'+
+      '<button class="xbtn" data-act="delType" data-id="'+t.id+'">✕</button></div>';
+  });
+  h+='</div><button class="btn" data-act="addType">＋ Blocktyp hinzufügen</button>';
+  h+='<div class="sub" style="margin-top:6px">Wiederkehrende Wochenmuster (Vorlagen pro Woche) sind als spätere Erweiterung geplant — bewusst nicht im MVP.</div>';
+  const wd=wdCfg();
+  const ls=S.settings.liveSync||{};
+  h+='<div class="fh">Live-Sync</div>';
+  h+='<div class="statusline">🛰️ '+esc(syncStatusText())+(S.meta.dirty?' · <b>lokale Änderungen warten auf Schreiben</b>':'')+'</div>';
+  h+='<div class="cfgList">'+
+    '<label class="checkrow"><input type="checkbox" data-field="liveOn"'+(ls.on?' checked':'')+'><span>Live-Sync aktiv — im Hintergrund ziehen und schreiben (nach jedem Kalenderabruf; Änderungen landen im Kalender beim nächsten Zyklus)</span></label>'+
+    '<div class="cfgRow"><span class="lbl">Intervall</span><select class="inp slim" data-field="liveInterval">'+[[30,'30 Sekunden'],[60,'60 Sekunden'],[300,'5 Minuten']].map(o=>'<option value="'+o[0]+'"'+((ls.interval||60)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select><button class="btn mini" data-act="syncNow">Jetzt synchronisieren</button></div></div>';
+  h+='<div class="sub" style="margin-bottom:8px">Fremde Einträge aus dem Kalender landen nach dem Abruf im Zuordnungs-Assistenten (📥 in der Wochenansicht), bevor sie sichtbar werden.</div>';
+  const stt=S.settings.slotTimes||{};
+  h+='<div class="fh">Blockzeiten im Kalender</div>';
+  h+='<div class="sub" style="margin-bottom:8px">Blöcke werden im Kalender mit diesen Uhrzeiten geführt; Termine mit expliziter Zeit (z. B. 17:45–21:00) behalten ihre echte Zeit.</div>';
+  h+='<div class="cfgList">'+[0,1,2].map(s=>'<div class="cfgRow"><span class="lbl">'+SLOTS[s].label+'</span><input class="inp slim" type="time" data-field="slotS" data-slot="'+s+'" value="'+esc((stt[s]||slotWin(s)).s)+'"><span class="pc">–</span><input class="inp slim" type="time" data-field="slotE" data-slot="'+s+'" value="'+esc((stt[s]||slotWin(s)).e)+'"></div>').join('')+'</div>';
+  h+='<div class="fh">Verbindung — Nextcloud / WebDAV (Lesen &amp; Schreiben)</div>';
+  h+='<div class="sub" style="margin-bottom:8px">🔑 Bitte ein <b>App-Passwort</b> verwenden (nicht das Login-Passwort): '+appPwLink(wd.url||'')+' → „App-Passwörter erstellen“. Eintragen hier unten; nur die Server-Adresse nötig — Theo findet die Kalender selbst.</div>';
+  h+='<div class="wdStatus" id="wd-status">'+(ui.wdMsg
+    ?ui.wdMsg
+    :(wd.url?'Gespeichert: <b>'+esc(wd.url)+'</b> ('+esc(wd.user||'')+')'+(wd.pass?' · App-Passwort auf diesem Gerät gemerkt':'')+(wd.cal?' · Kalender gewählt':'')
+      :'Noch keine Verbindung gespeichert. Nextcloud-URL (z. B. <code>https://cloud.example.de</code>) und Nutzername eintragen. Als Passwort bitte ein <b>App-Passwort</b> verwenden (Nextcloud → Einstellungen → Sicherheit).'))+'</div>';
+  h+='<div class="cfgList">'+
+    '<div class="cfgRow"><span class="lbl">Server-URL</span><input class="inp slim grow" id="wd-url" value="'+esc(wd.url||'')+'" placeholder="https://cloud.example.de"></div>'+
+    '<div class="cfgRow"><span class="lbl">Nutzername</span><input class="inp slim grow" id="wd-user" value="'+esc(wd.user||'')+'" placeholder="dein Nutzername"></div>'+
+    '<div class="cfgRow"><span class="lbl">App-Passwort</span><input class="inp slim grow" type="password" id="wd-pass" placeholder="'+(wd.pass?'(gemerkt — neu eingeben zum Ändern)':'optional')+'"></div>'+
+    '<label class="checkrow"><input type="checkbox" id="wd-store"'+(wd.pass?' checked':'')+'><span>App-Passwort auf diesem Gerät merken (Klartext im Browser — im Echtbetrieb übernimmt das der Sync-Dienst)</span></label></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="wdTest">Verbinden &amp; Kalender laden</button><button class="btn" data-act="wdSave">Speichern</button>'+(wd.url?'<button class="btn danger" data-act="wdClear">Verbindung löschen</button>':'')+'</div>';
+  const calHref=ui.wdCals&&ui.wdCals.length?null:wd.cal;
+  if(ui.wdCals&&ui.wdCals.length){
+    h+='<label class="f">Hauptkalender (Blöcke, Termine, MITs)</label><select class="inp" data-field="wdCal" id="wd-cal">'+ui.wdCals.map(c=>'<option value="'+esc(c.href)+'"'+(wd.cal===c.href?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select>';
+    h+='<label class="f">Phasen-Kalender (optional — Phasen werden dort transparent geführt, belegen keine Zeit)</label><select class="inp" data-field="wdCal2" id="wd-cal2"><option value="">— wie Hauptkalender —</option>'+ui.wdCals.map(c=>'<option value="'+esc(c.href)+'"'+(wd.cal2===c.href?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select>';
+    h+='<div class="sub" style="margin-top:6px"><b>Schreiben:</b> legt deine Blöcke, Termine, MITs und Phasen als VEVENTs im gewählten Kalender ab (Überschreiben per UID — fremde Termine bleiben unberührt). <b>Lesen:</b> lädt den Kalenderinhalt zurück (Wiederherstellung).</div>';
+    h+='<div class="fh" style="margin-top:10px">Was wird synchronisiert?</div><div class="sub" style="margin:0 0 6px">'+
+      '<b>VEVENT</b> (Hauptkalender): Blöcke, Termine, MITs (transparent, wie Phasen) · <b>VEVENT, transparent</b> (Phasen-Kalender): Jahresphasen · <b>VTODO</b> (Hauptkalender): Vorhaben &amp; To-dos inkl. Status (Kanban-Spalte), Deadline, „Erster Schritt“, Delegation, Schätzung — fremde Aufgaben (z. B. aus Tasks.org/DAVx⁵) werden als eigene Aufgaben übernommen · <b>VJOURNAL „Theo-Kapsel“</b>: Jahresmotto, Eingangskiste, Bereiche, Projekte (Metadaten), Blocktypen, Wochenfokus, Zuordnungs-Merklisten, Blockzeiten &amp; Sync-Einstellungen. <b>Fremde Termine</b> erhalten bei der Zuordnung eine Markierung im Kalender (<code>LR-ASSIGNED</code> + Slot; Zeiten unverändert), Zeit-Änderungen werden als Spiegel mit gleicher UID zurückgeschrieben. <b>Nicht synchronisiert:</b> Zugangsdaten (bleiben auf diesem Gerät).</div>';
+    h+='<div class="sheetBtns"><button class="btn primary" data-act="wdPush">→ In Kalender schreiben</button><button class="btn" data-act="wdPull">← Aus Kalender lesen</button></div>';
+  }else if(calHref){
+    h+='<div class="sub" style="margin-top:8px">Gewählter Kalender: <code>'+esc(calHref)+'</code></div>';
+    h+='<div class="sheetBtns"><button class="btn primary" data-act="wdPush">→ In Kalender schreiben</button><button class="btn" data-act="wdPull">← Aus Kalender lesen</button></div>';
+  }
+  h+='<div class="sub" style="margin-top:10px"><b>Empfohlen (funktioniert immer): der mitgelieferte Companion-Server.</b> Einmal starten — <code>python3 theo-server.py https://deine-cloud.example.de</code> — dann <code>http://localhost:8787</code> öffnen. Er liefert Theo aus und leitet alle Kalender-Anfragen serverseitig an die Nextcloud weiter: <b>Verbinden, Schreiben und Lesen funktionieren ohne CORS</b>. Die App erkennt ihn automatisch; Zugangsdaten kommen aus dieser Konfiguration und werden pro Anfrage weitergereicht, nichts wird gespeichert.</div>';
+  h+='<div class="sub" style="margin-top:8px"><b>Ohne Companion (direkt im Browser):</b> Der Browser verweigert das <b>Lesen fremder Server-Antworten</b> (CORS-Sicherheitsregel), wenn Theo nicht vom selben Server wie die Nextcloud geladen wird — egal ob von <code>file://</code> oder einer anderen Domain. Alternativen: ① diese Datei vom selben Server wie die Nextcloud ausliefern (gleiche Domain = kein CORS) ② Nextcloud-Admin setzt DAV-CORS-Header (App „WebApp Password“ o. ä.) ③ später der Sync-Dienst (Fahrplan E2).</div>';
+  h+='<div class="fh">Orientierungshilfen</div><div class="cfgList">';
+  Object.keys(AIDS).forEach(k=>{
+    h+='<label class="cfgRow" style="cursor:pointer"><input type="checkbox" data-field="aid" data-id="'+k+'"'+(S.settings.aids[k]?' checked':'')+'><span>'+AIDS[k]+'</span></label>';
+  });
+  h+='</div>';
+  h+='<div class="fh">CalDAV &amp; Datenspiegel</div>';
+  h+='<div class="statusline"><b>Konzept:</b> Alle Kalenderinhalte existieren als Standard-iCalendar-Objekte (VEVENT, RFC 5545) mit Kategorien <code>LR-BLOCK</code>, <code>LR-APPT</code>, <code>LR-MIT</code>, <code>LR-PHASE</code> und X-LR-Feldern. Im Echtbetrieb schreibt der Sync-Dienst jede Änderung fortlaufend in einen CalDAV-Kalender (z. B. Nextcloud) — der Kalender gehört dir und lebt unabhängig von dieser App weiter; die App kann jederzeit daraus wiederhergestellt werden. Diese Demo macht die Spiegelung als Export/Import sichtbar.</div>';
+  h+='<div class="sub" style="margin-bottom:8px">'+icsStats()+'</div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="exportIcs">ICS exportieren (Kalender)</button><button class="btn" data-act="importIcs">ICS importieren</button></div>';
+  h+='<div class="fh">Daten</div>';
+  h+='<div class="statusline">'+(storeOk?'✔ Dauerhafte Speicherung aktiv (localStorage im Browser).':'⚠ Vorschau-Modus: Diese eingebettete Vorschau erlaubt keine dauerhafte Speicherung — Änderungen bleiben bis zum Neuladen erhalten. Datei herunterladen und im Browser öffnen → wird dauerhaft gespeichert.')+'</div>';
+  h+='<div class="sheetBtns"><button class="btn" data-act="exportJson">JSON exportieren</button><button class="btn'+(ui.confirmReset?' danger':'')+'" data-act="resetDemo">'+(ui.confirmReset?'Wirklich alles zurücksetzen?':'Alles zurücksetzen (leer starten)')+'</button></div>';
+  return h;
+}
+
+/* ================= Sheets ================= */
+function openSheet(h){$('#overlay').innerHTML='<div class="sheet">'+h+'</div>'; $('#overlay').classList.add('on')}
+function closeModal(){$('#overlay').classList.remove('on'); $('#overlay').innerHTML=''; ui.ampCtx=null; ui.ampSel=null; ui.ampSelK=null}
+function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2800)}
+
+function sheetTypeAppt(d,s,tid,span){
+  const t=typeOf(tid); if(!t)return;
+  let h='<div class="shead"><h3>'+t.emoji+' '+esc(t.name)+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+' — dieser Typ ist „wie ein Termin“: er erscheint auch unten bei Termine.</div></div>';
+  h+='<label class="f">Titel</label><input class="inp" id="ta-title" value="'+esc(t.name)+'">';
+  h+='<label class="f">Uhrzeit (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="ta-t0" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="ta-t1" style="flex:1;min-width:110px"></div>';
+  h+='<label class="f">Dauer</label><select class="inp slim" id="ta-span">'+[1,2,3].map(v=>'<option value="'+v+'"'+(v===span?' selected':'')+'>'+(v===1?'1 Block':(v===2?'2 Blöcke':'3 Blöcke — ganzer Tag'))+'</option>').join('')+'</select>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="typeApptSave" data-day="'+d+'" data-slot="'+s+'" data-tid="'+tid+'">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetSlot(d,s){
+  let h='<div class="shead"><h3>Block belegen</h3><div class="sub">'+esc(fmtDaySlot(d,s))+' — ein Block, normalerweise ein Schwerpunkt.</div></div>';
+  h+='<div class="stack">'+S.types.map(t=>'<button class="typeB" data-act="fillType" data-day="'+d+'" data-slot="'+s+'" data-tid="'+t.id+'"><span class="bico">'+t.emoji+'</span><span style="flex:1">'+esc(t.name)+'</span>'+(t.ampel&&t.ampel!=='none'?ampDot(t.ampel):'')+'</button>').join('')+'</div>';
+  h+='<label class="f">Dauer</label><select class="inp slim" id="f-span"><option value="1">1 Block</option><option value="2">2 Blöcke (z. B. Vormittag + Mittag)</option><option value="3">3 Blöcke — ganzer Tag (z. B. Workshop)</option></select>';
+  h+='<div class="fh">Projekt</div>';
+  S.areas.forEach(a=>{
+    const ps=S.projects.filter(p=>p.areaId===a.id);
+    if(!ps.length)return;
+    h+='<div class="fh2">'+a.emoji+' '+esc(a.name)+'</div><div class="chips">'+ps.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
+  });
+  const loose=S.projects.filter(p=>!p.areaId);
+  if(loose.length)h+='<div class="chips">'+loose.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
+  h+='<div class="fh">Termin eintragen — auch für spätere Wochen &amp; Monate</div>';
+  h+='<input class="inp" id="ap-title" placeholder="Titel des Termins">';
+  h+='<div class="row2"><input class="inp slim" type="date" id="ap-date" value="'+iso(addDays(ui.anchor,d))+'" style="flex:1;min-width:145px"><input class="inp slim" type="time" id="ap-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="ap-t1" style="flex:1;min-width:100px"><select class="inp slim" id="f-span" style="flex:1;min-width:100px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke</option></select></div>';
+  h+='<div class="row2"><select class="inp slim" id="ap-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="ap-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
+  h+='<div class="sheetBtns"><button class="btn" data-act="addAppt" data-day="'+d+'" data-slot="'+s+'">Termin hinzufügen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetProj(d,s,pid){
+  const p=projOf(pid); if(!p)return;
+  ui.tmpAmpel='gelb';
+  let h='<div class="shead"><h3>'+(p.emoji||'📋')+' '+esc(p.name)+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+' — optional konkretisieren, alles überspringbar.</div></div>';
+  const open=p.todos.filter(t=>!t.done);
+  h+='<label class="f">Dauer</label><select class="inp slim" id="f-span"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select>';
+  h+='<label class="f">Konkrete Aufgabe (optional)</label><select class="inp" id="f-todo"><option value="">— keine, nur der Schwerpunkt —</option>'+open.map(t=>'<option value="'+t.id+'">'+esc(t.title)+'</option>').join('')+'</select>';
+  h+='<label class="f">Erster Schritt (optional) — macht den Einstieg billiger</label><input class="inp" id="f-theme" placeholder="z. B. „nur die Überschrift schreiben“">';
+  h+='<label class="f">Ampel — Energiequalität</label>'+ampRowSel('gelb','tmp');
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="confirmProj" data-day="'+d+'" data-slot="'+s+'" data-pid="'+pid+'">Block setzen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetBlock(d,s,w){
+  const W=w||wk();
+  const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
+  const p=bl.projectId?projOf(bl.projectId):null;
+  const td=bl.todoId?findTodo(bl.todoId):null;
+  const ty=bl.typeId?typeOf(bl.typeId):null;
+  let h='<div class="shead"><h3>'+esc(bl.kind==='projekt'&&p?p.name:bl.title)+'</h3><div class="sub">'+esc(fmtDaySlotW(W,d,s))+' · '+(bl.kind==='projekt'?'Projektblock'+(p?' — '+esc(p.name):''):(bl.kind==='task'?'Aufgabenblock':'Blocktyp: '+(ty?esc(ty.name):'frei definiert')))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+'</div></div>';
+  if(bl.kind==='projekt'){
+    h+='<label class="f">Erster Schritt — macht den Einstieg billiger (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="z. B. nur die Überschrift schreiben, erst Materialsammlung">';
+  }else{
+    h+='<label class="f">Titel — frei benennbar</label><input class="inp" id="b-title" value="'+esc(bl.title||'')+'" placeholder="z. B. Spazieren am Aasee, lesen, schwimmen">';
+    h+='<label class="f">Erster Schritt — macht den Einstieg billiger (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="Was genau? z. B. erst Kaffee, dann 30 Min. lesen">';
+  }
+  h+='<label class="f">Blocktyp (optional — beim Speichern gibt er einen Ampel-Vorschlag)</label><select class="inp" id="b-type"><option value="">— frei definiert —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(bl.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select>';
+  if(ty&&ty.asAppt){
+    h+='<label class="f">Start-/Endzeit (optional — „wie Termin“: ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="b-t0" value="'+esc(bl.t0||'')+'" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="b-t1" value="'+esc(bl.t1||'')+'" style="flex:1;min-width:110px"></div>';
+  }
+  const tk=bl.taskId?S.tasks.find(x=>x.id===bl.taskId):null;
+  if(tk)h+='<label class="checkrow"><input type="checkbox" data-act="toggleTaskBox" data-id="'+tk.id+'"'+(tk.done?' checked':'')+'><span>Aufgabe erledigt: '+esc(tk.title)+'</span></label>';
+  h+='<div class="fh">Ampel — wird beim Speichern übernommen</div>'+ampRowSel(bl.ampel||'none','block');
+  const fb=bl.fb||null;
+  h+='<div class="fh">Rückmeldung — optional, für den späteren Blick</div><div class="ampRow">'+
+    '<button class="ampB'+(fb==='ok'?' sel':'')+'" data-act="fbSet" data-v="ok">✔ hat funktioniert</button>'+
+    '<button class="ampB'+(fb==='bad'?' sel':'')+'" data-act="fbSet" data-v="bad">✖ hat nicht funktioniert</button>'+
+    '<button class="ampB'+(fb==='none'?' sel':'')+'" data-act="fbSet" data-v="none">— nichts Besonderes</button></div>';
+  h+='<input class="inp" id="b-fbnote" style="margin-top:8px" value="'+esc(bl.fbNote||'')+'" placeholder="Was war anders? Freitext — landet im Export (X-LR-FBNOTE) und kann später z. B. per KI ausgewertet werden.">';
+  if(td)h+='<label class="checkrow"><input type="checkbox" data-act="toggleTodoBox" data-id="'+td.t.id+'"'+(td.t.done?' checked':'')+'><span>Aufgabe erledigt: '+esc(td.t.title)+'</span></label>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="blockSave" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Speichern</button>'+
+    (td?'':'<button class="btn" data-act="blockDone" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">'+(bl.done?'Wieder öffnen':'Als erledigt markieren')+'</button>')+
+    '<button class="btn" data-act="moveBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Verschieben</button>'+
+    '<button class="btn danger" data-act="freeSlot" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">🗑 Löschen</button></div>';
+  h+='<div class="sub" style="margin-top:10px">🔒 Kalenderspiegel: <code>VEVENT '+icsUid('block',W+'-'+d+'-'+s)+'</code> · Kategorie LR-BLOCK'+(bl.ampel?' · LR-'+String(bl.ampel).toUpperCase():'')+(bl.span>1?' · X-LR-SPAN:'+bl.span:'')+' — liegt als Standardobjekt im offenen Kalender (CalDAV), unabhängig von dieser App.</div>';
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
+  ui.ampCtx={t:'block',d:d,s:s,w:W};
+  openSheet(h);
+}
+
+function sheetAppt(id){
+  const aps=getAppts(); let ap=null, key=null;
+  for(const k in aps){
+    const o=aps[k];
+    if(o.id===id){ap=o; key=k; break}
+    if(o.stack)for(const sa of o.stack)if(sa.id===id){ap=sa; key=k; break}
+    if(ap)break;
+  }
+  if(!ap)return;
+  ui.ampCtx={t:'appt',d:ap.day,s:ap.slot,id:ap.id};
+  const ar=ap.areaId?areaOfId(ap.areaId):null;
+  let h='<div class="shead"><h3>Termin</h3><div class="sub">'+esc(fmtDate(addDays(ui.anchor,ap.day)))+' · '+esc(ap.time)+(ap.span>1?' · über '+ap.span+' Blöcke':'')+(ar?' · '+esc(ar.name):'')+'</div></div>';
+  h+='<label class="f">Titel</label><input class="inp" id="a-title" value="'+esc(ap.title||'')+'">';
+  h+='<div class="fh">Ampel — wird beim Speichern übernommen</div>'+ampRowSel(ap.ampel||'none','appt');
+  const apc=parseClock(ap.time);
+  h+='<label class="f">Uhrzeit (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="a-t0" value="'+(apc?apc[0]:'')+'" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="a-t1" value="'+(apc&&apc[1]?apc[1]:'')+'" style="flex:1;min-width:110px"></div>';
+  h+='<label class="f">Typ (optional — schlägt beim Speichern eine passende Ampel vor)</label><select class="inp" id="a-type"><option value="">— keiner —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(ap.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select>';
+  const fb=ap.fb||null;
+  h+='<div class="fh">Rückmeldung — optional, für den späteren Blick</div><div class="ampRow">'+
+    '<button class="ampB'+(fb==='ok'?' sel':'')+'" data-act="fbSet" data-v="ok">✔ hat funktioniert</button>'+
+    '<button class="ampB'+(fb==='bad'?' sel':'')+'" data-act="fbSet" data-v="bad">✖ hat nicht funktioniert</button>'+
+    '<button class="ampB'+(fb==='none'?' sel':'')+'" data-act="fbSet" data-v="none">— nichts Besonderes</button></div>';
+  h+='<input class="inp" id="a-fbnote" style="margin-top:8px" value="'+esc(ap.fbNote||'')+'" placeholder="Was war anders? Freitext — landet im Export (X-LR-FBNOTE).">';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="apptSave" data-id="'+ap.id+'">Speichern</button><button class="btn danger" data-act="apptDel" data-id="'+ap.id+'">🗑 Löschen</button></div>';
+  h+='<div class="sub" style="margin-top:10px">🔒 Kalenderspiegel: <code>VEVENT '+icsUid('appt',wk()+'-'+key)+'</code> · Kategorie LR-APPT'+(ap.ampel?' · LR-'+String(ap.ampel).toUpperCase():'')+' — Termine liegen ohnehin als CalDAV-Objekte im Server-Kalender; die Ampel ist ein lokales Overlay.</div>';
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
+  openSheet(h);
+}
+
+function sheetAmpInfo(){
+  return '<div class="sub" style="margin-top:6px">🔴 sehr intensiv → Regeneration empfohlen · 🟠 intensiv · 🟡 Tunnelrisiko → Ausstiegspunkt helfen · 🟢 Erholung</div>';
+}
+
+function slotPickerSheet(title){
+  if(!ui.pickerWeek)ui.pickerWeek=wk();
+  ui.pickerTitle=title;
+  const pw=ui.pickerWeek;
+  const realW=iso(mondayOf(new Date()));
+  let h='<div class="shead"><h3>'+esc(title)+'</h3><div class="sub">Freie Blöcke — Woche wechseln mit ‹ ›, auch in anderen Wochen und Monaten.</div></div>';
+  h+='<div class="daychips" style="margin-bottom:8px"><button class="chip" data-act="pickerPrev">‹ eine Woche zurück</button><span class="chip" style="cursor:default">KW '+isoWeek(parseISO(pw))+' · '+fmtDate(parseISO(pw))+' – '+fmtDate(addDays(parseISO(pw),6))+'</span><button class="chip" data-act="pickerNext">eine Woche vor ›</button></div>';
+  for(let d=0;d<7;d++){
+    const dt=addDays(parseISO(pw),d);
+    if(pw===realW&&d<dayIdx(new Date()))continue;
+    h+='<div class="daySec"><div class="daySecT">'+fmtDate(dt)+(iso(dt)===todayISO()?' · heute':'')+'</div>';
+    for(let s=0;s<3;s++){
+      const bl=blocksFor(pw)[d+'|'+s], ap=apsFor(pw)[d+'|'+s];
+      h+='<div class="pickRow"><span class="lbl">'+SLOTS[s].ico+' '+SLOTS[s].label+'</span>';
+      if(ap)h+='<span class="st">Termin: '+esc(ap.title)+'</span>';
+      else if(bl)h+='<span class="st">Block: '+esc(bl.title||'')+'</span>';
+      else h+='<button class="btn mini" data-act="pickSlot" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">→ hier einplanen</button>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetMit(dateISO){
+  const d=dateISO||todayISO();
+  const m=S.mit[d];
+  let h='<div class="shead"><h3>🎯 MIT — wichtigste Aufgabe</h3><div class="sub">Nur eine pro Tag. Optional. Keine Erinnerung, keine Bewertung.</div></div>';
+  h+='<label class="f">Tag — das MIT gehört zu genau diesem Tag</label><input class="inp" type="date" id="mit-date" value="'+d+'">';
+  h+='<input class="inp" id="mit-inp" style="margin-top:8px" value="'+esc(m?m.text:'')+'" placeholder="Was ist an diesem Tag das Wichtigste?">';
+  if(m)h+='<label class="checkrow"><input type="checkbox" id="mit-done"'+(m.done?' checked':'')+'><span>erledigt</span></label>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="mitSave" data-date="'+d+'">Speichern</button>'+(m?'<button class="btn" data-act="mitClear" data-date="'+d+'">Für diesen Tag entfernen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+  const el=document.getElementById('mit-inp'); if(el)el.focus();
+}
+
+function sheetFocus(){
+  const f=S.focus[wk()];
+  let h='<div class="shead"><h3>🧭 Wochenfokus</h3><div class="sub">Eine Intention für diese Woche — reine Orientierung, sie steuert nichts.</div></div>';
+  h+='<input class="inp" id="focus-inp" value="'+esc(f?f:'')+'" placeholder="z. B. „Ruhe halten, drei Punkte“">';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="focusSave">Speichern</button>'+(f?'<button class="btn" data-act="focusClear">Entfernen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+  const el=document.getElementById('focus-inp'); if(el)el.focus();
+}
+
+function sheetEmoji(){
+  let h='<div class="shead"><h3>Symbol wählen</h3><div class="sub">Schnellauswahl unten — oder ein eigenes Zeichen, Emoji oder Buchstabe eingeben.</div></div>';
+  h+='<div class="capTools" style="margin-bottom:8px"><input class="inp" id="emo-free" maxlength="8" placeholder="Eigenes Zeichen … (z. B. M, 🐣, ☀)" data-enter="setEmojiCustom"><button class="btn" data-act="setEmojiCustom">Setzen</button></div>';
+  h+='<div class="emogrid">'+EMOJIS.map(e=>'<button data-act="setEmoji" data-e="'+e+'">'+e+'</button>').join('')+'</div>';
+  h+='<div class="fh">Buchstaben</div><div class="emogrid" style="grid-template-columns:repeat(9,1fr)">'+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(L=>'<button data-act="setEmoji" data-e="'+L+'">'+L+'</button>').join('')+'</div>';
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+  const el=document.getElementById('emo-free'); if(el)el.focus();
+}
+
+function sheetPhase(id,preStart,preEnd){
+  const p=(id&&id!=='new')?S.phases.find(x=>x.id===id):null;
+  if(!ui.phIdx)ui.phIdx=1;
+  ui.phColor=p?p.color:PHC[(ui.phIdx++)%PHC.length];
+  const st=p?p.start:(preStart||ui.year+'-01-01');
+  const en=p?p.end:(preEnd||ui.year+'-01-31');
+  let h='<div class="shead"><h3>'+(p?'Phase: '+esc(p.title):'Neue Phase')+'</h3><div class="sub">'+(p?'Zeitraum, Ausrichtung und Farbe frei anpassbar.':'Eine Intention für einen Zeitraum — ohne Verpflichtung, ohne Zuordnung.')+'</div></div>';
+  if(p&&p.desc)h+='<div class="note">'+esc(p.desc)+'</div>';
+  h+='<label class="f">Titel (Thema)</label><input class="inp" id="ph-title" value="'+esc(p?p.title:'')+'" placeholder="z. B. Fundament legen">';
+  h+='<label class="f">Beschreibung</label><textarea class="inp" id="ph-desc" rows="2" placeholder="Worin besteht die Ausrichtung?">'+esc(p?p.desc||'':'')+'</textarea>';
+  h+='<div class="row2"><div style="flex:1;min-width:150px"><label class="f">Beginn</label><input class="inp" type="date" id="ph-start" value="'+st+'"></div><div style="flex:1;min-width:150px"><label class="f">Ende</label><input class="inp" type="date" id="ph-end" value="'+en+'"></div></div>';
+  h+='<label class="f">Farbe — Palette oder eigene Farbe wählen</label><div class="swatches">'+PHC.map(c=>'<button class="sw2'+(ui.phColor===c?' sel':'')+'" style="--c:'+c+'" data-act="phaseColor" data-c="'+c+'"></button>').join('')+'</div><input type="color" class="colorInp" id="ph-color" data-field="phColor" value="'+esc(ui.phColor)+'" title="Eigene Farbe wählen" style="margin-top:8px">';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="phaseSave" data-id="'+(id||'new')+'">Speichern</button>'+(p?'<button class="btn danger" data-act="phaseDel" data-id="'+p.id+'">Löschen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetAssign(){
+  let h='<div class="shead"><h3>📥 Kalender-Einträge zuordnen</h3><div class="sub">Fremde Einträge aus der Nextcloud bekommen ihre Zuordnung von Theo — und Theo <b>markiert sie im Kalender selbst</b> (Kategorie <code>LR-ASSIGNED</code> + eingetragener Slot; Titel und Uhrzeiten bleiben exakt gleich). <b>Kein Eintrag kann mehr scheitern:</b> Ist ein Slot belegt, teilt sich der Eintrag den Block — beide Karten bleiben sichtbar. Vorschlag (dunkel markiert) aus den Uhrzeiten bzw. dem Blockraster; ganztägige Einträge ohne Uhrzeit darfst du frei einordnen — auch „Abend", wenn es nachts wirklich ums Abendleben geht.</div></div>';
+  if(!S.unmapped.length)h+='<div class="sub">Alles zugeordnet oder keine fremden Einträge gefunden. 🌿</div>';
+  S.unmapped.forEach(it=>{
+    const pc=parseClock(it.time);
+    const sug=pc?mapSlotForTime(pc[0],pc[1]):null;
+    h+='<div class="card inbItem"><div class="inbKind">📅 '+esc(fmtDate(parseISO(it.date)))+(it.time?' · '+esc(it.time):' · ganztägig ohne Uhrzeit')+'</div><div class="inbText">'+esc(it.title)+'</div>'+
+      '<div class="inbActs">'+[0,1,2].map(s=>'<button class="btn mini'+(sug===s?' primary':'')+'" data-act="assign" data-uid="'+it.uid+'" data-v="'+s+'" title="'+esc(SLOTS[s].label+' '+slotWin(s).s+'–'+slotWin(s).e)+'">'+SLOTS[s].ico+' '+SLOTS[s].label.split(' ')[0]+'</button>').join('')+
+      '<button class="btn mini" data-act="assign" data-uid="'+it.uid+'" data-v="all">📅 ganzer Tag</button><button class="btn mini ghost" data-act="assign" data-uid="'+it.uid+'" data-v="skip">ignorieren</button></div></div>';
+  });
+  h+='<div class="sub" style="margin-top:6px">Ignorierte Einträge werden auch bei künftigen Syncs nicht mehr vorgeschlagen. Zeitliche Grenzfälle (z. B. 21:30–23:30) kannst du nach der Zuordnung im Termin frei editieren.</div>';
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
+  openSheet(h);
+}
+
+function sheetNewAppt(){
+  let h='<div class="shead"><h3>Termin eintragen</h3><div class="sub">Für jeden beliebigen Tag — auch Monate im Voraus. Er landet automatisch im passenden Block der richtigen Woche.</div></div>';
+  h+='<label class="f">Titel</label><input class="inp" id="na-title" placeholder="z. B. Workshop, Zahnarzt, Treffen mit K.">';
+  h+='<div class="row2"><input class="inp slim" type="date" id="na-date" value="'+todayISO()+'" style="flex:1;min-width:145px"><input class="inp slim" type="time" id="na-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="na-t1" style="flex:1;min-width:100px"></div>';
+  h+='<div class="row2"><select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select><select class="inp slim" id="na-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select></div>';
+  h+='<label class="f">Typ (optional)</label><select class="inp" id="na-type"><option value="">— keiner —</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="newApptSave">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetTodo(a){
+  const f=a.kind==='todo'?findTodo(a.id):null;
+  const t=f?f.t:S.tasks.find(x=>x.id===a.id);
+  if(!t)return;
+  let h='<div class="shead"><h3>Vorhaben bearbeiten</h3><div class="sub">Scope anpassen, delegieren oder den Zeitrahmen ändern — alles normale Steuerung, keine Fehlerkorrektur.</div></div>';
+  h+='<label class="f">Titel / Scope</label><input class="inp" id="ed-title" value="'+esc(t.title)+'">';
+  h+='<label class="f">Erster Schritt — macht den Start billiger</label><input class="inp" id="ed-step" value="'+esc(t.firstStep||'')+'" placeholder="z. B. „nur die Überschrift schreiben“">';
+  h+='<label class="f">Deadline (optional)</label><div class="row2"><input class="inp" type="date" id="ed-due" value="'+(t.due||'')+'" style="flex:1;min-width:150px"><button class="btn" data-act="edClearDue">ohne Deadline</button></div>';
+  h+='<label class="f">Start (optional — ab wann ist es dran? Gantt-Balken)</label><input class="inp" type="date" id="ed-start" value="'+(t.start||'')+'">';
+  h+='<label class="f">Zeitschätzung — für Gantt &amp; spätere Kapazität</label><div class="row2"><select class="inp slim" id="ed-emode" style="flex:1;min-width:150px"><option value="simple"'+((t.est&&t.est.mode)!=='pert'?' selected':'')+'>einfach (Tage)</option><option value="pert"'+(t.est&&t.est.mode==='pert'?' selected':'')+'>PERT (to+4·tm+tp)/6</option></select>'+
+    '<input class="inp slim" id="ed-esimple" type="number" step="0.25" min="0" value="'+(t.est&&t.est.mode!=='pert'&&t.est?(t.est.simple||''):'')+'" placeholder="Tage" style="flex:1;min-width:90px"></div>';
+  h+='<div class="row2"><input class="inp slim" id="ed-eto" type="number" step="0.25" min="0" value="'+(t.est&&t.est.mode==='pert'?(t.est.to||''):'')+'" placeholder="optimistisch" style="flex:1;min-width:110px"><input class="inp slim" id="ed-etm" type="number" step="0.25" min="0" value="'+(t.est&&t.est.mode==='pert'?(t.est.tm||''):'')+'" placeholder="meistens" style="flex:1;min-width:110px"><input class="inp slim" id="ed-etp" type="number" step="0.25" min="0" value="'+(t.est&&t.est.mode==='pert'?(t.est.tp||''):'')+'" placeholder="pessimistisch" style="flex:1;min-width:110px"></div>';
+  if(t.est){const E=estDays(t); if(E)h+='<div class="sub">Erwartungswert: ≈'+(Math.round(E*10)/10)+' Tage</div>'}
+  h+='<label class="f">Delegiert an — leer bedeutet: bei mir</label><input class="inp" id="ed-del" value="'+esc(t.delegated||'')+'" placeholder="z. B. „T. übernimmt das Exposé-Review“">';
+  h+='<div class="sub" style="margin-top:10px">Delegierte Vorhaben zählen nicht als offene Posten — sie bleiben nur sichtbar, damit nichts verloren geht.</div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="edSave" data-kind="'+a.kind+'" data-id="'+a.id+'">Speichern</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetAreaDel(aid){
+  const a=areaOfId(aid); if(!a)return;
+  const ps=S.projects.filter(p=>p.areaId===aid);
+  const nT=ps.reduce((n,p)=>n+p.todos.length,0);
+  const confirming=ui.areaDelConfirm===aid;
+  let h='<div class="shead"><h3>Bereich „'+esc(a.name)+'“ entfernen</h3><div class="sub">To-dos gehen nicht verloren, ohne dass du es entscheidest.</div></div>';
+  h+='<div class="note">Diesem Bereich zugeordnet: <b>'+ps.length+'</b> Projekt(e) mit <b>'+nT+'</b> To-do(s).</div>';
+  h+='<div class="stack">'+
+    '<button class="typeB" data-act="areaDelKeep" data-id="'+aid+'"><span class="bico">🧩</span><span style="flex:1"><b>Projekte behalten</b><br><span class="sub">Sie laufen unter „Ohne Bereich“ weiter — alle To-dos bleiben erhalten.</span></span></button>'+
+    '<button class="typeB" data-act="areaDelAsk" data-id="'+aid+'"><span class="bico">🗑️</span><span style="flex:1"><b>'+(confirming?'Wirklich löschen? Diese Entscheidung ist endgültig.':'Projekte und To-dos löschen')+'</b><br><span class="sub">'+(confirming?'Noch einmal klicken entfernt '+ps.length+' Projekt(e) samt '+nT+' To-do(s) endgültig.':'Endgültig entfernen — vorher wirst du noch einmal gefragt.')+'</span></span></button></div>';
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="areaDelCancel">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetInbConvert(iid,target){
+  const it=S.inbox.find(x=>x.id===iid); if(!it)return;
+  const prev=(ui.inbConv&&ui.inbConv.iid===iid)?ui.inbConv:{pid:null};
+  ui.inbConv={iid:iid,target:target,pid:prev.pid};
+  const c=ui.inbConv;
+  let h='<div class="shead"><h3>Eintrag umwandeln</h3><div class="sub">Ziel wählen, Titel und Details anpassen — nichts geht verloren.</div></div>';
+  h+='<div class="chips">'+[['task','✅ Aufgabe'],['todo','🧩 Projekt-To-do'],['block','📅 Direkt als Block']].map(t=>'<button class="chip'+(c.target===t[0]?' on':'')+'" data-act="inbConvTarget" data-iid="'+iid+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>';
+  h+='<label class="f">Titel</label><input class="inp" id="ic-title" value="'+esc(it.text)+'">';
+  if(c.target==='todo'){
+    h+='<label class="f">Projekt</label>';
+    S.areas.forEach(a=>{
+      const ps=S.projects.filter(p=>p.areaId===a.id);
+      if(!ps.length)return;
+      h+='<div class="fh2">'+a.emoji+' '+esc(a.name)+'</div><div class="chips">'+ps.map(p=>'<button class="chip'+(c.pid===p.id?' on':'')+'" data-act="inbConvProj" data-iid="'+iid+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
+    });
+  }
+  if(c.target!=='block'){
+    h+='<label class="f">Deadline (optional)</label><input class="inp" type="date" id="ic-due">';
+    h+='<label class="f">Erster Schritt (optional — macht den Einstieg billiger)</label><input class="inp" id="ic-step" placeholder="z. B. „nur die Überschrift schreiben“">';
+    h+='<div class="sheetBtns"><button class="btn primary" data-act="inbConvSave" data-iid="'+iid+'">Umwandeln</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  }else{
+    h+='<label class="f">Erster Schritt / Notiz für den Block (optional)</label><input class="inp" id="ic-step" placeholder="Was genau ist dran?">';
+    h+='<div class="sheetBtns"><button class="btn primary" data-act="inbConvBlock" data-iid="'+iid+'">Weiter zur Blockwahl →</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  }
+  openSheet(h);
+}
+
+function sheetInbEdit(iid){
+  const it=S.inbox.find(x=>x.id===iid); if(!it)return;
+  let h='<div class="shead"><h3>Eintrag bearbeiten</h3><div class="sub">Text und Art sind frei änderbar.</div></div>';
+  h+='<label class="f">Art</label><select class="inp" id="ie-kind">'+Object.keys(INBKINDS).map(k=>'<option value="'+k+'"'+(it.kind===k?' selected':'')+'>'+INBKINDS[k][0]+' '+INBKINDS[k][1]+'</option>').join('')+'</select>';
+  h+='<label class="f">Inhalt</label><textarea class="inp" id="ie-text" rows="3">'+esc(it.text)+'</textarea>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="inbEditSave" data-id="'+it.id+'">Speichern</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetExportIcs(){
+  const ics=buildICS();
+  openSheet('<div class="shead"><h3>Kalender als ICS exportieren</h3><div class="sub">Standard-iCalendar (RFC 5545) — in Nextcloud, Thunderbird oder jeden CalDAV-Client importierbar. So bleibt dein Kalender unabhängig von dieser App.</div></div>'+
+    '<textarea class="inp" id="ics-ta" rows="12" readonly>'+esc(ics)+'</textarea>'+
+    '<div class="sheetBtns"><button class="btn primary" data-act="icsDownload">Herunterladen (.ics)</button><button class="btn" data-act="icsCopy">Kopieren</button><button class="btn ghost" data-act="closeModal">Schließen</button></div>');
+}
+
+function sheetImportIcs(){
+  openSheet('<div class="shead"><h3>ICS importieren</h3><div class="sub">LR-*-Objekte (Blöcke, Termine, MITs, Phasen) werden eingelesen — so kann die App direkt aus dem CalDAV-Kalender wiederhergestellt werden. Fremde Termine werden ignoriert; sie leben im Kalendersystem, nicht hier.</div></div>'+
+    '<input type="file" id="ics-file" accept=".ics,text/calendar,text/plain" style="font:inherit;font-size:13px">'+
+    '<label class="f">…oder ICS-Text einfügen</label><textarea class="inp" id="ics-paste" rows="8" placeholder="BEGIN:VCALENDAR …"></textarea>'+
+    '<div class="sheetBtns"><button class="btn primary" data-act="icsImportRun">Importieren</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>');
+}
+
+function sheetKanCard(tid){
+  const f=findTodo(tid); if(!f)return;
+  let h='<div class="shead"><h3>'+esc(f.t.title)+'</h3><div class="sub">'+(f.p.emoji||'📋')+' '+esc(f.p.name)+'</div></div>';
+  h+='<div class="stack">'+
+    '<button class="typeB" data-act="kanMove" data-tid="'+tid+'" data-c="offen">○ Nach Offen</button>'+
+    '<button class="typeB" data-act="kanMove" data-tid="'+tid+'" data-c="arbeit">◐ Nach In Arbeit</button>'+
+    '<button class="typeB" data-act="kanMove" data-tid="'+tid+'" data-c="fertig">✓ Nach Erledigt</button>'+
+    '<button class="typeB" data-act="planTodo" data-id="'+tid+'">📅 In Block planen</button>'+
+    '<button class="typeB" data-act="delTodo" data-id="'+tid+'">✕ Löschen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetInbToProj(iid){
+  let h='<div class="shead"><h3>Zu Projekt-To-do machen</h3><div class="sub">In welches Projekt passt „'+esc((S.inbox.find(i=>i.id===iid)||{}).text||'')+'“?</div></div>';
+  S.areas.forEach(a=>{
+    const ps=S.projects.filter(p=>p.areaId===a.id);
+    if(!ps.length)return;
+    h+='<div class="fh2">'+a.emoji+' '+esc(a.name)+'</div><div class="chips">'+ps.map(p=>'<button class="chip" data-act="inbPickProj" data-iid="'+iid+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
+  });
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetExport(){
+  openSheet('<div class="shead"><h3>Daten exportieren</h3><div class="sub">Voller Zustand als JSON — portabel, menschenlesbar, deine Daten.</div></div><textarea class="inp" id="exp-ta" rows="12" readonly>'+esc(JSON.stringify(S,null,2))+'</textarea><div class="sheetBtns"><button class="btn" data-act="copyExport">Kopieren</button><button class="btn ghost" data-act="closeModal">Schließen</button></div>');
+}
+
+/* ================= Logik ================= */
+function nextFree(day,slot){
+  const curW=wk(), cur=isCurrentWeek(), tI=dayIdx(new Date());
+  for(let off=0;off<4;off++){
+    const w=iso(addDays(parseISO(curW),7*off));
+    for(let d=0;d<7;d++){
+      if(off===0&&cur&&d<tI)continue;
+      let s0=0;
+      if(off===0&&d===day)s0=slot+1;
+      for(let s=s0;s<3;s++){if(!slotOccW(w,d,s))return {week:w,day:d,slot:s}}
+    }
+  }
+  return null;
+}
+function offerRegen(day,slot){
+  const t=nextFree(day,slot);
+  if(!t){toast('Keine freien Blöcke mehr diese Woche — Regeneration gern nächste Woche einplanen 🌿'); return}
+  ui.suggestion={target:t};
+}
+function toggleTodo(id,val){
+  const f=findTodo(id); if(!f)return;
+  f.t.done=val;
+  f.t.kanban=val?'fertig':(f.t.kanban==='fertig'?'offen':f.t.kanban);
+  if(f.t.planned){const bl=getBlocksW(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl)bl.done=val}
+  save();
+}
+function setBlock(d,s,bl){getBlocks()[d+'|'+s]=bl; save()}
+
+/* ================= Aktionen ================= */
+const ACT={
+  nav(a){ui.route={view:a.v}; ui.menuOpen=false; render()},
+  toggleMenu(){ui.menuOpen=!ui.menuOpen; $('#nav').classList.toggle('open',ui.menuOpen)},
+  backdrop(a,t,e){if(e.target===t)closeModal()},
+  closeModal(){closeModal()},
+  introOk(){S.meta.intro=true; save(); render()},
+  weekPrev(){ui.anchor=addDays(ui.anchor,-7); ui.mobileDay=dayIdx(new Date()); render()},
+  weekNext(){ui.anchor=addDays(ui.anchor,7); ui.mobileDay=dayIdx(new Date()); render()},
+  weekThis(){ui.anchor=mondayOf(new Date()); ui.mobileDay=dayIdx(new Date()); render()},
+  setDay(a){ui.mobileDay=+a.day; render()},
+  openSlot(a){sheetSlot(+a.day,+a.slot)},
+  fillType(a){
+    const t=typeOf(a.tid); if(!t)return;
+    const d=+a.day, s=+a.slot;
+    const want=readSpan(), avail=3-s;
+    if(want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
+    if(!spanRoomW(wk(),d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
+    if(t.asAppt){sheetTypeAppt(d,s,t.id,want); return}
+    setBlockW(wk(),d,s,{id:uid(),kind:'typ',typeId:t.id,title:t.name,ampel:t.ampel==='none'?null:t.ampel,note:'',done:false,span:want>1?want:1});
+    closeModal(); render(); toast('Block belegt: '+t.name+(want>1?' (über '+want+' Blöcke)':''));
+  },
+  typeApptSave(a){
+    const t=typeOf(a.tid); if(!t)return;
+    const d=+a.day, s=+a.slot;
+    const title=((document.getElementById('ta-title')||{}).value||'').trim()||t.name;
+    const t0=(document.getElementById('ta-t0')||{}).value||'';
+    const t1=(document.getElementById('ta-t1')||{}).value||'';
+    const sp=Math.max(1,Math.min(3,parseInt((document.getElementById('ta-span')||{}).value,10)||1));
+    const avail=3-s;
+    if(sp>avail){toast('Hier sind nur '+avail+' Blöcke frei — Dauer anpassen.'); return}
+    if(!spanRoomW(wk(),d,s,sp)){toast('Nicht genug freie Folgeböcke für diese Dauer.'); return}
+    const bl={id:uid(),kind:'typ',typeId:t.id,title:title,ampel:t.ampel==='none'?null:t.ampel,note:'',done:false,span:sp>1?sp:1};
+    if(t0){bl.t0=t0; if(t1)bl.t1=t1}
+    setBlockW(wk(),d,s,bl);
+    closeModal(); render(); toast('„'+title+'“ eingetragen'+(t0?' · '+apTimeStr(t0,t1):''));
+  },
+  fillProject(a){sheetProj(+a.day,+a.slot,a.pid)},
+  ampPick(a,t,e){
+    if(a.k==='tmp'){
+      t.closest('.ampRow').querySelectorAll('.ampB').forEach(b=>b.classList.remove('sel'));
+      t.classList.add('sel'); ui.tmpAmpel=a.v; return;
+    }
+    /* R11: Ampel ist Formularfeld — Auswahl markiert nur, Speichern übernimmt */
+    ui.ampSel=a.v; ui.ampSelK=a.k;
+    if(ui.ampCtx&&ui.ampCtx.t==='block')sheetBlock(ui.ampCtx.d,ui.ampCtx.s,ui.ampCtx.w);
+    else if(ui.ampCtx&&ui.ampCtx.t==='appt')sheetAppt(ui.ampCtx.id);
+  },
+  confirmProj(a){
+    const d=+a.day, s=+a.slot, p=projOf(a.pid); if(!p)return;
+    const tid=document.getElementById('f-todo').value;
+    const theme=document.getElementById('f-theme').value;
+    const want=readSpan(), avail=3-s;
+    if(want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
+    if(!spanRoomW(wk(),d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
+    const bl={id:uid(),kind:'projekt',projectId:p.id,todoId:tid||null,title:p.name,ampel:ui.tmpAmpel||'gelb',note:theme,done:false,span:want>1?want:1};
+    if(tid){const f=findTodo(tid); if(f)f.t.planned={wk:wk(),day:d,slot:s}}
+    setBlockW(wk(),d,s,bl); closeModal(); render();
+    toast('Block belegt für „'+p.name+'“ — '+fmtDaySlot(d,s));
+  },
+  addAppt(a){
+    const d=+a.day, s=+a.slot;
+    const title=document.getElementById('ap-title').value.trim();
+    if(!title){toast('Bitte einen Titel eingeben'); return}
+    const t0=(document.getElementById('ap-t0')||{}).value||'';
+    const t1=(document.getElementById('ap-t1')||{}).value||'';
+    const time=apTimeStr(t0,t1);
+    const amp=document.getElementById('ap-ampel').value||null;
+    const tyEl=document.getElementById('ap-type');
+    const ty=tyEl?tyEl.value||null:null;
+    const sp=readSpan();
+    const dIn=(document.getElementById('ap-date')||{}).value||iso(addDays(ui.anchor,d));
+    const w=iso(mondayOf(parseISO(dIn))), dd=dayIdx(parseISO(dIn));
+    let s0=s;
+    if(w!==wk()||dd!==d){
+      const f=findFreeSlot(w,dd,sp);
+      if(f<0){toast('An dem Tag ist kein passender freier Block — Dauer prüfen.'); return}
+      s0=f;
+    }else{
+      if(sp>3-s0){toast('Ab hier sind nur '+(3-s0)+' Blöcke frei — Dauer anpassen.'); return}
+      if(!spanRoomW(w,dd,s0,sp)){toast('Nicht genug freie Folgeböcke für diese Dauer.'); return}
+    }
+    apsFor(w)[dd+'|'+s0]={id:uid(),day:dd,slot:s0,title:title,time:time,ampel:amp,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:ty};
+    if(t0){const apx=apsFor(w)[dd+'|'+s0]; apx.t0=t0; if(t1)apx.t1=t1}
+    save(); closeModal(); render(); toast('Termin für '+fmtDate(parseISO(dIn))+' eingetragen'+(sp>1?' (über '+sp+' Blöcke)':'')+'.');
+  },
+  newAppt(){sheetNewAppt()},
+  newApptSave(){
+    const title=document.getElementById('na-title').value.trim();
+    const dIn=document.getElementById('na-date').value;
+    if(!title){toast('Titel fehlt.'); return}
+    if(!dIn){toast('Datum fehlt.'); return}
+    const t0=(document.getElementById('na-t0')||{}).value||'';
+    const t1=(document.getElementById('na-t1')||{}).value||'';
+    const time=apTimeStr(t0,t1);
+    const amp=document.getElementById('na-ampel').value||null;
+    const ty=document.getElementById('na-type').value||null;
+    const sp=Math.max(1,Math.min(3,parseInt(document.getElementById('na-span').value,10)||1));
+    const w=iso(mondayOf(parseISO(dIn))), dd=dayIdx(parseISO(dIn));
+    const s0=findFreeSlot(w,dd,sp);
+    if(s0<0){toast('An dem Tag ist kein passender freier Block — Dauer prüfen.'); return}
+    const apN={id:uid(),day:dd,slot:s0,title:title,time:time,ampel:amp,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:ty};
+    if(t0){apN.t0=t0; if(t1)apN.t1=t1}
+    apsFor(w)[dd+'|'+s0]=apN;
+    save(); closeModal(); render();
+    toast('Termin für '+fmtDate(parseISO(dIn))+' eingetragen'+(w!==wk()?' — liegt in einer anderen Woche':'')+'.');
+  },
+  agRange(a){ui.agRange=a.r; render()},
+  openBlock(a){sheetBlock(+a.day,+a.slot)},
+  openBlockW(a){sheetBlock(+a.day,+a.slot,a.w)},
+  openAppt(a){sheetAppt(a.id)},
+  blockSave(a){
+    const W=a.w||wk();
+    const bl=blocksFor(W)[a.day+'|'+a.slot]; if(!bl)return;
+    const tt=document.getElementById('b-title');
+    if(tt&&tt.value.trim())bl.title=tt.value.trim();
+    const nt=document.getElementById('b-note');
+    if(nt)bl.note=nt.value.trim();
+    const tyEl=document.getElementById('b-type');
+    if(tyEl){
+      bl.typeId=tyEl.value||null;
+      if(bl.typeId&&(!bl.ampel||bl.ampel==='none')){const ty2=typeOf(bl.typeId); if(ty2&&ty2.ampel&&ty2.ampel!=='none')bl.ampel=ty2.ampel}
+      const nty=typeOf(bl.typeId);
+      const t0el=document.getElementById('b-t0'), t1el=document.getElementById('b-t1');
+      if(nty&&nty.asAppt&&t0el){
+        if(t0el.value){bl.t0=t0el.value; if(t1el.value)bl.t1=t1el.value; else delete bl.t1}
+        else{delete bl.t0; delete bl.t1}
+      }
+    }
+    if(ui.ampSel!=null&&ui.ampSelK==='block'){
+      bl.ampel=ui.ampSel==='none'?null:ui.ampSel;
+      if(ui.ampSel==='rot'){const dd=+a.day, ss=+a.slot; setTimeout(()=>offerRegen(dd,ss),50)}
+    }
+    ui.ampSel=null; ui.ampSelK=null;
+    const fn=document.getElementById('b-fbnote');
+    if(fn)bl.fbNote=fn.value.trim();
+    save(); closeModal(); render(); toast('Block gespeichert.');
+  },
+  apptSave(a){
+    let ap=null, apW=null;
+    for(const w in S.appts){const aps=S.appts[w];
+      for(const k in aps){const o=aps[k];
+        if(o.id===a.id){ap=o; apW=w; break}
+        if(o.stack)for(const sa of o.stack)if(sa.id===a.id){ap=sa; apW=w; break}
+        if(ap)break;
+      }
+      if(ap)break;
+    }
+    if(!ap)return;
+    const tl=document.getElementById('a-title');
+    if(tl&&tl.value.trim())ap.title=tl.value.trim();
+    if(ui.ampSel!=null&&ui.ampSelK==='appt'){
+      ap.ampel=ui.ampSel==='none'?null:ui.ampSel;
+      if(ui.ampSel==='rot'&&apW===wk()){const dd=ap.day, ss=ap.slot; setTimeout(()=>offerRegen(dd,ss),50)}
+    }
+    ui.ampSel=null; ui.ampSelK=null;
+    const t0=(document.getElementById('a-t0')||{}).value||'';
+    const t1=(document.getElementById('a-t1')||{}).value||'';
+    if(t0||t1){ap.t0=t0||null; ap.t1=t1||null; ap.time=apTimeStr(ap.t0,ap.t1)}
+    const ts=document.getElementById('a-type');
+    if(ts){ap.typeId=ts.value||null; if(ap.typeId&&!ap.ampel){const ty=typeOf(ap.typeId); if(ty&&ty.ampel&&ty.ampel!=='none')ap.ampel=ty.ampel}}
+    const fn=document.getElementById('a-fbnote');
+    if(fn)ap.fbNote=fn.value.trim();
+    save(); closeModal(); render();
+    if(ap.remoteUid){wdPutRemote(ap,iso(addDays(parseISO(apW),ap.day)))}
+    toast('Termin gespeichert.');
+  },
+  fbSet(a){
+    const c=ui.ampCtx||{};
+    if(c.t==='block'){
+      const bl=blocksFor(c.w||wk())[c.d+'|'+c.s]; if(!bl)return;
+      bl.fb=bl.fb===a.v?null:a.v;
+      save(); sheetBlock(c.d,c.s,c.w);
+      toast(bl.fb?'Rückmeldung: '+FBL[bl.fb]:'Rückmeldung entfernt.');
+    }else if(c.t==='appt'){
+      let ap=null;
+      for(const w in S.appts){const aps=S.appts[w]; for(const k in aps){if(aps[k].id===c.id){ap=aps[k]; break}} if(ap)break}
+      if(!ap)return;
+      ap.fb=ap.fb===a.v?null:a.v;
+      save(); sheetAppt(c.id);
+      toast(ap.fb?'Rückmeldung: '+FBL[ap.fb]:'Rückmeldung entfernt.');
+    }
+  },
+  blockDone(a){
+    const W=a.w||wk();
+    const bl=blocksFor(W)[a.day+'|'+a.slot]; if(!bl)return;
+    bl.done=!bl.done;
+    if(bl.todoId){const f=findTodo(bl.todoId); if(f){f.t.done=bl.done; f.t.kanban=bl.done?'fertig':'offen'}}
+    if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.done=bl.done}
+    save(); closeModal(); render(); toast(bl.done?'Erledigt — gut, dass es dran war.':'Wieder geöffnet.');
+  },
+  freeSlot(a){
+    const d=+a.day, s=+a.slot;
+    const W=a.w||wk();
+    const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
+    if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned=null}
+    if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned=null}
+    const uid=icsUid('block',W+'-'+d+'-'+s).split('@')[0];
+    delete S.synced[uid];
+    tombMark(uid);
+    wdDeleteUid(uid);
+    delete blocksFor(W)[d+'|'+s];
+    save(); closeModal(); render(); toast('Block gelöscht — wird beim nächsten Sync auch im Kalender entfernt.');
+  },
+  moveBlock(a){
+    ui.pickCtx={type:'move',from:{day:+a.day,slot:+a.slot,w:a.w||wk()}};
+    ui.pickerWeek=a.w||wk();
+    slotPickerSheet('Block verschieben — auch in andere Wochen');
+  },
+  apptDel(a){
+    let ap=null, apW=null, apKey=null, stackIdx=-1;
+    for(const w in S.appts){const aps=S.appts[w];
+      for(const k in aps){const o=aps[k];
+        if(o.id===a.id){ap=o; apW=w; apKey=k; break}
+        if(o.stack){const si=o.stack.findIndex(x=>x.id===a.id); if(si>=0){ap=o.stack[si]; apW=w; apKey=k; stackIdx=si; break}}
+      }
+      if(ap)break;
+    }
+    if(!ap)return;
+    const c=wdCfg();
+    if(ap.remoteUid){
+      if(c.cal){try{wdFetch(c.cal+encodeURIComponent(ap.remoteUid)+'.ics',{method:'DELETE'}).catch(()=>{})}catch(e){}}
+      delete S.mapped[ap.remoteUid];
+    }else{
+      const uid=icsUid('appt',apW+'-'+ap.day+'-'+ap.slot).split('@')[0];
+      delete S.synced[uid];
+      tombMark(uid);
+      wdDeleteUid(uid);
+    }
+    if(ap.remoteUid)tombMark(ap.remoteUid);
+    const bucket=apsFor(apW)[apKey];
+    if(stackIdx>=0&&bucket&&bucket.stack)bucket.stack.splice(stackIdx,1);
+    else delete apsFor(apW)[apKey];
+    save(); closeModal(); render();
+    toast('Termin gelöscht'+(ap.remoteUid?' — auch im Kalender entfernt.':' — beim nächsten Sync auch im Kalender entfernt.'));
+  },
+  moveBlock(a){
+    ui.pickCtx={type:'move',from:{day:+a.day,slot:+a.slot}};
+    ui.pickerWeek=wk();
+    slotPickerSheet('Block verschieben — auch in andere Wochen');
+  },
+  pickSlot(a){
+    const c=ui.pickCtx||{};
+    const W=a.week||c.week||wk();
+    const d=+a.day, s=+a.slot;
+    if(slotOccW(W,d,s)){toast('Dieser Block ist belegt.'); return}
+    if(c.type==='move'){
+      const key=c.from.day+'|'+c.from.slot;
+      const srcW=c.from.w||wk();
+      const bl=blocksFor(srcW)[key]; if(!bl)return;
+      const spn=bl.span||1;
+      if(!spanRoomW(W,d,s,spn)){toast('Ziel hat nicht genug Platz für '+spn+' Blöcke.'); return}
+      delete blocksFor(srcW)[key];
+      blocksFor(W)[d+'|'+s]=bl;
+      if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:d,slot:s}}
+      toast('Verschoben nach '+fmtDaySlotW(W,d,s));
+    }else if(c.type==='todo'){
+      const f=findTodo(c.id); if(!f)return;
+      f.t.planned={wk:W,day:d,slot:s};
+      setBlockW(W,d,s,{id:uid(),kind:'projekt',projectId:f.p.id,todoId:c.id,title:f.p.name,ampel:'gelb',note:f.t.firstStep||'',done:false});
+      toast('„'+f.t.title+'“ geplant: '+fmtDaySlotW(W,d,s));
+    }else if(c.type==='task'){
+      const t=S.tasks.find(x=>x.id===c.id); if(!t)return;
+      t.planned={wk:W,day:d,slot:s};
+      setBlockW(W,d,s,{id:uid(),kind:'task',taskId:t.id,typeId:null,title:t.title,ampel:'none',note:t.firstStep||'',done:false});
+      toast('Aufgabe geplant: '+fmtDaySlotW(W,d,s));
+    }else if(c.type==='inbox'){
+      const it=S.inbox.find(x=>x.id===c.id);
+      const f=c.fields||{};
+      setBlockW(W,d,s,{id:uid(),kind:'typ',typeId:null,title:f.title||(it?it.text:'Gedanke'),ampel:'none',note:f.note||'',done:false});
+      if(it)S.inbox=S.inbox.filter(x=>x.id!==c.id);
+      toast('Aus der Eingangskiste geplant — schön, dass es einen Platz hat.');
+    }else if(c.type==='regen'){
+      setBlockW(W,d,s,{id:uid(),kind:'typ',typeId:'ty1',title:'Regeneration',ampel:'gruen',note:'',done:false});
+      toast('Regeneration eingeplant 🌿');
+    }
+    ui.pickCtx=null; ui.suggestion=null; ui.pickerWeek=null;
+    save(); closeModal(); render();
+  },
+  pickerPrev(){ui.pickerWeek=iso(addDays(parseISO(ui.pickerWeek||wk()),-7)); slotPickerSheet(ui.pickerTitle||'Block verschieben')},
+  pickerNext(){ui.pickerWeek=iso(addDays(parseISO(ui.pickerWeek||wk()),7)); slotPickerSheet(ui.pickerTitle||'Block verschieben')},
+  toggleTodoBox(a,t,e){toggleTodo(a.id,e.target.checked); render()},
+  toggleTaskBox(a,t,e){
+    const task=S.tasks.find(x=>x.id===a.id); if(!task)return;
+    task.done=e.target.checked;
+    if(task.planned){const bl=getBlocksW(task.planned.wk)[task.planned.day+'|'+task.planned.slot]; if(bl)bl.done=task.done}
+    save(); render();
+  },
+  planTodo(a){ui.pickCtx={type:'todo',id:a.id}; slotPickerSheet('Aufgabe in Block überführen')},
+  planTask(a){ui.pickCtx={type:'task',id:a.id}; slotPickerSheet('Aufgabe in Block überführen')},
+  unplanTodo(a){
+    const f=findTodo(a.id); if(!f)return;
+    if(f.t.planned){const bl=getBlocksW(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl)delete getBlocks()[f.t.planned.day+'|'+f.t.planned.slot]; f.t.planned=null}
+    save(); render(); toast('Planung gelöst — Aufgabe bleibt bestehen.');
+  },
+  unplanTask(a){
+    const t=S.tasks.find(x=>x.id===a.id); if(!t)return;
+    if(t.planned){delete getBlocks()[t.planned.day+'|'+t.planned.slot]; t.planned=null}
+    save(); render(); toast('Planung gelöst.');
+  },
+  delTodo(a){
+    const f=findTodo(a.id); if(!f)return;
+    if(f.t.planned){const bl=blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl&&bl.todoId===a.id)delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]}
+    f.p.todos=f.p.todos.filter(x=>x.id!==a.id);
+    delete S.synced[icsUid('todo',a.id).split('@')[0]];
+    tombMark(icsUid('todo',a.id));
+    wdDeleteUid(icsUid('todo',a.id)); /* volle UID — VTODO-Dateinamen tragen die Domain */
+    save(); closeModal(); render(); toast('To-do entfernt — wird beim nächsten Sync auch aus den Kalender-Aufgaben entfernt.');
+  },
+  delTask(a){
+    const t=S.tasks.find(x=>x.id===a.id); if(!t)return;
+    if(t.planned){const bl=blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]; if(bl&&bl.taskId===a.id)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]}
+    const fullUid=t.remoteUid||icsUid('todo',a.id);
+    S.tasks=S.tasks.filter(x=>x.id!==a.id);
+    delete S.synced[fullUid.split('@')[0]];
+    tombMark(fullUid);
+    wdDeleteUid(fullUid);
+    save(); render(); toast('Aufgabe entfernt — wird beim nächsten Sync auch aus den Kalender-Aufgaben entfernt.');
+  },
+  editTodoSheet(a){sheetTodo(a)},
+  edSave(a){
+    const f=a.kind==='todo'?findTodo(a.id):null;
+    const t=f?f.t:S.tasks.find(x=>x.id===a.id); if(!t)return;
+    const title=document.getElementById('ed-title').value.trim();
+    if(title)t.title=title;
+    t.firstStep=document.getElementById('ed-step').value.trim()||null;
+    t.due=document.getElementById('ed-due').value||null;
+    const st=document.getElementById('ed-start');
+    if(st)t.start=st.value||null;
+    const em=document.getElementById('ed-emode');
+    if(em){
+      if(em.value==='pert'){
+        t.est={mode:'pert',to:+((document.getElementById('ed-eto')||{}).value||0),tm:+((document.getElementById('ed-etm')||{}).value||0),tp:+((document.getElementById('ed-etp')||{}).value||0)};
+        if(!estDays(t))t.est=null;
+      }else{
+        const sv=+((document.getElementById('ed-esimple')||{}).value||0);
+        t.est=sv?{mode:'simple',simple:sv}:null;
+      }
+    }
+    t.delegated=document.getElementById('ed-del').value.trim()||null;
+    if(a.kind==='todo'){
+      if(t.delegated&&kanOf(t)==='offen')t.kanban='pending';
+      if(!t.delegated&&kanOf(t)==='pending')t.kanban='offen';
+    }
+    save(); closeModal(); render(); toast('Gespeichert — deine Kapazität steuert, nicht die Deadline.');
+  },
+  edClearDue(){const el=document.getElementById('ed-due'); if(el)el.value=''},
+  duePlusWeek(a){
+    const f=a.kind==='todo'?findTodo(a.id):null;
+    const t=f?f.t:S.tasks.find(x=>x.id===a.id); if(!t)return;
+    t.due=iso(addDays(parseISO(t.due||todayISO()),7));
+    save(); render(); toast('Timeline verschoben: +1 Woche. Eine völlig normale Reaktion.');
+  },
+  addTodo(a,el){
+    const p=projOf(a.id||a); if(!p)return;
+    const inp=document.getElementById('td-'+p.id);
+    const v=(el&&el.value)||(inp?inp.value:''); if(!v.trim())return;
+    p.todos.push({id:uid(),title:v.trim(),done:false,kanban:'offen'});
+    save(); render();
+    const ni=document.getElementById('td-'+p.id); if(ni)ni.focus();
+  },
+  addTask(a,el){
+    const v=(el&&el.value)||(document.getElementById?((document.querySelector('[data-enter="addTask"]')||{}).value||''):'');
+    if(!v.trim())return;
+    S.tasks.push({id:uid(),title:v.trim(),done:false,planned:null});
+    save(); render();
+    const ni=document.querySelector('[data-enter="addTask"]'); if(ni)ni.focus();
+  },
+  addProject(a,el){
+    const areaId=a.id||a;
+    const v=(el&&el.value)||(document.querySelector('[data-enter="addProject|'+areaId+'"]')||{}).value||'';
+    S.projects.push({id:uid(),areaId:areaId,name:v.trim()||'Neues Projekt',emoji:'📋',note:'',views:{list:true,kanban:true},todos:[]});
+    save(); render(); toast('Projekt angelegt — noch leer, das ist okay.');
+  },
+  openProj(a){ui.route={view:'projekt',id:a.id}; ui.projTab='list'; render()},
+  projTab(a){ui.projTab=a.t; render()},
+  toggleKanban(a){
+    const p=projOf(a.id); if(!p)return;
+    p.views.kanban=!p.views.kanban;
+    if(p.views.kanban)ui.projTab='kanban'; else ui.projTab='list';
+    save(); render();
+  },
+  delProj(a){
+    const p=projOf(a.id); if(!p)return;
+    S.projects=S.projects.filter(x=>x.id!==a.id);
+    ui.route={view:'bereiche'};
+    save(); render(); toast('Projekt „'+p.name+'“ gelöscht.');
+  },
+  kanCard(a){sheetKanCard(a.tid)},
+  kanMove(a){
+    const f=findTodo(a.tid); if(!f)return;
+    setKan(a.tid,a.c);
+    closeModal(); render();
+    if(a.c==='fertig')toast('Erledigt — synchron auch in Liste und geplantem Block.');
+  },
+  ganttMove(a){
+    const f=findTodo(a.tid); if(!f)return;
+    const dd=+a.d;
+    const st=f.t.start||todayISO();
+    f.t.start=iso(addDays(parseISO(st),dd));
+    save(); render();
+  },
+  kbAdd(a,el){
+    const parts=(typeof a==='string'?a:'').split('|');
+    const p=projOf(parts[0]); if(!p)return;
+    const col=parts[1]||'offen';
+    const v=el&&el.value?el.value:'';
+    if(!v.trim())return;
+    p.todos.push({id:uid(),title:v.trim(),done:col==='fertig',kanban:col});
+    save(); render();
+    const ni=document.querySelector('[data-enter="kbAdd|'+parts[0]+'|'+col+'"]'); if(ni)ni.focus();
+  },
+  inbKind(a){ui.inbKind=a.k; render(); const el=document.getElementById('inb-inp'); if(el)el.focus()},
+  inbAdd(){
+    const el=document.getElementById('inb-inp');
+    const v=el?el.value.trim():''; if(!v){toast('Nichts abzulegen — auch okay.'); return}
+    S.inbox.unshift({id:uid(),kind:ui.inbKind,text:v,ts:'gerade eben'});
+    save(); render();
+    const ni=document.getElementById('inb-inp'); if(ni){ni.value=''; ni.focus()}
+    toast('Abgelegt. Es liegt hier, bis du magst.');
+  },
+  inbToTask(a){
+    const it=S.inbox.find(x=>x.id===a.id); if(!it)return;
+    S.tasks.push({id:uid(),title:it.text,done:false,planned:null});
+    S.inbox=S.inbox.filter(x=>x.id!==a.id);
+    save(); render(); toast('→ Einzelne Aufgaben (Bereiche-Ansicht).');
+  },
+  inbToProj(a){sheetInbToProj(a.id)},
+  inbPickProj(a){
+    const it=S.inbox.find(x=>x.id===a.iid); const p=projOf(a.pid);
+    if(it&&p){p.todos.push({id:uid(),title:it.text,done:false,kanban:'offen'}); S.inbox=S.inbox.filter(x=>x.id!==a.iid); toast('→ To-do in „'+p.name+'“.')}
+    save(); closeModal(); render();
+  },
+  inbToBlock(a){ui.pickCtx={type:'inbox',id:a.id}; slotPickerSheet('Gedanke in Block überführen')},
+  inbDel(a){S.inbox=S.inbox.filter(x=>x.id!==a.id); save(); render(); toast('Weglassen — ohne Reue.')},
+  inbFilter(a){ui.inbF=a.f; render()},
+  inbEdit(a){sheetInbEdit(a.id)},
+  inbConvert(a){sheetInbConvert(a.id,a.target||'task')},
+  inbConvTarget(a){const it=S.inbox.find(x=>x.id===a.iid); sheetInbConvert(a.iid,a.t)},
+  inbConvProj(a){const it=S.inbox.find(x=>x.id===a.iid); if(ui.inbConv)ui.inbConv.pid=a.pid; sheetInbConvert(a.iid,ui.inbConv?ui.inbConv.target:'todo')},
+  inbConvSave(a){
+    const it=S.inbox.find(x=>x.id===a.iid); if(!it)return;
+    const c=ui.inbConv||{};
+    const title=(document.getElementById('ic-title')||{}).value||it.text;
+    const due=(document.getElementById('ic-due')||{}).value||null;
+    const step=(document.getElementById('ic-step')||{}).value.trim()||null;
+    if(c.target==='task'){
+      S.tasks.push({id:uid(),title:title,done:false,planned:null,due:due,firstStep:step});
+      toast('→ Einzelne Aufgaben — mitDeadline und erstem Schritt.');
+    }else{
+      const p=projOf(c.pid);
+      if(!p){toast('Bitte ein Projekt auswählen.'); return}
+      p.todos.push({id:uid(),title:title,done:false,kanban:'offen',due:due,firstStep:step});
+      toast('→ To-do in „'+p.name+'“.');
+    }
+    S.inbox=S.inbox.filter(x=>x.id!==a.iid);
+    ui.inbConv=null;
+    save(); closeModal(); render();
+  },
+  inbConvBlock(a){
+    const it=S.inbox.find(x=>x.id===a.iid); if(!it)return;
+    const title=(document.getElementById('ic-title')||{}).value||it.text;
+    const step=(document.getElementById('ic-step')||{}).value.trim()||'';
+    ui.pickCtx={type:'inbox',id:a.iid,fields:{title:title,note:step}};
+    ui.pickerWeek=wk();
+    ui.inbConv=null;
+    slotPickerSheet('„'+(title.length>34?title.slice(0,34)+'…':title)+'“ in Block überführen');
+  },
+  inbEditSave(a){
+    const it=S.inbox.find(x=>x.id===a.id); if(!it)return;
+    const el=document.getElementById('ie-text');
+    const kd=document.getElementById('ie-kind');
+    const v=el?el.value.trim():'';
+    if(!v){toast('Text bleibt bestehen — Feld war leer.'); closeModal(); return}
+    it.text=v;
+    if(kd&&INBKINDS[kd.value])it.kind=kd.value;
+    save(); closeModal(); render(); toast('Bearbeitet.');
+  },
+  editMit(a){sheetMit(a&&a.date?a.date:todayISO())},
+  mitSave(a){
+    const d=(a&&a.date)||todayISO();
+    const el=document.getElementById('mit-inp');
+    const v=el?el.value.trim():'';
+    const dc=document.getElementById('mit-done');
+    if(v)S.mit[d]={text:v,done:!!(dc&&dc.checked)}; else delete S.mit[d];
+    save(); closeModal(); render();
+    if(v)toast('MIT für '+esc(fmtDate(parseISO(d)))+' gesetzt.');
+  },
+  mitDone(a){
+    const d=(a&&a.date)||todayISO();
+    const m=S.mit[d]; if(!m)return;
+    m.done=!m.done; save(); render();
+    if(m.done)toast('MIT erledigt — schön.');
+  },
+  mitClear(a){
+    const d=(a&&a.date)||todayISO();
+    delete S.mit[d];
+    const uid=icsUid('mit',d).split('@')[0];
+    delete S.synced[uid];
+    tombMark(uid);
+    wdDeleteUid(uid);
+    save(); closeModal(); render();
+  },
+  editFocus(){sheetFocus()},
+  focusSave(){
+    const el=document.getElementById('focus-inp');
+    const v=el?el.value.trim():'';
+    if(v)S.focus[wk()]=v; else delete S.focus[wk()];
+    save(); closeModal(); render();
+  },
+  focusClear(){delete S.focus[wk()]; save(); closeModal(); render()},
+  suggestAccept(){
+    const t=ui.suggestion.target;
+    setBlockW(t.week,t.day,t.slot,{id:uid(),kind:'typ',typeId:'ty1',title:'Regeneration',ampel:'gruen',note:'',done:false});
+    ui.suggestion=null; save(); render();
+    toast('Regeneration eingeplant 🌿 — '+fmtDaySlotW(t.week,t.day,t.slot)+'.');
+  },
+  suggestOther(){ui.pickCtx={type:'regen'}; slotPickerSheet('Regeneration einplanen — wo passt es?')},
+  suggestDismiss(){ui.suggestion=null; render(); toast('Verstanden — kein Vorschlag, kein Druck.')},
+  yearPrev(){ui.year--; render()},
+  yearNext(){ui.year++; render()},
+  yearThis(){ui.year=new Date().getFullYear(); render()},
+  addPhase(){sheetPhase('new')},
+  editPhase(a){sheetPhase(a.id)},
+  yearDay(a){
+    const dstr=a.date;
+    const ph=phaseOf(dstr);
+    if(ph&&!ui.yearSel){sheetPhase(ph.id); return}
+    if(!ui.yearSel){ui.yearSel={start:dstr}; render(); return}
+    const st=ui.yearSel.start;
+    if(dstr===st){ui.yearSel=null; render(); return}
+    if(dstr<st){ui.yearSel={start:dstr}; render(); return}
+    ui.yearSel=null;
+    sheetPhase('new',st,dstr);
+    render();
+  },
+  yearSelCancel(){ui.yearSel=null; render()},
+  phaseColor(a,t){ui.phColor=a.c; const ci=document.getElementById('ph-color'); if(ci)ci.value=a.c; t.parentElement.querySelectorAll('.sw2').forEach(b=>b.classList.remove('sel')); t.classList.add('sel')},
+  phaseSave(a){
+    const title=document.getElementById('ph-title').value.trim();
+    const start=document.getElementById('ph-start').value;
+    const end=document.getElementById('ph-end').value;
+    if(!title){toast('Titel fehlt'); return}
+    if(!start||!end||start>end){toast('Zeitraum prüfen'); return}
+    const desc=document.getElementById('ph-desc').value.trim();
+    if(a.id==='new')S.phases.push({id:uid(),start:start,end:end,title:title,desc:desc,color:ui.phColor});
+    else{const p=S.phases.find(x=>x.id===a.id); if(p){p.start=start; p.end=end; p.title=title; p.desc=desc; p.color=ui.phColor}}
+    save(); closeModal(); render(); toast('Phase gespeichert.');
+  },
+  phaseDel(a){
+    S.phases=S.phases.filter(x=>x.id!==a.id);
+    const uid=icsUid('phase',a.id).split('@')[0]; /* VEVENT-Dateinamen tragen den lokalen UID-Teil */
+    delete S.synced[uid];
+    tombMark(uid);
+    const c=wdCfg();
+    /* DELETE auf beiden Kalendern versuchen — die Phase könnte aus der Zeit vor der cal2-Konfiguration im Hauptkalender liegen */
+    if(c.cal){try{wdFetch(c.cal+encodeURIComponent(uid)+'.ics',{method:'DELETE'}).catch(()=>{})}catch(e){}}
+    if(c.cal2&&c.cal2!==c.cal){try{wdFetch(c.cal2+encodeURIComponent(uid)+'.ics',{method:'DELETE'}).catch(()=>{})}catch(e){}}
+    save(); closeModal(); render(); toast('Phase gelöscht — der Sync entfernt sie auch im Kalender (mit Wiederholung, falls der Server streikt).');
+  },
+  pickEmoji(a){ui.emojiCtx={kind:a.ctx,id:a.id}; sheetEmoji()},
+  setEmoji(a){
+    const c=ui.emojiCtx||{};
+    if(c.kind==='area'){const x=S.areas.find(y=>y.id===c.id); if(x)x.emoji=a.e}
+    else if(c.kind==='type'){const x=S.types.find(y=>y.id===c.id); if(x)x.emoji=a.e}
+    else if(c.kind==='proj'){const x=projOf(c.id); if(x)x.emoji=a.e}
+    save(); closeModal(); render();
+  },
+  setEmojiCustom(){
+    const el=document.getElementById('emo-free');
+    const v=el?el.value.trim():'';
+    if(!v){toast('Zeichen eingeben — oder unten auswählen.'); return}
+    ACT.setEmoji({e:[...v][0]||v});
+  },
+  setAreaColor(a){const x=S.areas.find(y=>y.id===a.id); if(x){x.color=a.c; save(); render()}},
+  wdSave(){
+    const url=(document.getElementById('wd-url')||{}).value||'';
+    const user=(document.getElementById('wd-user')||{}).value||'';
+    const passEl=(document.getElementById('wd-pass')||{}).value||'';
+    const store=document.getElementById('wd-store');
+    const c=wdCfg();
+    c.url=url.trim().replace(/\/+$/,'');
+    c.user=user.trim();
+    if(store&&store.checked){ if(passEl)c.pass=passEl; }
+    else if(passEl){ c.pass=''; }
+    save(); render();
+    toast('Verbindung gespeichert'+(c.pass?' (inkl. App-Passwort auf diesem Gerät)':' (Passwort nicht gemerkt).'));
+  },
+  wdClear(){S.settings.webdav={url:'',user:'',pass:'',cal:''}; ui.wdCals=null; ui.wdMsg=''; save(); render(); toast('Verbindung entfernt.')},
+  wdCollectInputs(){
+    const url=((document.getElementById('wd-url')||{}).value||'').trim().replace(/\/+$/,'');
+    const user=((document.getElementById('wd-user')||{}).value||'').trim();
+    const passEl=((document.getElementById('wd-pass')||{}).value||'');
+    const store=document.getElementById('wd-store');
+    const c=wdCfg();
+    c.url=url; c.user=user;
+    if(store&&store.checked){ if(passEl)c.pass=passEl; }
+    else if(passEl){ c.pass=''; }
+    save();
+    return c;
+  },
+  async wdTest(){
+    const c=ACT.wdCollectInputs();
+    const st=document.getElementById('wd-status');
+    if(!c.url||!c.user){toast('Bitte URL und Nutzernamen angeben.'); return}
+    const base=wdBase();
+    if(!base){toast('URL unlesbar.'); return}
+    if(st)st.innerHTML='⏳ Verbinde mit '+esc(c.url)+' … (Kalender werden geladen)';
+    const px=await detectProxy();
+    const pfx=px?'🛰️ Companion-Server aktiv'+(px.target?' (Ziel: '+esc(px.target)+')':'')+' — Anfragen laufen über ihn, kein CORS. ':'';
+    if(px&&px.target&&wdBase().toLowerCase().indexOf(px.target.toLowerCase())!==0){
+      ui.wdMsg='🛰️ Companion-Server leitet nur zu <b>'+esc(px.target)+'</b> weiter (Ziel-Pinning gegen Missbrauch). Bitte trage genau diese Server-URL oben ein — dann funktioniert alles inkl. Live-Sync.';
+      render(); return;
+    }
+    const auth=wdAuth();
+    if(!auth){if(st)st.innerHTML=pfx+'✖ Nutzername/Passwort enthält nicht kodierbare Zeichen.'; return}
+    try{
+      const r0=await wdFetch(base+'/',{method:'PROPFIND',headers:{'Depth':'0'}});
+      if(!r0.ok){ui.wdMsg=pfx+wdHuman(r0.status,await wdBody(r0)); render(); return}
+      const r=await wdFetch(base+'/calendars/'+encodeURIComponent(c.user)+'/',{method:'PROPFIND',headers:{'Depth':'1'}});
+      if(!r.ok){ui.wdMsg=pfx+'✔ Anmeldung OK — aber die Kalenderliste scheitert. '+wdHuman(r.status,await wdBody(r)); render(); return}
+      const cals=parseCals(await r.text());
+      if(cals.length){
+        ui.wdCals=cals;
+        if(!c.cal||!cals.some(x=>x.href===c.cal))c.cal=cals[0].href;
+        ui.wdMsg=pfx+'✔ Verbunden mit <b>'+esc(c.url)+'</b> — '+cals.length+' Kalender gefunden. Unten auswählen; danach lesen und schreiben möglich.';
+        save(); render();
+      }else{
+        ui.wdMsg=pfx+'✔ Server erreichbar und angemeldet, aber keine Kalendersammlung gefunden. Kalender erst in der Nextcloud anlegen — oder URL prüfen.';
+        render();
+      }
+      return;
+    }catch(err){
+      if(!px){
+        try{
+          await fetch(base,{method:'PROPFIND',mode:'no-cors'});
+          ui.wdMsg='⚠ Server ist erreichbar, aber der Browser verweigert das <b>Lesen der Antwort</b> (CORS) — das ist eine Browser-Sicherheitsregel, kein Zugriffsfehler. <b>Lösung: den mitgelieferten Companion-Server nutzen</b> (siehe unten) — dann funktionieren Verbinden, Schreiben und Lesen zuverlässig.';
+          render(); return;
+        }catch(err2){}
+      }
+      ui.wdMsg=pfx+'✖ Server nicht erreichbar (Netzwerkfehler) — URL, https und Erreichbarkeit prüfen.';
+      render(); return;
+    }
+  },
+  async wdPush(){
+    const c=wdCfg(); const cal=c.cal;
+    if(!cal){toast('Bitte zuerst verbinden und einen Kalender wählen.'); return}
+    const cal2=(c.cal2&&c.cal2!==c.cal)?c.cal2:null;
+    const main=buildEvents('main'), ph=buildEvents('phases'), tds=buildTodos();
+    const allUids=main.concat(ph,tds).map(e=>String(e.uid).split('@')[0]);
+    await pruneSynced(allUids);
+    let ok=0, fail=0, lastS=0, lastT='';
+    ui.wdMsg='⏳ Schreibe '+(main.length+ph.length+tds.length)+' Objekte'+(cal2?' (Phasen in zweiten Kalender)':'')+' …';
+    render();
+    async function putAll(evs,href){
+      for(const ev of evs){
+        try{
+          const r=await wdFetch(href+encodeURIComponent(ev.uid)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:ev.text});
+          if(r.ok||r.status===201||r.status===204)ok++;
+          else{fail++; if(!lastS){lastS=r.status; lastT=await wdBody(r)}}
+        }catch(e){fail++}
+      }
+    }
+    await putAll(main,cal);
+    if(ph.length)await putAll(ph,cal2||cal);
+    if(tds.length)await putAll(tds,cal);
+    registerSynced(main); registerSynced(ph); registerSynced(tds); saveQuiet();
+    try{
+      const cobj=capsuleJson(); const cstr=JSON.stringify(cobj);
+      if(cstr!==SYNC.capJson){
+        const r=await wdFetch(cal+encodeURIComponent(CAP_UID)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:capsuleICS(cobj)});
+        if(r.ok||r.status===201||r.status===204){ok++; SYNC.capJson=cstr}
+        else{fail++; if(!lastS){lastS=r.status; lastT=await wdBody(r)}}
+      }
+    }catch(e){fail++}
+    if(ok)ui.wdMsg='✔ '+ok+' Objekte geschrieben (per UID überschrieben — wiederholtes Schreiben ist gefahrlos).'+(cal2?' Phasen liegen im zweiten Kalender und sind dort transparent (nicht „besetzt").':'')+' To-dos als VTODO, Kapsel (Motto/Kiste/Struktur) als VJOURNAL.'+(fail?' ✖ '+fail+' fehlgeschlagen: '+wdHuman(lastS,lastT):'');
+    else ui.wdMsg='✖ Schreiben nicht möglich. '+wdHuman(lastS||0,lastT);
+    render();
+  },
+  async wdPull(){
+    const c=wdCfg(); const cal=c.cal;
+    if(!cal){toast('Bitte zuerst verbinden und einen Kalender wählen.'); return}
+    ui.wdMsg='⏳ Lese Kalender …';
+    render();
+    try{
+      const r=await wdFetch(cal+'?export',{method:'GET'});
+      if(!r.ok){ui.wdMsg='✖ Lesen scheitert. '+wdHuman(r.status,await wdBody(r)); render(); return}
+      const txt=await r.text();
+      const res=importICS(txt);
+      const tr=processTodos(txt);
+      const cp=processCapsule(txt);
+      const c=wdCfg();
+      let txt2='';
+      if(c.cal2&&c.cal2!==c.cal){const r2=await wdFetch(c.cal2+'?export',{method:'GET'}); if(r2.ok){txt2=await r2.text(); const p2=importICS(txt2); res.phases+=p2.phases}}
+      reconcileDeleted([txt,txt2]);
+      let added=0;
+      for(const f of classifyRemote(txt)){
+        if(!S.unmapped.some(x=>x.uid===f.uid)){S.unmapped.push(f); added++}
+      }
+      saveQuiet(); render();
+      ui.wdMsg='✔ Gelesen: '+res.blocks+' Blöcke, '+res.appts+' Termine, '+res.mits+' MITs, '+res.phases+' Phasen'+(tr.updated?', '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?', '+tr.imported+' Aufgaben aus VTODO':'')+(cp.adopted?', Kapsel übernommen (Motto/Kiste/Struktur)':'')+(added?' · 📥 '+added+' fremde Einträge warten auf Zuordnung':'')+ '.';
+      render();
+    }catch(e){
+      ui.wdMsg='✖ Lesen nicht möglich (Netzwerk/CORS) — siehe Hinweis unten.';
+      render();
+    }
+  },
+  openAssign(){sheetAssign()},
+  syncNow(){syncCycle().then(function(){render(); toast('Sync ausgeführt — Details in der Live-Sync-Zeile.')})},
+  assign(a){
+    const it=S.unmapped.find(x=>x.uid===a.uid); if(!it)return;
+    if(a.v==='skip'){S.ignored[it.uid]=1; toast('Eintrag ignoriert — wird dauerhaft übersprungen.')}
+    else{
+      const w=iso(mondayOf(parseISO(it.date))), d=dayIdx(parseISO(it.date));
+      let s0, tag;
+      if(a.v==='all'){s0=0; tag='all'}
+      else{
+        s0=+a.v; tag=String(s0);
+        if(!apsFor(w)[d+'|'+s0]&&!blocksFor(w)[d+'|'+s0]){
+          const cov=coveredByW(w,d,s0);
+          if(cov){s0=cov.slot; tag=String(s0)}
+        }
+      }
+      const ap={id:uid(),day:d,slot:s0,title:it.title,time:it.time||'—',ampel:null,src:'',areaId:null,span:a.v==='all'?3:1,typeId:null,remoteUid:it.uid};
+      const key=d+'|'+s0;
+      const occ=apsFor(w)[key]||blocksFor(w)[key];
+      if(occ){
+        occ.stack=occ.stack||[]; occ.stack.push(ap);
+        toast('Zugeordnet — teilt sich den Block mit „'+(occ.title||'Eintrag')+'“. Die echte Uhrzeit bleibt sichtbar, im Kalender wird die Zuordnung markiert.');
+      }else{
+        apsFor(w)[key]=ap;
+        toast('Zugeordnet: '+fmtDate(parseISO(it.date))+' · '+SLOTS[s0].label+' — im Kalender wird die Zuordnung markiert (Zeiten unverändert).');
+      }
+      wdAssignWriteback(ap,tag,false);
+      S.mapped[it.uid]={w:w,day:d,slot:s0};
+    }
+    S.unmapped=S.unmapped.filter(x=>x.uid!==it.uid);
+    saveQuiet();
+    sheetAssign();
+    render();
+  },
+  addArea(){S.areas.push({id:uid(),name:'Neuer Bereich',emoji:'🌱',color:PHC[S.areas.length%PHC.length]}); save(); render(); toast('Bereich angelegt — unten benennen und färben.')},
+  delArea(a){sheetAreaDel(a.id)},
+  areaDelKeep(a){
+    S.areas=S.areas.filter(x=>x.id!==a.id);
+    S.projects.forEach(p=>{if(p.areaId===a.id)p.areaId=null});
+    ui.areaDelConfirm=null; save(); closeModal(); render();
+    toast('Bereich entfernt — Projekte laufen unter „Ohne Bereich“ weiter, alle To-dos bleiben.');
+  },
+  areaDelAsk(a){
+    if(ui.areaDelConfirm===a.id){
+      const aid=a.id;
+      const ps=S.projects.filter(p=>p.areaId===aid);
+      ps.forEach(p=>{p.todos.forEach(t=>{if(t.planned)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]})});
+      S.projects=S.projects.filter(p=>p.areaId!==aid);
+      S.areas=S.areas.filter(x=>x.id!==aid);
+      ui.areaDelConfirm=null; save(); closeModal(); render();
+      toast('Bereich samt Projekten und To-dos gelöscht.');
+      return;
+    }
+    ui.areaDelConfirm=a.id; sheetAreaDel(a.id);
+  },
+  areaDelCancel(){ui.areaDelConfirm=null; closeModal()},
+  addType(){S.types.push({id:uid(),name:'Neuer Typ',emoji:'•',ampel:'none'}); save(); render(); toast('Blocktyp angelegt.')},
+  delType(a){S.types=S.types.filter(x=>x.id!==a.id); save(); render(); toast('Typ entfernt.')},
+  moveItem(a){
+    const arr=S[a.k]; if(!arr)return;
+    const i=+a.i, j=i+ +a.d;
+    if(i<0||i>=arr.length||j<0||j>=arr.length)return;
+    const mv=arr.splice(i,1)[0];
+    arr.splice(j,0,mv);
+    save(); render();
+  },
+  exportJson(){sheetExport()},
+  exportIcs(){sheetExportIcs()},
+  importIcs(){sheetImportIcs()},
+  icsDownload(){
+    const ok=downloadText('theo.ics',buildICS());
+    toast(ok?'ICS heruntergeladen — in jeden Kalender/CalDAV-Server importierbar.':'Download in dieser Vorschau blockiert — bitte ICS-Text kopieren.');
+  },
+  icsCopy(){
+    const ta=document.getElementById('ics-ta'); if(!ta)return;
+    ta.select();
+    try{navigator.clipboard.writeText(ta.value).then(()=>toast('ICS kopiert.'),()=>toast('Bitte manuell markieren und kopieren.'))}
+    catch(e){toast('Bitte manuell markieren und kopieren.')}
+  },
+  icsImportRun(){
+    const ta=document.getElementById('ics-paste');
+    const fi=document.getElementById('ics-file');
+    const run=txt=>{
+      if(!txt||txt.indexOf('BEGIN:VCALENDAR')<0){toast('Das sieht nicht nach ICS aus — BEGIN:VCALENDAR fehlt.'); return}
+      const r=importICS(txt);
+      closeModal(); render();
+      toast('Import: '+r.blocks+' Blöcke, '+r.appts+' Termine, '+r.mits+' MITs, '+r.phases+' Phasen'+(r.skipped?' ('+r.skipped+' übersprungen)':'')+'.');
+    };
+    if(fi&&fi.files&&fi.files[0]&&typeof FileReader==='function'){
+      const rd=new FileReader();
+      rd.onload=()=>run(String(rd.result));
+      rd.readAsText(fi.files[0]);
+      return;
+    }
+    if(ta&&ta.value.trim())run(ta.value);
+    else toast('Keine ICS-Daten gefunden.');
+  },
+  copyExport(){
+    const ta=document.getElementById('exp-ta');
+    if(!ta)return;
+    ta.select();
+    try{navigator.clipboard.writeText(ta.value).then(()=>toast('In die Zwischenablage kopiert.'),()=>toast('Bitte manuell markieren und kopieren.'))}
+    catch(e){toast('Bitte manuell markieren und kopieren.')}
+  },
+  resetDemo(){
+    if(!ui.confirmReset){ui.confirmReset=true; render(); return}
+    ui.confirmReset=false;
+    S=seedFrom(S); ui.suggestion=null;
+    save(); render(); toast('Alles geleert — was im Kalender liegt, kommt mit dem nächsten Sync zurück.');
+  }
+};
+
+/* ================= Globale Events ================= */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');
+  if(ui.menuOpen&&!(t&&t.dataset.act==='toggleMenu')&&e.target.closest&&!e.target.closest('#nav')){
+    ui.menuOpen=false;
+    const nv=document.querySelector('#nav');
+    if(nv)nv.classList.remove('open');
+  }
+  if(!t)return;
+  const a=t.dataset;
+  if(ACT[a.act])ACT[a.act](a,t,e);
+});
+document.addEventListener('change',e=>{
+  const el=e.target; const f=el.dataset.field||'';
+  if(f==='areaName'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
+  else if(f==='areaColor'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.color=el.value; save(); render(); toast('Eigene Farbe gesetzt.')}}
+  else if(f==='phColor'){ui.phColor=el.value; save(); render()}
+  else if(f==='motto'){(S.motto||(S.motto={}))[el.dataset.year]=el.value.trim(); save(); render()}
+  else if(f==='liveOn'){S.settings.liveSync.on=el.checked; save(); startSync(); render()}
+  else if(f==='liveInterval'){S.settings.liveSync.interval=+el.value; save(); startSync(); render()}
+  else if(f==='slotS'){S.settings.slotTimes[el.dataset.slot].s=el.value||slotWin(+el.dataset.slot).s; save(); render()}
+  else if(f==='slotE'){S.settings.slotTimes[el.dataset.slot].e=el.value||slotWin(+el.dataset.slot).e; save(); render()}
+  else if(f==='weekJump'){
+    const v=el.value||'';
+    const m=v.match(/^(\d{4})-(\d{2})/);
+    if(m){ui.anchor=mondayOf(new Date(+m[1],+m[2]-1,1)); ui.mobileDay=0; render(); toast('Gesprungen: '+MONNAMES[+m[2]-1]+' '+m[1]+' — Woche ab '+fmtDate(ui.anchor)+'.')}
+  }
+  else if(f==='wdCal'){const c=wdCfg(); c.cal=el.value; save(); render(); toast('Kalender gewählt — Live-Sync kann jetzt laufen.')}
+  else if(f==='kanState'){setKan(el.dataset.tid,el.value); render()}
+  else if(f==='wdCal2'){const c=wdCfg(); c.cal2=el.value||''; save(); render(); toast(el.value?'Phasen-Kalender gewählt — Phasen werden transparent geführt.':'Phasen laufen im Hauptkalender.')}
+  else if(f==='typeName'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
+  else if(f==='typeAmpel'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.ampel=el.value; save()}}
+  else if(f==='typeAsAppt'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.asAppt=!!el.checked; save(); render(); toast(x.asAppt?'Blöcke dieses Typs erscheinen jetzt auch bei Termine.':'Typ zählt wieder als Block.')}}
+  else if(f==='projName'){const x=projOf(el.dataset.id); if(x){x.name=el.value; save()}}
+  else if(f==='aid'){S.settings.aids[el.dataset.id]=el.checked; save(); render()}
+});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(!el||!el.dataset)return;
+  if(el.dataset.field==='inbQ'){
+    ui.inbQ=el.value;
+    const pos=el.selectionStart;
+    render();
+    const ni=document.getElementById('inb-q');
+    if(ni){ni.focus(); try{ni.setSelectionRange(pos,pos)}catch(x){}}
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const el=e.target;
+  if(el&&el.dataset&&el.dataset.enter){
+    const parts=el.dataset.enter.split('|');
+    if(ACT[parts[0]])ACT[parts[0]](parts.slice(1).join('|'),el);
+  }
+});
+document.addEventListener('dragstart',e=>{
+  const el=e.target.closest('[data-drag]');
+  if(el&&e.dataTransfer){e.dataTransfer.setData('text/plain',el.dataset.drag); e.dataTransfer.effectAllowed='move'}
+});
+document.addEventListener('dragover',e=>{
+  const el=e.target.closest('[data-drop]');
+  if(el){e.preventDefault(); el.classList.add('drop')}
+});
+document.addEventListener('dragleave',e=>{
+  const el=e.target.closest('[data-drop]');
+  if(el)el.classList.remove('drop');
+});
+document.addEventListener('drop',e=>{
+  const el=e.target.closest('[data-drop]');
+  if(!el)return;
+  e.preventDefault();
+  el.classList.remove('drop');
+  const data=e.dataTransfer.getData('text/plain');
+  if(!data)return;
+  const drop=el.dataset.drop;
+  if(drop[0]==='w'&&data.startsWith('block:')){
+    const from=data.slice(6).split('|');
+    const to=drop.slice(1).match(/(\d)s(\d)/);
+    if(!to)return;
+    const fd=+from[0], fs=+from[1], td=+to[1], ts=+to[2];
+    if(slotOccupied(td,ts)){toast('Ziel belegt.'); return}
+    const bl=getBlocks()[fd+'|'+fs]; if(!bl)return;
+    delete getBlocks()[fd+'|'+fs];
+    getBlocks()[td+'|'+ts]=bl;
+    if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:wk(),day:td,slot:ts}}
+    save(); render(); toast('Verschoben nach '+fmtDaySlot(td,ts));
+  }else if(drop==='g'&&data.startsWith('gtodo:')){
+    const tid=data.slice(6).split('|')[1];
+    const f=findTodo(tid);
+    if(f){
+      f.t.start=el.dataset.date;
+      save(); render(); toast('Start verschoben: '+fmtDate(parseISO(el.dataset.date))+' — die Deadline (▼) bleibt fix.');
+    }
+  }else if(drop.startsWith('k')&&data.startsWith('todo:')){
+    const tid=data.slice(5).split('|')[1];
+    const col=drop.slice(1);
+    ACT.kanMove({tid:tid,c:col});
+  }else if(drop.startsWith('reorder:')&&data.startsWith('reorder:')){
+    const tp=drop.split(':'), sp=data.split(':');
+    if(tp[1]===sp[1]){
+      const map={area:'areas',type:'types'};
+      const arr=S[map[tp[1]]]; if(!arr)return;
+      const from=+sp[2], to=+tp[2];
+      if(from!==to&&from>=0&&to>=0&&from<arr.length&&to<arr.length){
+        const mv=arr.splice(from,1)[0];
+        arr.splice(to,0,mv);
+        save(); render();
+      }
+    }
+  }
+});
+
+/* ================= Start ================= */
+const savedState=load();
+S=(savedState&&savedState.meta&&savedState.meta.v===4)?normalizeState(savedState):seedFrom(savedState);
+ui.year=new Date().getFullYear();
+ui.mobileDay=dayIdx(new Date());
+render();
+/* Live-Sync automatisch starten, wenn Zugangsdaten vorhanden sind */
+if(wdCfg().url&&wdCfg().user&&wdCfg().pass)setTimeout(syncCycle,700);
+startSync();
+</script>
+</body>
+</html>
