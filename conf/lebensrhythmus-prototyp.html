@@ -90,21 +90,21 @@ label.f{display:block; font-size:12.5px; color:var(--sub); margin:12px 0 5px}
 .dh.today{background:#EFEAE0}
 .sl{font-size:11.5px; color:var(--sub); padding:8px 4px; text-align:right}
 .sl .ico{font-size:15px; display:block; text-align:center; margin-bottom:3px}
-.slot{min-height:106px; border-radius:14px; position:relative; display:flex; flex-direction:column; gap:6px}
+.slot{min-height:106px; min-width:0; border-radius:14px; position:relative; display:flex; flex-direction:column; gap:6px}
 .slot.free{border:1.6px dashed #D9D3C6; align-items:center; justify-content:center; color:#A49E91; cursor:pointer; background:rgba(255,255,255,.4); gap:2px}
 .slot.free:hover{border-color:#B9B2A2; color:#75705F; background:#FFF}
 .slot.free .plus{font-size:17px; line-height:1}
 .slot.free .fl{font-size:11px}
 .slot.drop{outline:2px solid #9BC4A9; outline-offset:2px}
-.card{background:#FFF; border:1px solid #ECE6D9; border-radius:14px; padding:10px 12px; box-shadow:0 1px 2px rgba(80,70,40,.05); font-size:13.5px}
+.card{background:#FFF; border:1px solid #ECE6D9; border-radius:14px; padding:9px 10px; box-shadow:0 1px 2px rgba(80,70,40,.05); font-size:13.5px; min-width:0; max-width:100%; box-sizing:border-box; overflow:hidden}
 .card.appt.stacked{margin-top:6px; border-left:3px solid #B7AE9C; background:#FDFBF6; font-size:12.5px; padding:8px 10px}
-.block{border-left:3px solid var(--ac,#C9C2B2); cursor:pointer; flex:1}
+.block{border-left:3px solid var(--ac,#C9C2B2); cursor:pointer; flex:1; min-width:0}
 .block.done{opacity:.5}
-.appt{background:#FBF8F1; cursor:pointer; flex:1}
+.appt{background:#FBF8F1; cursor:pointer; flex:1; min-width:0}
 [draggable="true"]{cursor:grab}
 [draggable="true"]:active{cursor:grabbing}
-.apList{display:flex; flex-direction:column; gap:4px}
-.apHead{display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:11px; color:var(--sub); padding:1px 2px}
+.apList{display:flex; flex-direction:column; gap:4px; min-width:0}
+.apHead{display:flex; align-items:center; justify-content:space-between; gap:4px; font-size:11px; color:var(--sub); padding:1px 2px; min-width:0; flex-wrap:wrap}
 .apAct{border:1px solid #DFD9CA; background:#FFF; border-radius:7px; padding:1px 6px; font-size:10.5px; color:#5C564A; cursor:pointer}
 .apAct:hover{background:#F4F0E7}
 .apWarn{color:#9E6230; font-weight:600}
@@ -115,14 +115,30 @@ label.f{display:block; font-size:12.5px; color:var(--sub); margin:12px 0 5px}
 .apBadge{font-size:10.5px; color:#7A7466; background:#EFEAE0; border-radius:6px; padding:1px 5px; white-space:nowrap; flex:none}
 .slotSubBtn{border:1px dashed #DFD9CA; background:rgba(255,255,255,.45); border-radius:9px; padding:3px 8px; font-size:11px; color:#8A8478; cursor:pointer; text-align:center}
 .slotSubBtn:hover{background:#FFF; border-color:#B9B2A2; color:#5C564A}
-.brow{display:flex; align-items:center; gap:8px}
-.bico{font-size:15px}
-.bttl{font-weight:600; flex:1}
-.btime{font-size:12px; color:var(--sub); font-variant-numeric:tabular-nums}
-.bnote{font-size:12px; color:var(--sub); margin-top:4px}
-.bsrc{font-size:11px; color:#A49E91; margin-top:4px}
-.tchip{display:flex; align-items:center; gap:6px; margin-top:6px; font-size:12.5px; cursor:pointer}
-.noamp{font-size:11px; color:#A49E91; border:1px dashed #D9D3C6; border-radius:8px; padding:1px 7px}
+.slotAddBlk{position:absolute; right:7px; bottom:7px; z-index:2; border:1px solid #DDD6C6; background:rgba(253,252,248,.96); border-radius:999px; padding:2px 8px; font-size:11px; color:#5C564A; cursor:pointer; box-shadow:0 1px 4px rgba(50,45,30,.1); display:inline-flex; align-items:center; gap:3px; line-height:1.3}
+.slotAddBlk:hover{background:#4A453C; color:#FBF9F2; border-color:#4A453C}
+@media (hover:hover) and (pointer:fine){
+  .slotAddBlk{opacity:0; pointer-events:none; transition:opacity .14s ease}
+  .slot:hover .slotAddBlk,.slot:focus-within .slotAddBlk{opacity:1; pointer-events:auto}
+}
+@media (hover:none),(pointer:coarse){
+  .slotAddBlk{width:24px; height:24px; padding:0; justify-content:center; font-size:13px; background:#F3EFE5; border-color:#DFD9CA; color:#6F6A5F; opacity:.85}
+  .slotAddBlk .addLbl{display:none}
+}
+.brow{display:flex; align-items:flex-start; gap:5px; min-width:0; width:100%}
+.brow>.dot,.brow>.noampDot{margin-top:3px; flex:none}
+.bico{font-size:13.5px; line-height:1.35; flex:none}
+.bttl{font-weight:600; font-size:13px; flex:1; min-width:0; line-height:1.3; overflow-wrap:anywhere; word-break:break-word; hyphens:auto}
+.btime{font-size:12px; color:var(--sub); font-variant-numeric:tabular-nums; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.bnote{font-size:12px; color:var(--sub); margin-top:4px; overflow-wrap:anywhere; word-break:break-word}
+.bsrc{font-size:11px; color:#A49E91; margin-top:4px; overflow-wrap:anywhere; word-break:break-word}
+.tchip{display:flex; align-items:flex-start; gap:6px; margin-top:6px; font-size:12.5px; cursor:pointer; min-width:0}
+.tchip span{min-width:0; overflow-wrap:anywhere; word-break:break-word}
+.noamp{font-size:11px; color:#A49E91; border:1px dashed #D9D3C6; border-radius:8px; padding:1px 7px; white-space:nowrap}
+.noampDot{width:11px; height:11px; border-radius:50%; border:1.4px dashed #D2CBB9; display:inline-block; flex:none}
+.cfgTpl{width:100%; background:#FAF7F0; border-top:1px dashed #E8E2D4; margin-top:6px; padding-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px}
+.uprow[draggable="true"]:hover{background:#FAF7F0; border-radius:9px}
+.upGrip{color:#C1BAAB; cursor:grab; user-select:none; font-size:13px; padding:0 2px}
 .wmobile{display:none}
 .daychips{display:flex; gap:6px; overflow-x:auto; padding:2px 0 8px}
 .daychips .chip{flex:none}
@@ -358,10 +374,39 @@ function fmtEst(t){
   return '≈'+(Math.round(e*10)/10)+' T'+(t.est.mode==='pert'?' (PERT)':'');
 }
 function apTimeStr(t0,t1){return t0?(t1?t0+'–'+t1:t0):'—'}
+/* 15-Minuten-Zeitwahl (:00/:15/:30/:45) ohne Übernahme der aktuellen Uhrzeit-Minute;
+   bereits vorhandene krumme Zeiten aus Kalender-Importen bleiben als Option erhalten. */
+function timePickHtml(val,attrs,emptyLbl){
+  const v=String(val||'').trim();
+  const hasCustom=/^\d{2}:\d{2}$/.test(v)&&!/^\d{2}:(00|15|30|45)$/.test(v);
+  const cH=hasCustom?+v.slice(0,2):-1;
+  const groups=[['🌅 Vormittag',6,11],['☀️ Mittag & Nachmittag',12,17],['🌙 Abend',18,23],['🌌 Nacht',0,5]];
+  let h='<select class="inp slim" '+(attrs||'')+'>';
+  if(emptyLbl!==false)h+='<option value=""'+(!v?' selected':'')+'>'+(emptyLbl||'— ohne Zeit —')+'</option>';
+  for(const g of groups){
+    const opts=[];
+    for(let hr=g[1];hr<=g[2];hr++){
+      for(const mn of [0,15,30,45])opts.push(pad(hr)+':'+pad(mn));
+      if(cH===hr)opts.push(v);
+    }
+    opts.sort();
+    h+='<optgroup label="'+g[0]+'">'+opts.map(tm=>'<option value="'+tm+'"'+(tm===v?' selected':'')+'>'+tm+'</option>').join('')+'</optgroup>';
+  }
+  return h+'</select>';
+}
+function normalizeType(t){
+  if(!t)return t;
+  if(!t.defSpan||t.defSpan<1||t.defSpan>3)t.defSpan=1;
+  if(t.openEdit===undefined)t.openEdit=true;
+  if(t.defNote===undefined)t.defNote='';
+  if(t.defT0===undefined)t.defT0='';
+  if(t.defT1===undefined)t.defT1='';
+  return t;
+}
 
 /* ================= Zustand ================= */
 let S=null;
-const ui={route:{view:'woche'},anchor:mondayOf(new Date()),year:new Date().getFullYear(),mobileDay:dayIdx(new Date()),projTab:'list',suggestion:null,pickCtx:null,ampCtx:null,emojiCtx:null,inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,menuOpen:false,wdCals:null,wdMsg:'',agRange:'woche',pickerWeek:null,pickerTitle:'',expSlots:{}};
+const ui={route:{view:'woche'},anchor:mondayOf(new Date()),year:new Date().getFullYear(),mobileDay:dayIdx(new Date()),projTab:'list',suggestion:null,pickCtx:null,ampCtx:null,emojiCtx:null,inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,menuOpen:false,wdCals:null,wdMsg:'',agRange:'woche',pickerWeek:null,pickerTitle:'',expSlots:{},tplOpen:{},deferRender:false};
 
 let storeOk=false;
 try{localStorage.setItem('__lr','1'); localStorage.removeItem('__lr'); storeOk=true}catch(e){}
@@ -379,6 +424,7 @@ function normalizeState(x){
   if(!x.tomb)x.tomb={};
   if(!x.capsuleTs)x.capsuleTs=0;
   if(x.meta.dirty===undefined)x.meta.dirty=false;
+  if(Array.isArray(x.types))x.types.forEach(normalizeType);
   if(!x.appts)x.appts={};
   if(x.blocks){
     for(const w in x.blocks){
@@ -403,13 +449,13 @@ function seed(){
   /* Ab Rev 8: keine Demo-Daten mehr — Theo startet leer und zeigt nur, was wirklich synchronisiert wird.
      Behalten wird nur das Blocktypen-Vokabular (Teil des Ampel-Systems), das ist Konfiguration, kein Demo-Inhalt. */
   const types=[
-    {id:'ty1',name:'Regeneration',emoji:'🌿',ampel:'gruen'},
-    {id:'ty2',name:'Runterkommen',emoji:'🕯️',ampel:'gruen'},
-    {id:'ty3',name:'Vorbereitung',emoji:'🧺',ampel:'none'},
-    {id:'ty4',name:'Anfahrt & Übergang',emoji:'🚶',ampel:'none'},
-    {id:'ty5',name:'Nachbereitung',emoji:'🫧',ampel:'none'},
-    {id:'ty6',name:'1:1-Termin',emoji:'🤝',ampel:'rot',asAppt:true},
-    {id:'ty7',name:'Fokusarbeit',emoji:'🎯',ampel:'gelb'}
+    {id:'ty1',name:'Regeneration',emoji:'🌿',ampel:'gruen',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''},
+    {id:'ty2',name:'Runterkommen',emoji:'🕯️',ampel:'gruen',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''},
+    {id:'ty3',name:'Vorbereitung',emoji:'🧺',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''},
+    {id:'ty4',name:'Anfahrt & Übergang',emoji:'🚶',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''},
+    {id:'ty5',name:'Nachbereitung',emoji:'🫧',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''},
+    {id:'ty6',name:'1:1-Termin',emoji:'🤝',ampel:'rot',asAppt:true,defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''},
+    {id:'ty7',name:'Fokusarbeit',emoji:'🎯',ampel:'gelb',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''}
   ];
   return {
     meta:{v:4,intro:false,dirty:false,pulled:false},
@@ -544,8 +590,40 @@ function detachAppt(f){
 function placeApptInSlot(w,d,s,ap){
   ap.day=d; ap.slot=s;
   const key=d+'|'+s, aps=apsFor(w), cur=aps[key];
-  if(!cur){aps[key]=ap}
-  else{cur.stack=cur.stack||[]; cur.stack.push(ap)}
+  if(!cur){
+    aps[key]=ap;
+    if(!ap.remoteUid)delete S.tomb[icsUid('appt',w+'-'+d+'-'+s).split('@')[0]];
+  }else{
+    cur.stack=cur.stack||[]; cur.stack.push(ap);
+    if(!ap.remoteUid&&ap.id)delete S.tomb[icsUid('appt',ap.id).split('@')[0]];
+  }
+}
+function moveApptClean(f,dstW,dstDay,dstSlot){
+  if(!f||!f.ap)return;
+  const ap=f.ap, oldW=f.w, oldDay=ap.day, oldSlot=ap.slot, wasStacked=(f.stackIdx>=0);
+  detachAppt(f);
+  placeApptInSlot(dstW,dstDay,dstSlot,ap);
+  if(ap.remoteUid)return;
+  const nowPrimary=(apsFor(dstW)[dstDay+'|'+dstSlot]===ap);
+  if(wasStacked){
+    if(nowPrimary&&ap.id){
+      const u=icsUid('appt',ap.id).split('@')[0];
+      delete S.synced[u]; tombMark(u); wdDeleteUid(u);
+    }
+    return;
+  }
+  const rem=apsFor(oldW)[oldDay+'|'+oldSlot];
+  if(rem&&!rem.remoteUid&&rem.id&&rem!==ap){
+    const uProm=icsUid('appt',rem.id).split('@')[0];
+    delete S.synced[uProm]; tombMark(uProm); wdDeleteUid(uProm);
+  }else if(!(oldW===dstW&&oldDay===dstDay&&oldSlot===dstSlot&&nowPrimary)){
+    const uSlot=icsUid('appt',oldW+'-'+oldDay+'-'+oldSlot).split('@')[0];
+    delete S.synced[uSlot]; tombMark(uSlot); wdDeleteUid(uSlot);
+  }
+}
+function retireLocalBlockUid(w,d,s){
+  const u=icsUid('block',w+'-'+d+'-'+s).split('@')[0];
+  delete S.synced[u]; tombMark(u); wdDeleteUid(u);
 }
 function apRangeMin(ap){
   if(!ap)return null;
@@ -632,7 +710,7 @@ function buildEvents(only){
       ev({uid:icsUid('block',w+'-'+p[0]+'-'+p[1]),dtstart:tm.start,dtend:tm.end,
         sum:(bl.title||'Block')+' · '+SLOTS[+p[1]].label,
         desc:(bl.note||'')+(bl.done?' (erledigt)':''),cat:cat,
-        x:{KIND:bl.kind||'typ',SLOT:p[1],SPAN:String(bl.span||1),DATE:date,WEEK:w,DAY:p[0],PROJECT:bl.projectId||'',TODO:bl.todoId||'',TYPE:bl.typeId||'',FB:bl.fb||'',FBNOTE:bl.fbNote||''}});
+        x:{KIND:bl.kind||'typ',SLOT:p[1],SPAN:String(bl.span||1),DATE:date,WEEK:w,DAY:p[0],PROJECT:bl.projectId||'',TODO:bl.todoId||'',TASK:bl.taskId||'',TYPE:bl.typeId||'',T0:bl.t0||'',T1:bl.t1||'',FB:bl.fb||'',FBNOTE:bl.fbNote||''}});
     }
   }
   function emitLocalAppt(w,ap,uidSuffix){
@@ -745,13 +823,26 @@ function mirrorICS(ap,date){
 async function wdPutRemote(ap,date){
   const c=wdCfg();
   if(!ap.remoteUid||!c.cal)return;
+  const ruid=ap.remoteUid;
+  const wb=SYNC.wbRev||(SYNC.wbRev={});
+  const rev=wb[ruid]=(wb[ruid]||0)+1;
   const hmap=SYNC.hrefs||(SYNC.hrefs={});
-  let href=hmap[ap.remoteUid]||(c.cal+encodeURIComponent(ap.remoteUid)+'.ics');
+  let href=hmap[ruid];
   const body=mirrorICS(ap,date);
   try{
+    if(!href){
+      const probe=c.cal+encodeURIComponent(ruid)+'.ics';
+      const gr=await wdFetch(probe,{method:'GET'});
+      if(gr.ok)href=hmap[ruid]=probe;
+      else if(gr.status===404)href=(await wdResolveHref(c.cal,ruid))||probe;
+      else href=probe;
+    }
+    if(wb[ruid]!==rev)return;
     let r=await wdFetch(href,{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:body});
     if(!r.ok&&(r.status===400||r.status===404||r.status===409||r.status===412)){
-      const real=await wdResolveHref(c.cal,ap.remoteUid);
+      delete hmap[ruid];
+      const real=await wdResolveHref(c.cal,ruid);
+      if(wb[ruid]!==rev)return;
       if(real&&real!==href){href=real; r=await wdFetch(href,{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:body})}
     }
     toast(r.ok?'Aktualisierung im Kalender übernommen.':'Kalender-Update scheiterte (HTTP '+r.status+').');
@@ -800,16 +891,21 @@ function takeRemote(f,place,srcLabel){
    CATEGORIES:LR-ASSIGNED + X-LR-SLOT — Summary und Uhrzeiten bleiben exakt gleich. */
 async function wdAssignWriteback(ap,slotTag,quiet){
   const c=wdCfg(); if(!ap.remoteUid||!c.cal)return;
+  const ruid=ap.remoteUid;
+  const wb=SYNC.wbRev||(SYNC.wbRev={});
+  const rev=wb[ruid]=(wb[ruid]||0)+1;
   try{
     const hmap=SYNC.hrefs||(SYNC.hrefs={});
-    let href=hmap[ap.remoteUid]||(c.cal+encodeURIComponent(ap.remoteUid)+'.ics');
+    let href=hmap[ruid]||(c.cal+encodeURIComponent(ruid)+'.ics');
     let r=await wdFetch(href,{method:'GET'});
     if(!r.ok&&r.status===404){
-      const real=await wdResolveHref(c.cal,ap.remoteUid);
+      const real=await wdResolveHref(c.cal,ruid);
       if(real){href=real; r=await wdFetch(href,{method:'GET'})}
     }
+    if(wb[ruid]!==rev)return;
     if(!r.ok){if(!quiet)toast('Markierung im Kalender nicht möglich (HTTP '+r.status+').'); return}
     const lines=(await r.text()).replace(/\r/g,'').split('\n');
+    if(wb[ruid]!==rev)return;
     const out=[]; let inEv=false, hasCat=false, touched=false;
     for(const l of lines){
       const tr=l.trim();
@@ -1018,7 +1114,7 @@ function adoptCapsule(o){
   if(o.motto)S.motto=o.motto;
   if(Array.isArray(o.inbox))S.inbox=o.inbox;
   if(Array.isArray(o.areas))S.areas=o.areas;
-  if(Array.isArray(o.types))S.types=o.types;
+  if(Array.isArray(o.types))S.types=o.types.map(normalizeType);
   if(o.focus)S.focus=o.focus;
   if(Array.isArray(o.projects))S.projects=o.projects.map(p=>{const local=S.projects.find(x=>x.id===p.id); const q={todos:local?local.todos:[]}; for(const k in p)if(k!=='todos')q[k]=p[k]; return q});
   if(o.settings){if(o.settings.aids)S.settings.aids=o.settings.aids; if(o.settings.slotTimes)S.settings.slotTimes=o.settings.slotTimes; if(o.settings.liveSync)S.settings.liveSync=o.settings.liveSync}
@@ -1187,6 +1283,8 @@ function importICS(text){
       if(x('PROJECT'))bl.projectId=x('PROJECT');
       if(x('TYPE'))bl.typeId=x('TYPE');
       if(x('TODO'))bl.todoId=x('TODO');
+      if(x('TASK'))bl.taskId=x('TASK');
+      if(x('T0')){bl.t0=x('T0'); if(x('T1'))bl.t1=x('T1')}
       if(e.UID)S.synced[String(e.UID).split('@')[0]]=1;
       blocksFor(w)[dayIdx(d0)+'|'+slot]=bl; nb++;
     }else if(cats.includes('LR-APPT')){
@@ -1207,12 +1305,11 @@ function importICS(text){
       if(mt>1){ap.multiId=x('MULTIID')||null; ap.multiStart=x('MULTISTART')||date; ap.multiEnd=x('MULTIEND')||date; ap.multiIdx=parseInt(x('MULTIIDX'),10)||1; ap.multiTotal=mt}
       if(uidL)S.synced[uidL]=1;
       const cur=apsFor(w)[key];
-      if(!cur){apsFor(w)[key]=ap}
-      else if(wantId){
+      if(wantId){
         const ex=findAppt(wantId);
         if(ex)Object.assign(ex.ap,{title:ap.title,time:ap.time,ampel:ap.ampel,fb:ap.fb,fbNote:ap.fbNote,t0:ap.t0,t1:ap.t1});
         else placeApptInSlot(w,dd,ss,ap);
-      }else if(!cur.remoteUid){
+      }else if(!cur){apsFor(w)[key]=ap}else if(!cur.remoteUid){
         if(cur.stack)ap.stack=cur.stack;
         ap.id=cur.id||ap.id;
         apsFor(w)[key]=ap;
@@ -1405,6 +1502,27 @@ async function pushAll(){
   if(fail===0&&S.meta.dirty){S.meta.dirty=false; saveQuiet()}
   return {ok:ok, fail:fail};
 }
+function isEditingInMain(){
+  const a=document.activeElement;
+  if(!a||!a.tagName)return false;
+  const tg=String(a.tagName).toUpperCase();
+  if(tg!=='INPUT'&&tg!=='TEXTAREA'&&tg!=='SELECT')return false;
+  const tp=String(a.type||'').toLowerCase();
+  if(tp==='checkbox'||tp==='radio'||tp==='button')return false;
+  if(typeof a.closest==='function'&&a.closest('#overlay'))return false;
+  return true;
+}
+function safeBgRender(){
+  if($('#overlay').classList.contains('on'))return;
+  if(isEditingInMain()){
+    ui.deferRender=true;
+    const sl=document.getElementById('sync-statusline');
+    if(sl)sl.innerHTML='🛰️ '+esc(syncStatusText())+(S.meta.dirty?' · <b>lokale Änderungen warten auf Schreiben</b>':'');
+    return;
+  }
+  ui.deferRender=false;
+  render();
+}
 /* Direkter Push: jede Änderung (save()) schreibt nach kurzer Entprellung sofort */
 let pushTimer=null;
 function schedulePush(){
@@ -1419,7 +1537,7 @@ function schedulePush(){
       const r=await pushAll();
       SYNC.last=new Date();
       SYNC.msg='⏏ direkt gepusht '+r.ok+(r.fail?' / ✖ '+r.fail:'');
-      if(!$('#overlay').classList.contains('on'))render();
+      safeBgRender();
     }catch(e){SYNC.msg='Push-Fehler: '+String(e&&e.message||e)}
     finally{SYNC.running=false}
   },2500);
@@ -1456,14 +1574,20 @@ async function syncCycle(){
     const r=await wdFetch(cal+'?export',{method:'GET'});
     if(r.ok){
       const txt=await r.text();
+      let txt2='';
+      if(cal2){const r2=await wdFetch(cal2+'?export',{method:'GET'}); if(r2.ok)txt2=await r2.text()}
+      if((S.capsuleTs||0)!==rev){
+        SYNC.last=new Date();
+        SYNC.msg=(m?m+' · ':'')+'Pull übersprungen — lokale Änderungen werden zuerst gepusht';
+        return;
+      }
       importICS(txt);
       const pr=processRemote(txt);
       const cp=await pullCapsule(cal,txt);
       const tr=processTodos(txt);
       if(!S.meta.pulled&&cp.checked)S.meta.pulled=true; /* ab jetzt darf dieses Gerät schreiben */
       if(!cp.ts&&cp.checked&&S.meta.pulled&&SYNC.capJson===null&&hasCapsuleContent())S.meta.dirty=true; /* Erst-Nachschub für Quellgerät, falls Server noch keine Kapsel hat */
-      let txt2='';
-      if(cal2){const r2=await wdFetch(cal2+'?export',{method:'GET'}); if(r2.ok){txt2=await r2.text(); importICS(txt2)}}
+      if(txt2)importICS(txt2);
       reconcileDeleted([txt,txt2]);
       SYNC.last=new Date();
       m=(m?m+' · ':'')+'gelesen'+(pr.placed?' · '+pr.placed+' eingeordnet':'')+(pr.queued?' · 📥 '+pr.queued+' zuzuordnen':'')+(tr.updated?' · '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?' · '+tr.imported+' Aufgaben aus Kalender':'')+(cp.adopted?' · Kapsel übernommen':'');
@@ -1473,7 +1597,7 @@ async function syncCycle(){
         m=(m?m+' · ':'')+'geschrieben '+pr2.ok+(pr2.fail?' / ✖ '+pr2.fail:'');
       }
       SYNC.msg=m;
-      if(!$('#overlay').classList.contains('on'))render();
+      safeBgRender();
     }else{
       SYNC.msg='Lesen scheiterte (HTTP '+r.status+')';
     }
@@ -1503,7 +1627,33 @@ function parseCals(xml){
 function getBlocks(){return S.blocks[wk()]||(S.blocks[wk()]={})}
 function getBlocksW(w){return S.blocks[w]||{}}
 function getAppts(){return S.appts[wk()]||(S.appts[wk()]={})}
-function setBlockW(w,d,s,bl){blocksFor(w)[d+'|'+s]=bl; save()}
+function isAsApptBlock(bl){
+  if(!bl||!bl.typeId)return false;
+  const t=typeOf(bl.typeId);
+  return !!(t&&t.asAppt);
+}
+function realBlockAt(w,d,s){
+  const b=blocksFor(w)[d+'|'+s];
+  return (b&&!isAsApptBlock(b))?b:null;
+}
+function evictAsApptBlock(w,d,s,keepBlockUid){
+  const key=d+'|'+s, cur=blocksFor(w)[key];
+  if(!cur||!isAsApptBlock(cur))return;
+  if(!keepBlockUid)retireLocalBlockUid(w,d,s);
+  delete blocksFor(w)[key];
+  const tm=cur.t0?apTimeStr(cur.t0,cur.t1):'—';
+  const ap={id:cur.id||uid(),day:d,slot:s,title:cur.title||'Termin',time:tm,ampel:cur.ampel||null,src:'Manuell',areaId:null,span:cur.span||1,typeId:cur.typeId||null,fb:cur.fb||null,fbNote:cur.fbNote||cur.note||''};
+  if(cur.t0){ap.t0=cur.t0; if(cur.t1)ap.t1=cur.t1}
+  placeApptInSlot(w,d,s,ap);
+}
+function setBlockW(w,d,s,bl){
+  if(!isAsApptBlock(bl)){
+    for(let k=0;k<(bl.span||1);k++)if(s+k<3)evictAsApptBlock(w,d,s+k,k===0);
+  }
+  delete S.tomb[icsUid('block',w+'-'+d+'-'+s).split('@')[0]];
+  blocksFor(w)[d+'|'+s]=bl;
+  save();
+}
 function coveredByW(w,d,s){
   const bs=blocksFor(w),aps=apsFor(w);
   for(let k=1;k<=2;k++){
@@ -1514,13 +1664,13 @@ function coveredByW(w,d,s){
   return null;
 }
 function slotOccW(w,d,s){return blocksFor(w)[d+'|'+s]||apsFor(w)[d+'|'+s]||coveredByW(w,d,s)}
-function blockOccW(w,d,s){return !!(blocksFor(w)[d+'|'+s]||coveredByW(w,d,s))}
+function blockOccW(w,d,s){return !!(realBlockAt(w,d,s)||coveredByW(w,d,s))}
 function blockSpanRoomW(w,d,s,span,ignoreKey){
   if(s+(span||1)>3)return false;
   for(let k=0;k<(span||1);k++){
     const sk=s+k, key=d+'|'+sk;
     if(key===ignoreKey)continue;
-    if(blocksFor(w)[key])return false;
+    if(realBlockAt(w,d,sk))return false;
     const cov=coveredByW(w,d,sk);
     if(cov&&(d+'|'+cov.slot)!==ignoreKey)return false;
   }
@@ -1545,6 +1695,12 @@ function fmtDaySlotW(w,d,s){const dt=addDays(parseISO(w),d); return fmtDate(dt)+
 function readSpan(){
   const sel=document.getElementById('f-span');
   return sel?Math.max(1,Math.min(3,parseInt(sel.value,10)||1)):1;
+}
+function readSpanForType(t){
+  const sel=document.getElementById('f-span');
+  const v=sel?parseInt(sel.value,10):0;
+  if(v>=1)return Math.min(3,v);
+  return Math.max(1,Math.min(3,(t&&t.defSpan)||1));
 }
 function phaseOf(dstr){let best=null; for(const p of S.phases){if(p.start<=dstr&&dstr<=p.end){if(!best||p.start>best.start)best=p}} return best}
 /* Alle Phasen, die an einem Tag aktiv sind — Überlappungen sind erlaubt und werden mit „ | “ angezeigt */
@@ -1666,13 +1822,14 @@ function renderGantt(p){
 function renderUpcoming(){
   const items=allDeadlineItems(); const nd=delegatedCount(); const np=plannedWithDue();
   let h='<div class="card upcard"><div class="fh2" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>🕐 Anstehend — mit Deadline, ohne Block</span><span class="pc">Deadlines sind Erwartungsanker, keine Urteile</span></div>';
-  h+='<div class="sub" style="margin-bottom:6px">Hier steht nur, was eine <b>Deadline</b> hat und noch <b>keinen Block</b> bekommen hat'+(np?' — bereits in Blöcken geplant: '+np+' (in der Wochenansicht sichtbar)':'')+'. Ohne Deadline wird hier bewusst nicht gelistet; Zeitschätzungen pro Vorhaben sind als spätere Erweiterung geplant. Bei knapper Kapazität: <b>Timeline verschieben</b>, <b>Scope anpassen</b> oder <b>delegieren</b>.</div>';
+  h+='<div class="sub" style="margin-bottom:6px">Hier steht nur, was eine <b>Deadline</b> hat und noch <b>keinen Block</b> bekommen hat'+(np?' — bereits in Blöcken geplant: '+np+' (in der Wochenansicht sichtbar)':'')+'. Per <b>Drag &amp; Drop (⠿)</b> direkt oben in einen Wochenblock ziehen oder mit „→ Block“ einplanen. Bei knapper Kapazität: <b>Timeline verschieben</b>, <b>Scope anpassen</b> oder <b>delegieren</b>.</div>';
   if(!items.length)h+='<div class="sub">Nichts mit Deadline. Auch das ist ein zulässiger Zustand.</div>';
   items.forEach(it=>{
     const t=it.t; const pn=it.p?(it.p.emoji+' '+it.p.name):'Einzelne Aufgabe';
     const toggleAct=it.kind==='todo'?'toggleTodoBox':'toggleTaskBox';
     const planAct=it.kind==='todo'?'planTodo':'planTask';
-    h+='<div class="uprow"><input type="checkbox" data-act="'+toggleAct+'" data-id="'+t.id+'"'+(t.done?' checked':'')+'>'+
+    const dragAttr=it.kind==='todo'?'todo:'+it.p.id+'|'+t.id:'task:'+t.id;
+    h+='<div class="uprow" draggable="true" data-drag="'+esc(dragAttr)+'" title="In einen Wochenblock ziehen, um einzuplanen"><span class="upGrip" title="in die Woche ziehen">⠿</span><input type="checkbox" data-act="'+toggleAct+'" data-id="'+t.id+'"'+(t.done?' checked':'')+'>'+
       '<span class="upT"><span'+(t.done?' class="strike"':'')+'>'+esc(t.title)+'</span>'+(t.firstStep?'<div class="firstStep">→ '+esc(t.firstStep)+'</div>':'')+'<div class="upP">'+esc(pn)+'</div></span>'+
       dueChip(t.due,'data-act="editTodoSheet" data-kind="'+it.kind+'" data-id="'+t.id+'"')+
       '<div class="miniBtns"><button class="btn mini" data-act="'+planAct+'" data-id="'+t.id+'" title="in einen Block überführen">→ Block</button>'+
@@ -1784,20 +1941,33 @@ function suggHtml(){
     '<button class="btn mini" data-act="suggestAccept">Annehmen</button><button class="btn mini" data-act="suggestOther">Anders wählen</button><button class="btn mini ghost" data-act="suggestDismiss">Nicht jetzt</button></div>';
 }
 
+function slotApptDisplayList(w,d,s){
+  const list=apptsInSlot(w,d,s).slice();
+  const rawBl=blocksFor(w)[d+'|'+s];
+  if(rawBl&&isAsApptBlock(rawBl)){
+    const tm=rawBl.t0?apTimeStr(rawBl.t0,rawBl.t1):(slotWin(s).s+'–'+slotWin(s).e);
+    list.push(Object.assign({},rawBl,{_asBl:true,day:d,slot:s,time:tm}));
+    list.sort((a,b)=>apSortMin(a)-apSortMin(b));
+  }
+  return list;
+}
 function apptRowHtml(ap){
   const mb=ap.multiTotal>1?'<span class="apBadge">↔ '+ap.multiIdx+'/'+ap.multiTotal+'</span>':'';
-  return '<div class="apRow" draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'" title="'+esc(ap.title+(ap.time?' ('+ap.time+')':''))+' — klicken zum Bearbeiten, ziehen zum Verschieben">'+
+  const ty=ap.typeId?typeOf(ap.typeId):null;
+  const actAttr=ap._asBl?'draggable="true" data-drag="block:'+ap.day+'|'+ap.slot+'" data-act="openBlock" data-day="'+ap.day+'" data-slot="'+ap.slot+'"':'draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'"';
+  return '<div class="apRow" '+actAttr+' title="'+esc(ap.title+(ap.time?' ('+ap.time+')':''))+' — klicken zum Bearbeiten, ziehen zum Verschieben">'+
     '<span class="apTm">🕐 '+esc(ap.time||'—')+'</span>'+
-    '<span class="apTt">'+esc(ap.title)+'</span>'+mb+(ampDot(ap.ampel)||'')+'</div>';
+    '<span class="apTt">'+(ap._asBl&&ty?ty.emoji+' ':'')+esc(ap.title)+'</span>'+mb+(ampDot(ap.ampel)||'')+'</div>';
 }
 function apptClusterHtml(w,d,s,appts,withBlock){
   const expKey=w+'|'+d+'|'+s, exp=!!ui.expSlots[expKey];
   const ov=hasTimeOverlap(appts);
   const lim=(!exp&&appts.length>3)?3:appts.length;
+  const realApCount=appts.filter(a=>!a._asBl).length;
   let h='<div class="apList">';
   if(appts.length>=2||withBlock){
     h+='<div class="apHead"><span>📅 '+(appts.length===1?'1 Termin':appts.length+' Termine')+(ov?' · <span class="apWarn" title="Uhrzeiten überschneiden sich">⚡ Überschneidung</span>':'')+'</span>'+
-      (appts.length>=2?'<button class="apAct" data-act="openSplitSlot" data-day="'+d+'" data-slot="'+s+'" title="Termine auf Tagesblöcke verteilen oder umsortieren">⇄ Aufteilen</button>':'')+'</div>';
+      (realApCount>=2?'<button class="apAct" data-act="openSplitSlot" data-day="'+d+'" data-slot="'+s+'" title="Termine auf Tagesblöcke verteilen oder umsortieren">⇄ Aufteilen</button>':'')+'</div>';
   }
   for(let i=0;i<lim;i++)h+=apptRowHtml(appts[i]);
   if(appts.length>3)h+='<button class="slotSubBtn" data-act="toggleApptExp" data-k="'+expKey+'">'+(exp?'▴ kompakt zeigen':'▾ +'+(appts.length-3)+' weitere Termine (alle '+appts.length+')')+'</button>';
@@ -1805,8 +1975,8 @@ function apptClusterHtml(w,d,s,appts,withBlock){
 }
 function slotCell(d,s,cur,tI,mobile){
   const W=wk(), key=d+'|'+s;
-  const bl=getBlocks()[key];
-  const appts=apptsInSlot(W,d,s);
+  const bl=realBlockAt(W,d,s);
+  const appts=slotApptDisplayList(W,d,s);
   const cov=coveredByW(W,d,s);
   if(bl&&appts.length){
     return '<div class="slot" data-drop="w'+d+'s'+s+'">'+blockCard(bl,d,s)+apptClusterHtml(W,d,s,appts,true)+'</div>';
@@ -1820,7 +1990,7 @@ function slotCell(d,s,cur,tI,mobile){
   if(appts.length){
     const body=appts.length===1?apptCard(appts[0]):apptClusterHtml(W,d,s,appts,false);
     const canAddBlock=appts.every(a=>(a.span||1)===1);
-    return '<div class="slot" data-drop="w'+d+'s'+s+'">'+body+(canAddBlock?'<button class="slotSubBtn" data-act="openSlot" data-day="'+d+'" data-slot="'+s+'">＋ Block dazu</button>':'')+'</div>';
+    return '<div class="slot" data-drop="w'+d+'s'+s+'">'+body+(canAddBlock?'<button class="slotAddBlk" data-act="openSlot" data-day="'+d+'" data-slot="'+s+'" title="Block zu diesem Tagesabschnitt hinzufügen">＋<span class="addLbl">Block dazu</span></button>':'')+'</div>';
   }
   if(cov)return '<div class="slot spancont" data-drop="w'+d+'s'+s+'">┃ belegt durch „'+esc(cov.title)+'“ ('+SLOTS[cov.slot].label+')</div>';
   return '<div class="slot free" data-drop="w'+d+'s'+s+'" data-act="openSlot" data-day="'+d+'" data-slot="'+s+'" role="button"><span class="plus">＋</span><span class="fl">belegen</span></div>';
@@ -1830,9 +2000,11 @@ function apptCard(ap){
   const ar=ap.areaId?areaOfId(ap.areaId):null;
   const ty=ap.typeId?typeOf(ap.typeId):null;
   const mb=ap.multiTotal>1?' <span class="apBadge">↔ Tag '+ap.multiIdx+'/'+ap.multiTotal+'</span>':'';
-  return '<div class="card appt" draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'">'+
-    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · über '+ap.span+' Blöcke':'')+'</span>'+mb+(ampDot(ap.ampel)||'<span class="noamp">＋ Ampel</span>')+'</div>'+
-    '<div class="bttl">'+esc(ap.title)+'</div>'+
+  const actAttr=ap._asBl?'draggable="true" data-drag="block:'+ap.day+'|'+ap.slot+'" data-act="openBlock" data-day="'+ap.day+'" data-slot="'+ap.slot+'"':'draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'"';
+  return '<div class="card appt'+(ap.done?' done':'')+'" '+actAttr+'>'+
+    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · '+ap.span+' Blöcke':'')+'</span>'+mb+(ampDot(ap.ampel)||'<span class="noampDot" title="Ampel im Termin setzen"></span>')+'</div>'+
+    '<div class="bttl">'+(ap._asBl&&ty?ty.emoji+' ':'')+esc(ap.title)+'</div>'+
+    (ap.note?'<div class="bnote">→ '+esc(ap.note)+'</div>':'')+
     '<div class="bsrc">'+(ty?ty.emoji+' '+esc(ty.name):'')+(ar?(ty?' · ':'')+esc(ar.name):'')+(ap.fb?((ty||ar)?' · ':'')+FBL[ap.fb]:'')+'</div></div>';
 }
 
@@ -1989,22 +2161,30 @@ function renderConfig(){
   });
   h+='</div><button class="btn" data-act="addArea">＋ Bereich hinzufügen</button>';
   h+='<div class="sub" style="margin-top:6px">Beim Entfernen eines Bereichs entscheidest du: Projekte behalten (laufen unter „Ohne Bereich“ weiter) oder endgültig löschen — To-dos gehen nie verloren, ohne dass du es gewählt hast.</div>';
-  h+='<div class="fh">Blocktypen — Vorlagen für Blöcke (▲▼ zum Sortieren)</div><div class="cfgList">';
+  h+='<div class="fh">Blocktypen — Vorlagen für Blöcke &amp; Termin-Typen (▲▼ zum Sortieren)</div><div class="sub" style="margin:-4px 0 8px">Hier legst du pro Vorlage Standard-Ampel, Standard-Dauer und fest, ob sich nach dem Einsetzen direkt der Editor öffnet (z. B. zum Benennen von „Socializing → Anna“ oder „Erholung → Sauna“) oder der Block sofort fertig ist.</div><div class="cfgList">';
   S.types.forEach((t,idx)=>{
+    normalizeType(t);
+    const tpOpen=!!ui.tplOpen[t.id];
+    const hasExtra=!!(t.defNote||t.defT0||t.defT1);
     h+='<div class="cfgRow" data-drop="reorder:type:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:type:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
       '<button class="emoBtn" data-act="pickEmoji" data-ctx="type" data-id="'+t.id+'">'+t.emoji+'</button>'+
-      '<input class="inp slim grow" data-field="typeName" data-id="'+t.id+'" value="'+esc(t.name)+'">'+
-      '<select class="inp slim" data-field="typeAmpel" data-id="'+t.id+'">'+['none','gruen','gelb','orange','rot'].map(v=>'<option value="'+v+'"'+(t.ampel===v?' selected':'')+'>'+AMP[v].label+'</option>').join('')+'</select>'+
-      '<label class="checkrow" style="margin:0 4px;white-space:nowrap"><input type="checkbox" data-field="typeAsAppt" data-id="'+t.id+'"'+(t.asAppt?' checked':'')+'><span title="Blöcke dieses Typs erscheinen auch unten bei „Termine“">wie Termin</span></label>'+
+      '<input class="inp slim grow" style="min-width:130px" data-field="typeName" data-id="'+t.id+'" value="'+esc(t.name)+'">'+
+      '<select class="inp slim" data-field="typeAmpel" data-id="'+t.id+'" title="Standard-Ampel">'+['none','gruen','gelb','orange','rot'].map(v=>'<option value="'+v+'"'+(t.ampel===v?' selected':'')+'>'+AMP[v].label+'</option>').join('')+'</select>'+
+      '<select class="inp slim" data-field="typeDefSpan" data-id="'+t.id+'" title="Standard-Dauer der Vorlage">'+[[1,'1 Block'],[2,'2 Blöcke'],[3,'3 Blöcke']].map(o=>'<option value="'+o[0]+'"'+((t.defSpan||1)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
+      '<select class="inp slim" data-field="typeOpenEdit" data-id="'+t.id+'" title="Verhalten nach Auswahl oder Drop">'+[['1','✎ danach editieren'],['0','✓ direkt fertig']].map(o=>'<option value="'+o[0]+'"'+((t.openEdit!==false?'1':'0')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
+      '<label class="checkrow" style="margin:0 4px;white-space:nowrap"><input type="checkbox" data-field="typeAsAppt" data-id="'+t.id+'"'+(t.asAppt?' checked':'')+'><span title="Verhält sich im Wochenraster wie ein Termin (Uhrzeit, erscheint bei Termine, erlaubt zusätzlichen Block im selben Abschnitt)">wie Termin</span></label>'+
+      '<button class="btn mini'+(tpOpen||hasExtra?' primary':'')+'" data-act="toggleTypeTpl" data-id="'+t.id+'" title="Weitere Vorlagen-Details (Standard-Notiz &amp; Uhrzeit)">⚙ Vorlage</button>'+
       '<div class="arrows"><button class="xbtn" data-act="moveItem" data-k="types" data-i="'+idx+'" data-d="-1" title="nach oben">▲</button><button class="xbtn" data-act="moveItem" data-k="types" data-i="'+idx+'" data-d="1" title="nach unten">▼</button></div>'+
-      '<button class="xbtn" data-act="delType" data-id="'+t.id+'">✕</button></div>';
+      '<button class="xbtn" data-act="delType" data-id="'+t.id+'">✕</button>'+
+      (tpOpen?'<div class="cfgTpl"><span class="pc">Standard-Notiz / Erster Schritt:</span><input class="inp slim grow" style="min-width:160px" data-field="typeDefNote" data-id="'+t.id+'" value="'+esc(t.defNote||'')+'" placeholder="optional, z. B. Handy weglegen, Thema sammeln"><span class="pc">Standard-Zeit:</span>'+timePickHtml(t.defT0||'','data-field="typeDefT0" data-id="'+t.id+'"','— Start —')+'<span class="pc">–</span>'+timePickHtml(t.defT1||'','data-field="typeDefT1" data-id="'+t.id+'"','— Ende —')+'</div>':'')+
+      '</div>';
   });
   h+='</div><button class="btn" data-act="addType">＋ Blocktyp hinzufügen</button>';
-  h+='<div class="sub" style="margin-top:6px">Wiederkehrende Wochenmuster (Vorlagen pro Woche) sind als spätere Erweiterung geplant — bewusst nicht im MVP.</div>';
+  h+='<div class="sub" style="margin-top:6px">Alle Vorlagen-Einstellungen werden automatisch über die Theo-Kapsel zwischen deinen Geräten synchronisiert.</div>';
   const wd=wdCfg();
   const ls=S.settings.liveSync||{};
   h+='<div class="fh">Live-Sync</div>';
-  h+='<div class="statusline">🛰️ '+esc(syncStatusText())+(S.meta.dirty?' · <b>lokale Änderungen warten auf Schreiben</b>':'')+'</div>';
+  h+='<div class="statusline" id="sync-statusline">🛰️ '+esc(syncStatusText())+(S.meta.dirty?' · <b>lokale Änderungen warten auf Schreiben</b>':'')+'</div>';
   h+='<div class="cfgList">'+
     '<label class="checkrow"><input type="checkbox" data-field="liveOn"'+(ls.on?' checked':'')+'><span>Live-Sync aktiv — im Hintergrund ziehen und schreiben (nach jedem Kalenderabruf; Änderungen landen im Kalender beim nächsten Zyklus)</span></label>'+
     '<div class="cfgRow"><span class="lbl">Intervall</span><select class="inp slim" data-field="liveInterval">'+[[30,'30 Sekunden'],[60,'60 Sekunden'],[300,'5 Minuten']].map(o=>'<option value="'+o[0]+'"'+((ls.interval||60)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select><button class="btn mini" data-act="syncNow">Jetzt synchronisieren</button></div></div>';
@@ -2012,7 +2192,7 @@ function renderConfig(){
   const stt=S.settings.slotTimes||{};
   h+='<div class="fh">Blockzeiten im Kalender</div>';
   h+='<div class="sub" style="margin-bottom:8px">Blöcke werden im Kalender mit diesen Uhrzeiten geführt; Termine mit expliziter Zeit (z. B. 17:45–21:00) behalten ihre echte Zeit.</div>';
-  h+='<div class="cfgList">'+[0,1,2].map(s=>'<div class="cfgRow"><span class="lbl">'+SLOTS[s].label+'</span><input class="inp slim" type="time" data-field="slotS" data-slot="'+s+'" value="'+esc((stt[s]||slotWin(s)).s)+'"><span class="pc">–</span><input class="inp slim" type="time" data-field="slotE" data-slot="'+s+'" value="'+esc((stt[s]||slotWin(s)).e)+'"></div>').join('')+'</div>';
+  h+='<div class="cfgList">'+[0,1,2].map(s=>'<div class="cfgRow"><span class="lbl">'+SLOTS[s].label+'</span>'+timePickHtml((stt[s]||slotWin(s)).s,'data-field="slotS" data-slot="'+s+'"',false)+'<span class="pc">–</span>'+timePickHtml((stt[s]||slotWin(s)).e,'data-field="slotE" data-slot="'+s+'"',false)+'</div>').join('')+'</div>';
   h+='<div class="fh">Verbindung — Nextcloud / WebDAV (Lesen &amp; Schreiben)</div>';
   h+='<div class="sub" style="margin-bottom:8px">🔑 Bitte ein <b>App-Passwort</b> verwenden (nicht das Login-Passwort): '+appPwLink(wd.url||'')+' → „App-Passwörter erstellen“. Eintragen hier unten; nur die Server-Adresse nötig — Theo findet die Kalender selbst.</div>';
   h+='<div class="wdStatus" id="wd-status">'+(ui.wdMsg
@@ -2061,31 +2241,50 @@ function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show');
 
 function sheetTypeAppt(d,s,tid,span){
   const t=typeOf(tid); if(!t)return;
-  let h='<div class="shead"><h3>'+t.emoji+' '+esc(t.name)+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+' — dieser Typ ist „wie ein Termin“: er erscheint auch unten bei Termine.</div></div>';
+  normalizeType(t);
+  let h='<div class="shead"><h3>'+t.emoji+' '+esc(t.name)+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+' — dieser Typ verhält sich wie ein Termin: erscheint im Termin-Stil, unten bei Termine, und lässt parallel einen Block im selben Abschnitt zu.</div></div>';
   h+='<label class="f">Titel</label><input class="inp" id="ta-title" value="'+esc(t.name)+'">';
-  h+='<label class="f">Uhrzeit (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="ta-t0" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="ta-t1" style="flex:1;min-width:110px"></div>';
+  h+='<label class="f">Notiz / Thema (optional)</label><input class="inp" id="ta-note" value="'+esc(t.defNote||'')+'" placeholder="optional, z. B. Agenda, Ort, Vorbereitung">';
+  h+='<label class="f">Uhrzeit im 15-Min-Raster (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2">'+timePickHtml(t.defT0||'','id="ta-t0" style="flex:1;min-width:125px"','— Start —')+'<span class="pc">–</span>'+timePickHtml(t.defT1||'','id="ta-t1" style="flex:1;min-width:125px"','— Ende —')+'</div>';
   h+='<label class="f">Dauer</label><select class="inp slim" id="ta-span">'+[1,2,3].map(v=>'<option value="'+v+'"'+(v===span?' selected':'')+'>'+(v===1?'1 Block':(v===2?'2 Blöcke':'3 Blöcke — ganzer Tag'))+'</option>').join('')+'</select>';
   h+='<div class="sheetBtns"><button class="btn primary" data-act="typeApptSave" data-day="'+d+'" data-slot="'+s+'" data-tid="'+tid+'">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
+  const el=document.getElementById('ta-title'); if(el){el.focus(); try{el.select()}catch(x){}}
 }
 
-function sheetSlot(d,s){
-  const curAps=apptsInSlot(wk(),d,s);
-  let h='<div class="shead"><h3>Block belegen</h3><div class="sub">'+esc(fmtDaySlot(d,s))+(curAps.length?' · 📅 '+curAps.length+' Termin'+(curAps.length===1?'':'e')+' im Slot — Block und Termine bleiben beide sichtbar.':' — ein Block, normalerweise ein Schwerpunkt.')+'</div></div>';
-  h+='<div class="stack">'+S.types.map(t=>'<button class="typeB" data-act="fillType" data-day="'+d+'" data-slot="'+s+'" data-tid="'+t.id+'"><span class="bico">'+t.emoji+'</span><span style="flex:1">'+esc(t.name)+'</span>'+(t.ampel&&t.ampel!=='none'?ampDot(t.ampel):'')+'</button>').join('')+'</div>';
-  h+='<label class="f">Dauer</label><select class="inp slim" id="f-span"><option value="1">1 Block</option><option value="2">2 Blöcke (z. B. Vormittag + Mittag)</option><option value="3">3 Blöcke — ganzer Tag (z. B. Workshop)</option></select>';
-  h+='<div class="fh">Projekt</div>';
-  S.areas.forEach(a=>{
-    const ps=S.projects.filter(p=>p.areaId===a.id);
-    if(!ps.length)return;
-    h+='<div class="fh2">'+a.emoji+' '+esc(a.name)+'</div><div class="chips">'+ps.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
-  });
-  const loose=S.projects.filter(p=>!p.areaId);
-  if(loose.length)h+='<div class="chips">'+loose.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
+function sheetSlot(d,s,w){
+  const W=w||wk();
+  if(W!==wk())ui.anchor=parseISO(W);
+  const curAps=slotApptDisplayList(W,d,s);
+  const hasReal=!!realBlockAt(W,d,s);
+  let h='<div class="shead"><h3>'+(hasReal?'Termin ergänzen':'Block oder Termin eintragen')+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+(curAps.length?' · 📅 '+curAps.length+' Termin'+(curAps.length===1?'':'e')+' im Abschnitt — Block und Termine bleiben beide sichtbar.':' — Vorlage wählen (öffnet danach den Editor, sofern in der Vorlage nicht auf „direkt fertig“ gestellt).')+'</div></div>';
+  const availTypes=hasReal?S.types.filter(t=>t.asAppt):S.types;
+  if(availTypes.length){
+    h+='<div class="stack">'+availTypes.map(t=>{
+      normalizeType(t);
+      const hints=[];
+      if(t.asAppt)hints.push('wie Termin');
+      if((t.defSpan||1)>1)hints.push(t.defSpan+' Blöcke');
+      if(t.defT0)hints.push(apTimeStr(t.defT0,t.defT1));
+      if(t.openEdit===false&&!t.asAppt)hints.push('direkt');
+      return '<button class="typeB" data-act="fillType" data-day="'+d+'" data-slot="'+s+'" data-tid="'+t.id+'"><span class="bico">'+t.emoji+'</span><span style="flex:1">'+esc(t.name)+(hints.length?' <span class="pc">· '+esc(hints.join(' · '))+'</span>':'')+'</span>'+(t.ampel&&t.ampel!=='none'?ampDot(t.ampel):'')+'</button>';
+    }).join('')+'</div>';
+  }
+  if(!hasReal){
+    h+='<label class="f">Dauer (überschreibt bei Bedarf die Vorlage)</label><select class="inp slim" id="f-span"><option value="0">Standard der Vorlage (1 Block)</option><option value="1">1 Block</option><option value="2">2 Blöcke (z. B. Vormittag + Mittag)</option><option value="3">3 Blöcke — ganzer Tag (z. B. Workshop)</option></select>';
+    h+='<div class="fh">Projekt</div>';
+    S.areas.forEach(a=>{
+      const ps=S.projects.filter(p=>p.areaId===a.id);
+      if(!ps.length)return;
+      h+='<div class="fh2">'+a.emoji+' '+esc(a.name)+'</div><div class="chips">'+ps.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
+    });
+    const loose=S.projects.filter(p=>!p.areaId);
+    if(loose.length)h+='<div class="chips">'+loose.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
+  }
   h+='<div class="fh">Termin eintragen — auch mehrtägig oder für spätere Wochen</div>';
   h+='<input class="inp" id="ap-title" placeholder="Titel des Termins">';
   h+='<div class="row2"><input class="inp slim" type="date" id="ap-date" value="'+iso(addDays(ui.anchor,d))+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="ap-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
-  h+='<div class="row2"><input class="inp slim" type="time" id="ap-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="ap-t1" style="flex:1;min-width:100px"><select class="inp slim" id="ap-span" style="flex:1;min-width:100px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke</option></select></div>';
+  h+='<div class="row2">'+timePickHtml('','id="ap-t0" style="flex:1;min-width:115px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="ap-t1" style="flex:1;min-width:115px"','— Ende —')+'<select class="inp slim" id="ap-span" style="flex:1;min-width:100px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke</option></select></div>';
   h+='<div class="row2"><select class="inp slim" id="ap-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="ap-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
   h+='<div class="sheetBtns"><button class="btn" data-act="addAppt" data-day="'+d+'" data-slot="'+s+'">Termin hinzufügen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
@@ -2104,15 +2303,16 @@ function sheetProj(d,s,pid){
   openSheet(h);
 }
 
-function sheetBlock(d,s,w){
+function sheetBlock(d,s,w,focusTitle){
   const W=w||wk();
   const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
   const p=bl.projectId?projOf(bl.projectId):null;
   const td=bl.todoId?findTodo(bl.todoId):null;
   const ty=bl.typeId?typeOf(bl.typeId):null;
+  const isTA=!!(ty&&ty.asAppt);
   const slotAps=apptsInSlot(W,d,s);
-  let h='<div class="shead"><h3>'+esc(bl.kind==='projekt'&&p?p.name:bl.title)+'</h3><div class="sub">'+esc(fmtDaySlotW(W,d,s))+' · '+(bl.kind==='projekt'?'Projektblock'+(p?' — '+esc(p.name):''):(bl.kind==='task'?'Aufgabenblock':'Blocktyp: '+(ty?esc(ty.name):'frei definiert')))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+'</div></div>';
-  if(slotAps.length){
+  let h='<div class="shead"><h3>'+esc(bl.kind==='projekt'&&p?p.name:bl.title)+'</h3><div class="sub">'+esc(fmtDaySlotW(W,d,s))+' · '+(bl.kind==='projekt'?'Projektblock'+(p?' — '+esc(p.name):''):(bl.kind==='task'?'Aufgabenblock':(isTA?'Termin-Vorlage: '+esc(ty.name):'Blocktyp: '+(ty?esc(ty.name):'frei definiert'))))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+'</div></div>';
+  if(!isTA&&slotAps.length){
     h+='<div class="note">📅 <b>Gleichzeitige Termine in diesem Slot ('+slotAps.length+'):</b> '+slotAps.map(a=>esc((a.time&&a.time!=='—'?a.time+' ':'')+a.title)).join(' · ')+
       '<div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap"><button class="btn mini" data-act="splitBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">✂ Block teilen (Teil 2 im nächsten freien Slot)</button>'+
       (slotAps.length>=2?'<button class="btn mini" data-act="openSplitSlot" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">⇄ Termine aufteilen</button>':'')+'</div></div>';
@@ -2120,12 +2320,13 @@ function sheetBlock(d,s,w){
   if(bl.kind==='projekt'){
     h+='<label class="f">Erster Schritt — macht den Einstieg billiger (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="z. B. nur die Überschrift schreiben, erst Materialsammlung">';
   }else{
-    h+='<label class="f">Titel — frei benennbar</label><input class="inp" id="b-title" value="'+esc(bl.title||'')+'" placeholder="z. B. Spazieren am Aasee, lesen, schwimmen">';
-    h+='<label class="f">Erster Schritt — macht den Einstieg billiger (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="Was genau? z. B. erst Kaffee, dann 30 Min. lesen">';
+    h+='<label class="f">Titel — frei benennbar</label><input class="inp" id="b-title" value="'+esc(bl.title||'')+'" placeholder="z. B. Anna, Sauna, Spazieren am Aasee">';
+    h+='<label class="f">Erster Schritt / Notiz (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="Was genau? z. B. erst Kaffee, dann 30 Min. lesen">';
   }
-  h+='<label class="f">Blocktyp (optional — beim Speichern gibt er einen Ampel-Vorschlag)</label><select class="inp" id="b-type"><option value="">— frei definiert —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(bl.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select>';
-  if(ty&&ty.asAppt){
-    h+='<label class="f">Start-/Endzeit (optional — „wie Termin“: ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="b-t0" value="'+esc(bl.t0||'')+'" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="b-t1" value="'+esc(bl.t1||'')+'" style="flex:1;min-width:110px"></div>';
+  h+='<label class="f">Blocktyp / Vorlage (optional — beim Speichern gibt er einen Ampel-Vorschlag)</label><select class="inp" id="b-type"><option value="">— frei definiert —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(bl.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+(t.asAppt?' (wie Termin)':'')+'</option>').join('')+'</select>';
+  h+='<label class="f">Dauer</label><select class="inp slim" id="b-span">'+[1,2,3].map(v=>'<option value="'+v+'"'+((bl.span||1)===v?' selected':'')+'>'+(v===1?'1 Block':(v===2?'2 Blöcke':'3 Blöcke — ganzer Tag'))+'</option>').join('')+'</select>';
+  if(isTA||bl.t0||bl.t1){
+    h+='<label class="f">Start-/Endzeit im 15-Min-Raster (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2">'+timePickHtml(bl.t0||'','id="b-t0" style="flex:1;min-width:125px"','— Start —')+'<span class="pc">–</span>'+timePickHtml(bl.t1||'','id="b-t1" style="flex:1;min-width:125px"','— Ende —')+'</div>';
   }
   const tk=bl.taskId?S.tasks.find(x=>x.id===bl.taskId):null;
   if(tk)h+='<label class="checkrow"><input type="checkbox" data-act="toggleTaskBox" data-id="'+tk.id+'"'+(tk.done?' checked':'')+'><span>Aufgabe erledigt: '+esc(tk.title)+'</span></label>';
@@ -2139,12 +2340,14 @@ function sheetBlock(d,s,w){
   if(td)h+='<label class="checkrow"><input type="checkbox" data-act="toggleTodoBox" data-id="'+td.t.id+'"'+(td.t.done?' checked':'')+'><span>Aufgabe erledigt: '+esc(td.t.title)+'</span></label>';
   h+='<div class="sheetBtns"><button class="btn primary" data-act="blockSave" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Speichern</button>'+
     (td?'':'<button class="btn" data-act="blockDone" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">'+(bl.done?'Wieder öffnen':'Als erledigt markieren')+'</button>')+
+    (isTA&&(bl.span||1)===1?'<button class="btn" data-act="openSlotW" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">＋ Block dazulegen</button>':'')+
     '<button class="btn" data-act="moveBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Verschieben</button>'+
     '<button class="btn danger" data-act="freeSlot" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">🗑 Löschen</button></div>';
   h+='<div class="sub" style="margin-top:10px">🔒 Kalenderspiegel: <code>VEVENT '+icsUid('block',W+'-'+d+'-'+s)+'</code> · Kategorie LR-BLOCK'+(bl.ampel?' · LR-'+String(bl.ampel).toUpperCase():'')+(bl.span>1?' · X-LR-SPAN:'+bl.span:'')+' — liegt als Standardobjekt im offenen Kalender (CalDAV), unabhängig von dieser App.</div>';
   h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
   ui.ampCtx={t:'block',d:d,s:s,w:W};
   openSheet(h);
+  if(focusTitle){const el=document.getElementById('b-title'); if(el){el.focus(); try{el.select()}catch(x){}}}
 }
 
 function sheetAppt(id){
@@ -2153,13 +2356,14 @@ function sheetAppt(id){
   const ap=f.ap, apW=f.w, apDate=iso(addDays(parseISO(apW),ap.day));
   ui.ampCtx={t:'appt',d:ap.day,s:ap.slot,w:apW,id:ap.id};
   const ar=ap.areaId?areaOfId(ap.areaId):null;
+  const canAddBlk=!blockOccW(apW,ap.day,ap.slot)&&(ap.span||1)===1;
   const multiNote=ap.multiTotal>1?' · ↔ Mehrtägig ('+fmtDate(parseISO(ap.multiStart||apDate))+' – '+fmtDate(parseISO(ap.multiEnd||apDate))+', Tag '+ap.multiIdx+'/'+ap.multiTotal+')':'';
   let h='<div class="shead"><h3>Termin</h3><div class="sub">'+esc(fmtDate(parseISO(apDate)))+' · '+esc(ap.time||'')+(ap.span>1?' · über '+ap.span+' Blöcke':'')+esc(multiNote)+(ar?' · '+esc(ar.name):'')+'</div></div>';
   h+='<label class="f">Titel</label><input class="inp" id="a-title" value="'+esc(ap.title||'')+'">';
   h+='<div class="fh">Ampel — wird beim Speichern übernommen</div>'+ampRowSel(ap.ampel||'none','appt');
   const apc=(!/^(ab|bis)\s/i.test(ap.time||''))?parseClock(ap.time):null;
   h+='<label class="f">Datum &amp; Tagesblock</label><div class="row2"><input class="inp slim" type="date" id="a-date" value="'+apDate+'" style="flex:1;min-width:140px"><select class="inp slim" id="a-slot" style="flex:1;min-width:155px">'+SLOTS.map((sl,si)=>'<option value="'+si+'"'+(ap.slot===si?' selected':'')+'>'+sl.ico+' '+esc(sl.label)+'</option>').join('')+'</select></div>';
-  h+='<label class="f">Uhrzeit (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="a-t0" value="'+(ap.t0||(apc?apc[0]:''))+'" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="a-t1" value="'+(ap.t1||(apc&&apc[1]?apc[1]:''))+'" style="flex:1;min-width:110px"></div>';
+  h+='<label class="f">Uhrzeit im 15-Min-Raster (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2">'+timePickHtml(ap.t0||(apc?apc[0]:''),'id="a-t0" style="flex:1;min-width:125px"','— Start —')+'<span class="pc">–</span>'+timePickHtml(ap.t1||(apc&&apc[1]?apc[1]:''),'id="a-t1" style="flex:1;min-width:125px"','— Ende —')+'</div>';
   h+='<label class="f">Typ (optional — schlägt beim Speichern eine passende Ampel vor)</label><select class="inp" id="a-type"><option value="">— keiner —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(ap.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select>';
   const fb=ap.fb||null;
   h+='<div class="fh">Rückmeldung — optional, für den späteren Blick</div><div class="ampRow">'+
@@ -2167,7 +2371,7 @@ function sheetAppt(id){
     '<button class="ampB'+(fb==='bad'?' sel':'')+'" data-act="fbSet" data-v="bad">✖ hat nicht funktioniert</button>'+
     '<button class="ampB'+(fb==='none'?' sel':'')+'" data-act="fbSet" data-v="none">— nichts Besonderes</button></div>';
   h+='<input class="inp" id="a-fbnote" style="margin-top:8px" value="'+esc(ap.fbNote||'')+'" placeholder="Was war anders? Freitext — landet im Export (X-LR-FBNOTE).">';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="apptSave" data-id="'+ap.id+'">Speichern</button><button class="btn" data-act="splitAppt" data-id="'+ap.id+'" title="'+(ap.multiTotal>1?'Diesen Tag als einzelnen Termin ablösen':'Termin in zwei Teile auf Folgeslot aufteilen')+'">✂ '+(ap.multiTotal>1?'Diesen Tag ablösen':'Termin teilen')+'</button><button class="btn danger" data-act="apptDel" data-id="'+ap.id+'">🗑 Löschen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="apptSave" data-id="'+ap.id+'">Speichern</button>'+(canAddBlk?'<button class="btn" data-act="openSlotW" data-w="'+apW+'" data-day="'+ap.day+'" data-slot="'+ap.slot+'">＋ Block dazulegen</button>':'')+'<button class="btn" data-act="splitAppt" data-id="'+ap.id+'" title="'+(ap.multiTotal>1?'Diesen Tag als einzelnen Termin ablösen':'Termin in zwei Teile auf Folgeslot aufteilen')+'">✂ '+(ap.multiTotal>1?'Diesen Tag ablösen':'Termin teilen')+'</button><button class="btn danger" data-act="apptDel" data-id="'+ap.id+'">🗑 Löschen</button></div>';
   h+='<div class="sub" style="margin-top:10px">🔒 Kalenderspiegel: <code>VEVENT '+(ap.remoteUid?esc(ap.remoteUid):icsUid('appt',apW+'-'+ap.day+'-'+ap.slot))+'</code>'+(ap.ampel?' · LR-'+String(ap.ampel).toUpperCase():'')+' — Termine liegen als CalDAV-Objekte im Server-Kalender; Löschen entfernt auch das Server-Objekt.</div>';
   h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
   openSheet(h);
@@ -2206,10 +2410,10 @@ function slotPickerSheet(title){
     if(pw===realW&&d<dayIdx(new Date()))continue;
     h+='<div class="daySec"><div class="daySecT">'+fmtDate(dt)+(iso(dt)===todayISO()?' · heute':'')+'</div>';
     for(let s=0;s<3;s++){
-      const bl=blocksFor(pw)[d+'|'+s], aps=apptsInSlot(pw,d,s), cov=coveredByW(pw,d,s);
+      const bl=realBlockAt(pw,d,s), aps=slotApptDisplayList(pw,d,s), cov=coveredByW(pw,d,s);
       h+='<div class="pickRow"><span class="lbl">'+SLOTS[s].ico+' '+SLOTS[s].label+'</span>';
       if(bl)h+='<span class="st">Block: '+esc(bl.title||'')+'</span>';
-      else if(cov)h+='<span class="st">belegt durch „'+esc(cov.title)+'“</span>';
+      else if(cov&&!isAsApptBlock(cov))h+='<span class="st">belegt durch „'+esc(cov.title)+'“</span>';
       else if(aps.length)h+='<span class="st">📅 '+aps.length+' Termin'+(aps.length===1?' ('+esc(aps[0].title)+')':'e')+'</span><button class="btn mini" data-act="pickSlot" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">→ dazu einplanen</button>';
       else h+='<button class="btn mini" data-act="pickSlot" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">→ hier einplanen</button>';
       h+='</div>';
@@ -2287,7 +2491,7 @@ function sheetNewAppt(){
   let h='<div class="shead"><h3>Termin eintragen</h3><div class="sub">Für jeden beliebigen Tag oder Zeitraum — auch mehrtägig oder Monate im Voraus. Er landet automatisch im passenden Block der jeweiligen Woche.</div></div>';
   h+='<label class="f">Titel</label><input class="inp" id="na-title" placeholder="z. B. Workshop, Zahnarzt, Konferenz, Urlaub">';
   h+='<div class="row2"><input class="inp slim" type="date" id="na-date" value="'+todayISO()+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="na-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
-  h+='<div class="row2"><input class="inp slim" type="time" id="na-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="na-t1" style="flex:1;min-width:100px"><select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select></div>';
+  h+='<div class="row2">'+timePickHtml('','id="na-t0" style="flex:1;min-width:115px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="na-t1" style="flex:1;min-width:115px"','— Ende —')+'<select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select></div>';
   h+='<div class="row2"><select class="inp slim" id="na-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="na-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
   h+='<div class="sheetBtns"><button class="btn primary" data-act="newApptSave">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
@@ -2444,29 +2648,73 @@ const ACT={
   weekThis(){ui.anchor=mondayOf(new Date()); ui.mobileDay=dayIdx(new Date()); render()},
   setDay(a){ui.mobileDay=+a.day; render()},
   openSlot(a){sheetSlot(+a.day,+a.slot)},
+  openSlotW(a){sheetSlot(+a.day,+a.slot,a.w||wk())},
   fillType(a){
     const t=typeOf(a.tid); if(!t)return;
-    const d=+a.day, s=+a.slot;
-    const want=readSpan(), avail=3-s;
-    if(want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
-    if(!blockSpanRoomW(wk(),d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
-    if(t.asAppt){sheetTypeAppt(d,s,t.id,want); return}
-    setBlockW(wk(),d,s,{id:uid(),kind:'typ',typeId:t.id,title:t.name,ampel:t.ampel==='none'?null:t.ampel,note:'',done:false,span:want>1?want:1});
-    closeModal(); render(); toast('Block belegt: '+t.name+(want>1?' (über '+want+' Blöcke)':''));
+    normalizeType(t);
+    const d=+a.day, s=+a.slot, W=wk();
+    const sel=document.getElementById('f-span');
+    const explicitSpan=sel?parseInt(sel.value,10):0;
+    let want=readSpanForType(t);
+    const avail=3-s;
+    if(t.asAppt){
+      if(explicitSpan>=1&&want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
+      if(want>avail)want=avail;
+      if(t.openEdit===false){
+        if(!blocksFor(W)[d+'|'+s]){
+          const bl={id:uid(),kind:'typ',typeId:t.id,title:t.name,ampel:t.ampel==='none'?null:t.ampel,note:t.defNote||'',done:false,span:want>1?want:1};
+          if(t.defT0){bl.t0=t.defT0; if(t.defT1)bl.t1=t.defT1}
+          setBlockW(W,d,s,bl);
+        }else{
+          const apN={id:uid(),day:d,slot:s,title:t.name,time:apTimeStr(t.defT0||'',t.defT1||''),ampel:t.ampel==='none'?null:t.ampel,src:'Manuell',areaId:null,span:want>1?want:1,typeId:t.id};
+          if(t.defT0){apN.t0=t.defT0; if(t.defT1)apN.t1=t.defT1}
+          if(t.defNote)apN.fbNote=t.defNote;
+          placeApptInSlot(W,d,s,apN); save();
+        }
+        closeModal(); render(); toast('„'+t.name+'“ eingetragen'+(t.defT0?' · '+apTimeStr(t.defT0,t.defT1):''));
+        return;
+      }
+      sheetTypeAppt(d,s,t.id,want); return;
+    }
+    if(explicitSpan>=1){
+      if(want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
+      if(!blockSpanRoomW(W,d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
+    }else{
+      while(want>1&&(want>avail||!blockSpanRoomW(W,d,s,want)))want--;
+      if(!blockSpanRoomW(W,d,s,want)){toast('Dieser Block ist bereits belegt.'); return}
+    }
+    const bl={id:uid(),kind:'typ',typeId:t.id,title:t.name,ampel:t.ampel==='none'?null:t.ampel,note:t.defNote||'',done:false,span:want>1?want:1};
+    if(t.defT0){bl.t0=t.defT0; if(t.defT1)bl.t1=t.defT1}
+    setBlockW(W,d,s,bl);
+    if(t.openEdit!==false){
+      render();
+      sheetBlock(d,s,W,true);
+    }else{
+      closeModal(); render(); toast('Block belegt: '+t.name+(want>1?' (über '+want+' Blöcke)':''));
+    }
   },
   typeApptSave(a){
     const t=typeOf(a.tid); if(!t)return;
-    const d=+a.day, s=+a.slot;
+    normalizeType(t);
+    const d=+a.day, s=+a.slot, W=wk();
     const title=((document.getElementById('ta-title')||{}).value||'').trim()||t.name;
+    const note=((document.getElementById('ta-note')||{}).value||'').trim();
     const t0=(document.getElementById('ta-t0')||{}).value||'';
     const t1=(document.getElementById('ta-t1')||{}).value||'';
     const sp=Math.max(1,Math.min(3,parseInt((document.getElementById('ta-span')||{}).value,10)||1));
     const avail=3-s;
     if(sp>avail){toast('Hier sind nur '+avail+' Blöcke frei — Dauer anpassen.'); return}
-    if(!blockSpanRoomW(wk(),d,s,sp)){toast('Nicht genug freie Folgeböcke für diese Dauer.'); return}
-    const bl={id:uid(),kind:'typ',typeId:t.id,title:title,ampel:t.ampel==='none'?null:t.ampel,note:'',done:false,span:sp>1?sp:1};
-    if(t0){bl.t0=t0; if(t1)bl.t1=t1}
-    setBlockW(wk(),d,s,bl);
+    if(!blocksFor(W)[d+'|'+s]){
+      if(!blockSpanRoomW(W,d,s,sp)){toast('Nicht genug freie Folgeböcke für diese Dauer.'); return}
+      const bl={id:uid(),kind:'typ',typeId:t.id,title:title,ampel:t.ampel==='none'?null:t.ampel,note:note,done:false,span:sp>1?sp:1};
+      if(t0){bl.t0=t0; if(t1)bl.t1=t1}
+      setBlockW(W,d,s,bl);
+    }else{
+      const apN={id:uid(),day:d,slot:s,title:title,time:apTimeStr(t0,t1),ampel:t.ampel==='none'?null:t.ampel,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:t.id};
+      if(t0){apN.t0=t0; if(t1)apN.t1=t1}
+      if(note)apN.fbNote=note;
+      placeApptInSlot(W,d,s,apN); save();
+    }
     closeModal(); render(); toast('„'+title+'“ eingetragen'+(t0?' · '+apTimeStr(t0,t1):''));
   },
   fillProject(a){sheetProj(+a.day,+a.slot,a.pid)},
@@ -2652,16 +2900,27 @@ const ACT={
     if(tt&&tt.value.trim())bl.title=tt.value.trim();
     const nt=document.getElementById('b-note');
     if(nt)bl.note=nt.value.trim();
+    const spEl=document.getElementById('b-span');
+    if(spEl){
+      const wantSp=Math.max(1,Math.min(3,parseInt(spEl.value,10)||1));
+      const d0=+a.day, s0=+a.slot;
+      if(wantSp!==(bl.span||1)){
+        if(wantSp>3-s0||!blockSpanRoomW(W,d0,s0,wantSp,d0+'|'+s0)){
+          toast('Für '+wantSp+' Blöcke ist ab hier nicht genug Platz.');
+          return;
+        }
+        bl.span=wantSp;
+      }
+    }
     const tyEl=document.getElementById('b-type');
     if(tyEl){
       bl.typeId=tyEl.value||null;
       if(bl.typeId&&(!bl.ampel||bl.ampel==='none')){const ty2=typeOf(bl.typeId); if(ty2&&ty2.ampel&&ty2.ampel!=='none')bl.ampel=ty2.ampel}
-      const nty=typeOf(bl.typeId);
-      const t0el=document.getElementById('b-t0'), t1el=document.getElementById('b-t1');
-      if(nty&&nty.asAppt&&t0el){
-        if(t0el.value){bl.t0=t0el.value; if(t1el.value)bl.t1=t1el.value; else delete bl.t1}
-        else{delete bl.t0; delete bl.t1}
-      }
+    }
+    const t0el=document.getElementById('b-t0'), t1el=document.getElementById('b-t1');
+    if(t0el){
+      if(t0el.value){bl.t0=t0el.value; if(t1el&&t1el.value)bl.t1=t1el.value; else delete bl.t1}
+      else{delete bl.t0; delete bl.t1}
     }
     if(ui.ampSel!=null&&ui.ampSelK==='block'){
       bl.ampel=ui.ampSel==='none'?null:ui.ampSel;
@@ -2702,8 +2961,7 @@ const ACT={
     const wantSlot=(sEl&&sEl.value!==undefined&&sEl.value!=='')?+sEl.value:ap.slot;
     const wantW=iso(mondayOf(parseISO(wantDate))), wantDay=dayIdx(parseISO(wantDate));
     if(wantW!==apW||wantDay!==ap.day||wantSlot!==ap.slot){
-      detachAppt(f);
-      placeApptInSlot(wantW,wantDay,wantSlot,ap);
+      moveApptClean(f,wantW,wantDay,wantSlot);
       if(ap.remoteUid)S.mapped[ap.mapKey||ap.remoteUid]={w:wantW,day:wantDay,slot:wantSlot};
       apW=wantW;
     }
@@ -2795,17 +3053,20 @@ const ACT={
       if(!blockSpanRoomW(W,d,s,spn,srcW===W?key:null)){toast('Ziel hat nicht genug Platz für '+spn+' Blöcke.'); return}
       if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(srcW,c.from.day,c.from.slot,sa)); delete bl.stack}
       delete blocksFor(srcW)[key];
-      blocksFor(W)[d+'|'+s]=bl;
+      retireLocalBlockUid(srcW,c.from.day,c.from.slot);
+      setBlockW(W,d,s,bl);
       if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:d,slot:s}}
       if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:d,slot:s}}
       toast('Verschoben nach '+fmtDaySlotW(W,d,s));
     }else if(c.type==='todo'){
       const f=findTodo(c.id); if(!f)return;
+      if(f.t.planned){delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; retireLocalBlockUid(f.t.planned.wk,f.t.planned.day,f.t.planned.slot)}
       f.t.planned={wk:W,day:d,slot:s};
       setBlockW(W,d,s,{id:uid(),kind:'projekt',projectId:f.p.id,todoId:c.id,title:f.p.name,ampel:'gelb',note:f.t.firstStep||'',done:false});
       toast('„'+f.t.title+'“ geplant: '+fmtDaySlotW(W,d,s));
     }else if(c.type==='task'){
       const t=S.tasks.find(x=>x.id===c.id); if(!t)return;
+      if(t.planned){delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]; retireLocalBlockUid(t.planned.wk,t.planned.day,t.planned.slot)}
       t.planned={wk:W,day:d,slot:s};
       setBlockW(W,d,s,{id:uid(),kind:'task',taskId:t.id,typeId:null,title:t.title,ampel:'none',note:t.firstStep||'',done:false});
       toast('Aufgabe geplant: '+fmtDaySlotW(W,d,s));
@@ -2835,12 +3096,20 @@ const ACT={
   planTask(a){ui.pickCtx={type:'task',id:a.id}; slotPickerSheet('Aufgabe in Block überführen')},
   unplanTodo(a){
     const f=findTodo(a.id); if(!f)return;
-    if(f.t.planned){const bl=getBlocksW(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl)delete getBlocks()[f.t.planned.day+'|'+f.t.planned.slot]; f.t.planned=null}
+    if(f.t.planned){
+      const pl=f.t.planned, bl=blocksFor(pl.wk)[pl.day+'|'+pl.slot];
+      if(bl){delete blocksFor(pl.wk)[pl.day+'|'+pl.slot]; retireLocalBlockUid(pl.wk,pl.day,pl.slot)}
+      f.t.planned=null;
+    }
     save(); render(); toast('Planung gelöst — Aufgabe bleibt bestehen.');
   },
   unplanTask(a){
     const t=S.tasks.find(x=>x.id===a.id); if(!t)return;
-    if(t.planned){delete getBlocks()[t.planned.day+'|'+t.planned.slot]; t.planned=null}
+    if(t.planned){
+      const pl=t.planned;
+      if(blocksFor(pl.wk)[pl.day+'|'+pl.slot]){delete blocksFor(pl.wk)[pl.day+'|'+pl.slot]; retireLocalBlockUid(pl.wk,pl.day,pl.slot)}
+      t.planned=null;
+    }
     save(); render(); toast('Planung gelöst.');
   },
   delTodo(a){
@@ -3321,8 +3590,9 @@ const ACT={
     ui.areaDelConfirm=a.id; sheetAreaDel(a.id);
   },
   areaDelCancel(){ui.areaDelConfirm=null; closeModal()},
-  addType(){S.types.push({id:uid(),name:'Neuer Typ',emoji:'•',ampel:'none'}); save(); render(); toast('Blocktyp angelegt.')},
-  delType(a){S.types=S.types.filter(x=>x.id!==a.id); save(); render(); toast('Typ entfernt.')},
+  addType(){const id=uid(); S.types.push(normalizeType({id:id,name:'Neuer Typ',emoji:'•',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:''})); ui.tplOpen[id]=true; save(); render(); toast('Blocktyp angelegt — Vorlage direkt einstellbar.')},
+  toggleTypeTpl(a){ui.tplOpen[a.id]=!ui.tplOpen[a.id]; render()},
+  delType(a){S.types=S.types.filter(x=>x.id!==a.id); delete ui.tplOpen[a.id]; save(); render(); toast('Typ entfernt.')},
   moveItem(a){
     const arr=S[a.k]; if(!arr)return;
     const i=+a.i, j=i+ +a.d;
@@ -3385,8 +3655,7 @@ function moveApptTo(apId,dstW,td,ts,quiet){
   const f=findAppt(apId); if(!f)return false;
   const ap=f.ap, srcW=f.w, oldDay=ap.day, oldSlot=ap.slot;
   if(srcW===dstW&&oldDay===td&&oldSlot===ts)return false;
-  detachAppt(f);
-  placeApptInSlot(dstW,td,ts,ap);
+  moveApptClean(f,dstW,td,ts);
   if(ap.remoteUid){
     const mk=ap.mapKey||ap.remoteUid;
     S.mapped[mk]={w:dstW,day:td,slot:ts};
@@ -3417,7 +3686,7 @@ document.addEventListener('change',e=>{
   if(f==='areaName'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
   else if(f==='areaColor'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.color=el.value; save(); render(); toast('Eigene Farbe gesetzt.')}}
   else if(f==='phColor'){ui.phColor=el.value; save(); render()}
-  else if(f==='motto'){(S.motto||(S.motto={}))[el.dataset.year]=el.value.trim(); save(); render()}
+  else if(f==='motto'){(S.motto||(S.motto={}))[el.dataset.year]=el.value.trim(); save(); if(!isEditingInMain())render()}
   else if(f==='liveOn'){S.settings.liveSync.on=el.checked; save(); startSync(); render()}
   else if(f==='liveInterval'){S.settings.liveSync.interval=+el.value; save(); startSync(); render()}
   else if(f==='slotS'){S.settings.slotTimes[el.dataset.slot].s=el.value||slotWin(+el.dataset.slot).s; save(); render()}
@@ -3432,20 +3701,46 @@ document.addEventListener('change',e=>{
   else if(f==='wdCal2'){const c=wdCfg(); c.cal2=el.value||''; save(); render(); toast(el.value?'Phasen-Kalender gewählt — Phasen werden transparent geführt.':'Phasen laufen im Hauptkalender.')}
   else if(f==='typeName'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
   else if(f==='typeAmpel'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.ampel=el.value; save()}}
-  else if(f==='typeAsAppt'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.asAppt=!!el.checked; save(); render(); toast(x.asAppt?'Blöcke dieses Typs erscheinen jetzt auch bei Termine.':'Typ zählt wieder als Block.')}}
+  else if(f==='typeDefSpan'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defSpan=Math.max(1,Math.min(3,+el.value||1)); save(); toast('Vorlagen-Dauer: '+x.defSpan+(x.defSpan===1?' Block':' Blöcke'))}}
+  else if(f==='typeOpenEdit'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.openEdit=!!el.checked; save(); toast(x.openEdit?'Vorlage öffnet nach Auswahl den Editor.':'Vorlage trägt direkt ohne Editor ein.')}}
+  else if(f==='typeDefNote'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defNote=el.value; save()}}
+  else if(f==='typeDefT0'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defT0=el.value||''; if(!x.defT0)x.defT1=''; save(); render()}}
+  else if(f==='typeDefT1'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defT1=el.value||''; save()}}
+  else if(f==='typeAsAppt'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.asAppt=!!el.checked; save(); render(); toast(x.asAppt?'Vorlage verhält sich jetzt wie ein Termin (Optik, Agenda & Koexistenz).':'Vorlage zählt wieder als normaler Arbeitsblock.')}}
   else if(f==='projName'){const x=projOf(el.dataset.id); if(x){x.name=el.value; save()}}
   else if(f==='aid'){S.settings.aids[el.dataset.id]=el.checked; save(); render()}
 });
 document.addEventListener('input',e=>{
   const el=e.target;
   if(!el||!el.dataset)return;
-  if(el.dataset.field==='inbQ'){
+  const f=el.dataset.field||'';
+  if(f==='inbQ'){
     ui.inbQ=el.value;
     const pos=el.selectionStart;
     render();
     const ni=document.getElementById('inb-q');
     if(ni){ni.focus(); try{ni.setSelectionRange(pos,pos)}catch(x){}}
+  }else if(f==='areaName'){
+    const x=S.areas.find(y=>y.id===el.dataset.id);
+    if(x){x.name=el.value; save()}
+  }else if(f==='projName'){
+    const x=projOf(el.dataset.id);
+    if(x){x.name=el.value; save()}
+  }else if(f==='typeName'){
+    const x=S.types.find(y=>y.id===el.dataset.id);
+    if(x){x.name=el.value; save()}
+  }else if(f==='typeDefNote'){
+    const x=S.types.find(y=>y.id===el.dataset.id);
+    if(x){x.defNote=el.value; save()}
+  }else if(f==='motto'){
+    (S.motto||(S.motto={}))[el.dataset.year]=el.value.trim();
+    save();
   }
+});
+document.addEventListener('focusout',()=>{
+  setTimeout(()=>{
+    if(ui.deferRender&&!isEditingInMain()){ui.deferRender=false; render()}
+  },60);
 });
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter')return;
@@ -3492,9 +3787,30 @@ document.addEventListener('drop',e=>{
     const bl=getBlocks()[srcKey]; if(!bl)return;
     const spn=bl.span||1;
     const dstBl=getBlocks()[dstKey];
-    if(dstBl&&spn===1&&(dstBl.span||1)===1){
+    if(isAsApptBlock(bl)){
+      if(spn>3-ts){toast('Ab hier sind nur '+(3-ts)+' Blöcke frei.'); return}
+      if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
+      delete getBlocks()[srcKey];
+      retireLocalBlockUid(W,fd,fs);
+      if(!dstBl){
+        const duid=icsUid('block',W+'-'+td+'-'+ts).split('@')[0];
+        delete S.tomb[duid];
+        getBlocks()[dstKey]=bl;
+      }else{
+        const apN={id:bl.id||uid(),day:td,slot:ts,title:bl.title||'Termin',time:apTimeStr(bl.t0||'',bl.t1||''),ampel:bl.ampel&&bl.ampel!=='none'?bl.ampel:null,src:'Manuell',areaId:null,span:spn,typeId:bl.typeId||null};
+        if(bl.t0){apN.t0=bl.t0; if(bl.t1)apN.t1=bl.t1}
+        if(bl.note||bl.fbNote)apN.fbNote=bl.fbNote||bl.note;
+        if(bl.fb)apN.fb=bl.fb;
+        placeApptInSlot(W,td,ts,apN);
+      }
+      save(); render(); toast('Termin verschoben nach '+fmtDaySlot(td,ts));
+      return;
+    }
+    if(dstBl&&!isAsApptBlock(dstBl)&&spn===1&&(dstBl.span||1)===1){
       getBlocks()[srcKey]=dstBl;
       getBlocks()[dstKey]=bl;
+      const suid=icsUid('block',W+'-'+fd+'-'+fs).split('@')[0], duid=icsUid('block',W+'-'+td+'-'+ts).split('@')[0];
+      delete S.tomb[suid]; delete S.tomb[duid];
       if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:td,slot:ts}}
       if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:td,slot:ts}}
       if(dstBl.todoId){const f2=findTodo(dstBl.todoId); if(f2)f2.t.planned={wk:W,day:fd,slot:fs}}
@@ -3506,7 +3822,8 @@ document.addEventListener('drop',e=>{
     if(!blockSpanRoomW(W,td,ts,spn,srcKey)){toast('Zielblock belegt.'); return}
     if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
     delete getBlocks()[srcKey];
-    getBlocks()[dstKey]=bl;
+    retireLocalBlockUid(W,fd,fs);
+    setBlockW(W,td,ts,bl);
     if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:td,slot:ts}}
     if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:td,slot:ts}}
     save(); render(); toast('Verschoben nach '+fmtDaySlot(td,ts));
@@ -3520,10 +3837,20 @@ document.addEventListener('drop',e=>{
     const tid=data.slice(5).split('|')[1], td=+to[1], ts=+to[2], W=wk();
     if(blockOccW(W,td,ts)){toast('Zielblock belegt.'); return}
     const f=findTodo(tid); if(!f)return;
-    if(f.t.planned)delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot];
+    if(f.t.planned){delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; retireLocalBlockUid(f.t.planned.wk,f.t.planned.day,f.t.planned.slot)}
     f.t.planned={wk:W,day:td,slot:ts};
     setBlockW(W,td,ts,{id:uid(),kind:'projekt',projectId:f.p.id,todoId:tid,title:f.p.name,ampel:'gelb',note:f.t.firstStep||'',done:false});
     save(); render(); toast('„'+f.t.title+'“ geplant: '+fmtDaySlot(td,ts));
+  }else if(drop[0]==='w'&&data.startsWith('task:')){
+    const to=drop.slice(1).match(/(\d)s(\d)/);
+    if(!to)return;
+    const taskId=data.slice(5), td=+to[1], ts=+to[2], W=wk();
+    if(blockOccW(W,td,ts)){toast('Zielblock belegt.'); return}
+    const t=S.tasks.find(x=>x.id===taskId); if(!t)return;
+    if(t.planned){delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]; retireLocalBlockUid(t.planned.wk,t.planned.day,t.planned.slot)}
+    t.planned={wk:W,day:td,slot:ts};
+    setBlockW(W,td,ts,{id:uid(),kind:'task',taskId:t.id,typeId:null,title:t.title,ampel:'none',note:t.firstStep||'',done:!!t.done});
+    save(); render(); toast('„'+t.title+'“ geplant: '+fmtDaySlot(td,ts));
   }else if(drop==='g'&&data.startsWith('gtodo:')){
     const tid=data.slice(6).split('|')[1];
     const f=findTodo(tid);
