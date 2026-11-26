@@ -18,10 +18,10 @@ Die Beta ist für **Vercel (`fra1`)** und **Supabase (`eu-central-1`, Frankfurt)
 ### Aktueller Prototyp und offene Punkte
 
 - Die Demo ist ohne Konto zugänglich. Die freiwillige Auswahl personalisiert den Einstieg und die Modulübersicht; sie ist nicht mit einer Warteliste verknüpft. Das frühere Wartelistenformular ist ausgeblendet. Mailanbindung und Warteliste kommen später.
-- Wochenübersicht, Eingangskiste und Lebensbereiche sind vorhanden; Werte, Psychoedukation, Reflexion samt späteren Auswertungen, Übergänge und Social Accountability sind zunächst als Ideen markiert, nicht als fertige Funktionen. Vier Farbschemata sind auswählbar.
+- Wochenübersicht, Eingangskiste und Lebensbereiche sind vorhanden; Werte, Psychoedukation, Reflexion samt späteren Auswertungen, Übergänge und Social Accountability sind zunächst als Ideen markiert, nicht als fertige Funktionen. Fünf Farbschemata einschließlich Nachtmodus sind auswählbar. Neue Schemafarben für Bereiche und Phasen folgen dem aktiven Schema; eigene und bereits vorhandene Farben ohne Herkunft bleiben unverändert.
 - Bestehende Konten können sich mit E-Mail und Passwort anmelden; nach einem erfolgreichen Login lässt sich das Passwort in der Konfiguration ändern. Die Registrierung mit Einladung und der optionale Magic Link benötigen einen funktionierenden Mailversand. Fiktive Adressen können keine E-Mails empfangen.
 - Lokale Kontodaten werden getrennt nach Benutzer-ID zwischengespeichert; diese Daten sind nicht verschlüsselt und können für andere Personen mit Zugriff auf dasselbe Browserprofil sichtbar sein. Beim Konto-Wechsel werden verspätete Antworten des vorherigen Kontos verworfen und Sync-Anfragen an die ursprüngliche Sitzung gebunden. Öffentliche Geräte nicht für echte Daten verwenden.
-- Die Test-Suite verwendet Auth-/Sync-Mocks; erfolgreiche Live-Anmeldungen, Kontowechsel im Browser und der Mailversand müssen vor einer Freigabe zusätzlich Ende zu Ende getestet werden. Rechtstexte bleiben Entwürfe, Stripe ist nicht freigeschaltet.
+- Die Test-Suite verwendet Auth-/Sync-Mocks; Browser-Anmeldungen, Kontowechsel im Browser und der Mailversand müssen vor einer Freigabe zusätzlich Ende zu Ende getestet werden. Die beiden bekannten Testkonten wurden separat direkt gegen den Live-Auth-Dienst geprüft. Rechtstexte bleiben Entwürfe, Stripe ist nicht freigeschaltet.
 
 ### 1. Supabase-Projekt (Frankfurt)
 

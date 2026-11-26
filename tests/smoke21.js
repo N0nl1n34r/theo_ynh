@@ -177,7 +177,7 @@ function spawnDevice(cloud, initialSession, initialStore = {}) {
   devA.d.S.motto[yr] = 'Gelassen durch das Jahr';
   devA.d.S.settings.theme = 'lavendel';
   devA.d.S.settings.modules = ['woche', 'reflexion'];
-  devA.d.S.areas.push({ id: 'ar1', name: 'Gesundheit', emoji: '🌿', color: '#7CA982' });
+  devA.d.S.areas.push({ id: 'ar1', name: 'Gesundheit', emoji: '🌿', color: '#7CA982', colorIndex: 2 });
   devA.d.S.projects.push({
     id: 'pr1', areaId: 'ar1', name: 'Rücken stärken', emoji: '🧘', note: '', views: { list: true, kanban: true },
     todos: [{ id: 'td1', title: 'Matte ausrollen', firstStep: 'Ins Wohnzimmer legen', done: false, kanban: 'offen', due: W }]
@@ -186,7 +186,7 @@ function spawnDevice(cloud, initialSession, initialStore = {}) {
   devA.d.blocksFor(W)['0|0'] = { id: 'bl1', kind: 'typ', typeId: 'ty7', title: 'Ruhiger Fokus', ampel: 'gelb', note: 'Kapitel 1', done: false };
   devA.d.apsFor(W)['1|1'] = { id: 'ap1', day: 1, slot: 1, title: 'Physiotherapie', time: '14:30–15:15', t0: '14:30', t1: '15:15', ampel: 'gruen', span: 1 };
   devA.d.S.mit[W] = { text: 'Physio wahrnehmen', done: false };
-  devA.d.S.phases.push({ id: 'ph1', start: W, end: W, title: 'Schonwoche', desc: '', color: '#A3B98F' });
+  devA.d.S.phases.push({ id: 'ph1', start: W, end: W, title: 'Schonwoche', desc: '', color: '#A3B98F', colorIndex: 3 });
   devA.d.save();
 
   await devA.d.syncCycle(false);
@@ -194,6 +194,8 @@ function spawnDevice(cloud, initialSession, initialStore = {}) {
 
   ok(devB.d.S.settings.theme === 'lavendel' && devB.d.S.settings.modules.includes('reflexion'),
     'T1: Farbschema und Modulauswahl synchronisieren mit der Kapsel');
+  ok(devB.d.S.areas[0].colorIndex === 2 && devB.d.S.phases[0].colorIndex === 3,
+    'T1: Palette für Bereiche und Phasen bleibt über mehrere Geräte erhalten');
   ok(devB.d.S.motto[yr] === 'Gelassen durch das Jahr', 'T1a: Kapsel (Jahresmotto & Bereiche) auf Gerät B angekommen');
   ok(devB.d.S.projects.length === 1 && devB.d.S.projects[0].todos[0].title === 'Matte ausrollen',
     'T1b: Projekt + Projekt-To-do inkl. Erster Schritt auf Gerät B angekommen');

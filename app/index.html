@@ -368,6 +368,30 @@ body.auth-gated #topbar{display:none}
 .onbStep:hover{border-color:#BDB5A3;background:#FBF9F3}
 .pricePill{display:inline-flex;align-items:center;gap:6px;background:#EEF4EC;border:1px solid #CFE0CE;color:#2A3F2D;border-radius:999px;padding:4px 11px;font-size:12.5px;font-weight:600}
 
+
+/* Nacht: surfaces, controls and muted text are all deliberately themed. */
+:root[data-theme="nacht"]{color-scheme:dark;--bg:#171b20;--panel:#252b32;--ink:#edf0ed;--sub:#bac5c1;--line:#46535b;--soft:#20272d;--rot:#e98c7d;--orange:#efb578;--gelb:#e8ce7e;--gruen:#9ac9a4;--neutral:#aab6b4}
+:root[data-theme="nacht"] :where(.authWrap,.sheet,.card,.cfgRow,.phchip,.btn,.inp,.chip,.tab,.typeB,.ampB,.emoBtn,.emogrid button,.onbStep,.apAct,.spCell,#topbar .burger,.authTab.on){background:var(--panel);border-color:var(--line);color:var(--ink)}
+:root[data-theme="nacht"] :where(.authTabs,.demoBar,.onbCard,.intro,.sugg,.note,.statusline,.wdStatus,.repBox,.cfgTpl,.subChip,.bRetBtn,.duechip,.apBadge,.orient .mini2,.gday.wknd,.gcell.wknd,.yhint,.inbMd code,.inbMd pre,code){background:#303942;border-color:var(--line);color:var(--ink)}
+:root[data-theme="nacht"] :where(.appt,.apRow,.card.appt.stacked){background:#303a3e;border-color:var(--line);color:var(--ink)}
+:root[data-theme="nacht"] :where(.navbtn:hover,.navbtn.on,.btn:hover,.chip:hover,.tab:hover,.typeB:hover,.phchip:hover,.onbStep:hover,.slot.free:hover,.agRow:hover,.uprow[draggable="true"]:hover,.emogrid button:hover){background:#3b484d;color:var(--ink)}
+:root[data-theme="nacht"] :where(.btn.primary,.chip.on,.tab.on,.spCell.on,.daychips .chip.on,.capKinds .chip.on){background:#a3c6b1;border-color:#a3c6b1;color:#15241d}
+:root[data-theme="nacht"] .ampB.sel{background:#3b5144;border-color:#a3c6b1;box-shadow:0 0 0 1.5px #a3c6b1 inset;color:var(--ink)}
+:root[data-theme="nacht"] :where(.btn.ghost){background:transparent;color:var(--sub)}
+:root[data-theme="nacht"] :where(.btn.danger){color:#ffbbb1;border-color:#b87c75}
+:root[data-theme="nacht"] :where(.slot.free,.spancont){background:#222a30;border-color:#526068;color:#bac5c1}
+:root[data-theme="nacht"] :where(.slotSubBtn,.slotAddBlk){background:#303942;border-color:#526068;color:var(--ink)}
+:root[data-theme="nacht"] :where(.dh,.fh,.fh2,.daySecT,.kname,.mcell,.mwd,.gday,.pickRow .st,.bsrc,.grip,.xbtn,.intro ul){color:var(--sub)}
+:root[data-theme="nacht"] :where(.mcell.ph){color:#202622}
+:root[data-theme="nacht"] :where(.gbar){color:#202622}
+:root[data-theme="nacht"] :where(.dh.today,.authNotice,.pricePill){background:#30453b;border-color:#537666;color:#d7efdb}
+:root[data-theme="nacht"] .authNotice.warn{background:#533c2d;border-color:#ae8b66;color:#ffdfbc}
+:root[data-theme="nacht"] :where(.sw.sel,.sw2.sel){outline-color:#e6f2e9}
+:root[data-theme="nacht"] :where(a){color:#b7d9cc}
+:root[data-theme="nacht"] :where(.trow,.uprow,.agRow,.pickRow,.grow,.gday,.gcell){border-color:var(--line)}
+:root[data-theme="nacht"] :where(.colorInp){background:var(--panel)}
+:root[data-theme="nacht"] .inp::placeholder{color:#a0b0ae;opacity:1}
+
 </style>
 </head>
 <body>
@@ -415,6 +439,17 @@ const SLOTS=[{label:'Vormittag',ico:'🌅'},{label:'Mittag & Nachmittag',ico:'�
 const AMP={rot:{c:'#D96A5B',label:'Sehr intensiv'},orange:{c:'#E09B4C',label:'Intensiv'},gelb:{c:'#D8B44C',label:'Tunnelrisiko'},gruen:{c:'#7CA982',label:'Erholung'},none:{c:'#B5AFA4',label:'Neutral'}};
 const AMPKEYS=['rot','orange','gelb','gruen'];
 const PHC=['#CBB389','#9B93C4','#6FA8A0','#A3B98F','#C98D76','#8FAECB','#D9A0AB','#A8A29B'];
+// Palette choices are semantic indices; legacy and explicitly custom colours remain unchanged.
+const THEME_PALETTES={
+  natur:PHC,
+  meer:['#9EBEC6','#8DA9CF','#68A8A8','#8BB9AF','#D09D8D','#8EAFCF','#CAA4C4','#9EAEB6'],
+  lavendel:['#C8B2C9','#A79ACB','#91B2B8','#AAB99E','#C59CA0','#A4AED2','#D3A7C0','#AAA2B3'],
+  wald:['#C5B68F','#9E9FBD','#7AACA0','#94B68F','#C79880','#92AEB5','#CAA5AB','#A4A99B'],
+  nacht:['#D4BE96','#B8ADD8','#87BBB6','#AEC9A7','#D8A391','#A3BED9','#D5AEC3','#B2B0B5']
+};
+function themePalette(){return THEME_PALETTES[(S&&S.settings&&S.settings.theme)||'natur']||PHC}
+function validColorIndex(i){return Number.isInteger(i)&&i>=0&&i<PHC.length}
+function itemColor(item){return item&&validColorIndex(item.colorIndex)?themePalette()[item.colorIndex]:(item&&item.color)||themePalette()[0]}
 const EMOJIS=['🌿','🫧','🤲','🫂','🛋️','🌅','🌊','🧭','🕯️','🧺','🚶','🌀','🎯','📅','🤝','💻','🛠️','🏡','🎨','📚','🍳','🚴','🧠','💬','🌱','📝','🚪','🍽️','😴','🛁','🎸','☕','🧘','🛌','🚿','🎧','🎹','🧩','🪴','🌾','🌙','⭐','🔥','💧','🏔️','🚲','🧶','✏️','📊','🗂️','📞','🛒','🏥','⚖️','🎓','🧾','🗓️','⏳','🌈','🐣','📮','🔗','🍵','🥾','🪑'];
 const MODULES=[
   {id:'woche',name:'Wochenübersicht',icon:'🗓️',desc:'Eine ruhige Sicht auf Termine, Energie und Freiräume.',available:true},
@@ -426,7 +461,7 @@ const MODULES=[
   {id:'uebergaenge',name:'Übergänge',icon:'🚪',desc:'Wechsel zwischen Tätigkeiten und Orten bewusst gestalten.'},
   {id:'social',name:'Social Accountability',icon:'🤝',desc:'Unterstützung durch vertraute Menschen; Beratungsverzeichnis als mögliche spätere Idee.'}
 ];
-const THEMES=[['natur','Sand'],['meer','Meer'],['lavendel','Lavendel'],['wald','Wald']];
+const THEMES=[['natur','Sand'],['meer','Meer'],['lavendel','Lavendel'],['wald','Wald'],['nacht','Nacht']];
 const INBKINDS={gedanke:['💭','Gedanke'],aufgabe:['✅','Aufgabe'],idee:['💡','Idee'],sonstiges:['📎','Sonstiges']};
 const AIDS={mit:'🎯 MIT für den Tag',focus:'🧭 Wochenfokus',year:'🍂 Jahresthema anzeigen'};
 const FBL={ok:'✔ hat funktioniert',bad:'✖ hat nicht funktioniert',none:'— nichts Besonderes'};
@@ -639,8 +674,8 @@ function buildDemoState(){
   d.meta.intro=false;
   d.motto[yr]='Weniger müssen, ehrlicher planen';
   d.focus[W]='Zwei wichtige Dinge reichen — Abende ruhig lassen';
-  d.phases=[{id:'dm_ph1',start:W,end:iso(addDays(parseISO(W),20)),title:'Ruhige Orientierungswoche',desc:'Übergänge bewusst mitplanen',color:'#A3B98F'}];
-  d.areas=[{id:'dm_a1',name:'Alltag & Zuhause',emoji:'🏡',color:'#A3B98F'},{id:'dm_a2',name:'Arbeit & Projekte',emoji:'🧭',color:'#8FAECB'}];
+  d.phases=[{id:'dm_ph1',start:W,end:iso(addDays(parseISO(W),20)),title:'Ruhige Orientierungswoche',desc:'Übergänge bewusst mitplanen',color:'#A3B98F',colorIndex:3}];
+  d.areas=[{id:'dm_a1',name:'Alltag & Zuhause',emoji:'🏡',color:'#A3B98F',colorIndex:3},{id:'dm_a2',name:'Arbeit & Projekte',emoji:'🧭',color:'#8FAECB',colorIndex:5}];
   d.projects=[{id:'dm_p1',areaId:'dm_a1',name:'Wohnung entlasten',emoji:'🧺',note:'',views:{list:true,kanban:true},todos:[
     {id:'dm_t1',title:'Schublade im Flur durchsehen',firstStep:'Nur alles auf den Tisch legen',done:false,kanban:'offen',due:iso(addDays(parseISO(W),4)),planned:null},
     {id:'dm_t2',title:'Altglas wegbringen',firstStep:'Tasche neben die Tür stellen',done:false,kanban:'offen',due:null,planned:null}
@@ -735,9 +770,9 @@ function renderMd(raw){
 }
 function phaseBgStyle(phs){
   if(!phs||!phs.length)return '';
-  if(phs.length===1)return 'background:'+phs[0].color+';';
+  if(phs.length===1)return 'background:'+itemColor(phs[0])+';';
   const n=phs.length;
-  const stops=phs.map((p,i)=>p.color+' '+(i*100/n).toFixed(2)+'% '+((i+1)*100/n).toFixed(2)+'%').join(',');
+  const stops=phs.map((p,i)=>itemColor(p)+' '+(i*100/n).toFixed(2)+'% '+((i+1)*100/n).toFixed(2)+'%').join(',');
   return 'background:linear-gradient(135deg,'+stops+');';
 }
 function slotTimeFitsSlot(t0,t1,s,span){
@@ -1220,7 +1255,7 @@ function collectCurrentItemsMap(){
   for(const ph of (S.phases||[])){
     if(!ph||!ph.id)continue;
     const u=itemUid('phase',ph.id);
-    map[u]={uid:u,kind:'phase',payload:{id:ph.id,start:ph.start,end:ph.end,title:ph.title,desc:ph.desc||'',color:ph.color}};
+    map[u]={uid:u,kind:'phase',payload:{id:ph.id,start:ph.start,end:ph.end,title:ph.title,desc:ph.desc||'',color:ph.color,colorIndex:validColorIndex(ph.colorIndex)?ph.colorIndex:null}};
   }
   for(const p of (S.projects||[])){
     for(const t of (p.todos||[])){
@@ -1336,6 +1371,7 @@ function applyLiveItem(u,kind,payload){
     if(!payload.id)return;
     const idx=S.phases.findIndex(x=>x.id===payload.id);
     const phObj={id:payload.id,start:payload.start,end:payload.end,title:payload.title,desc:payload.desc||'',color:payload.color||PHC[0]};
+    if(validColorIndex(payload.colorIndex))phObj.colorIndex=payload.colorIndex;
     if(idx>=0)S.phases[idx]=phObj;
     else S.phases.push(phObj);
     return;
@@ -1899,7 +1935,7 @@ function renderAuthGate(){
     }
 
     h+='<label class="f">E-Mail-Adresse</label><input class="inp" type="email" id="auth-email" autocomplete="email" placeholder="du@beispiel.de" value="'+esc(ui.authEmail)+'" data-enter="'+(ui.authMode==='login'?'authPassword':'authSubmit')+'">';
-    if(ui.authMode==='login')h+='<label class="f" for="auth-password">Passwort</label><input class="inp" type="password" id="auth-password" autocomplete="current-password" data-enter="authPassword">';
+    if(ui.authMode==='login')h+='<label class="f" for="auth-password">Passwort</label><input class="inp" type="password" id="auth-password" autocomplete="current-password" placeholder="Passwort eingeben" data-enter="authPassword">';
     if(ui.authErr)h+='<div class="authNotice warn" role="alert">'+esc(ui.authErr)+'</div>';
 
     h+='<div class="sheetBtns" style="margin-top:16px">'+
@@ -2033,7 +2069,7 @@ function renderGantt(p){
   if(!items.length){s0=iso(addDays(new Date(),-2)); s1=iso(addDays(new Date(),17))}
   const N=Math.min(140,Math.round((parseISO(s1)-parseISO(s0))/86400000)+1);
   const D=36, LW=220;
-  let h='<div class="gcap"><span class="gi"><span style="display:inline-block;width:26px;height:10px;border-radius:5px;background:#CBB389"></span> geschätzte Dauer</span><span class="gi" style="color:#4A453C">▼ Deadline (bleibt fix)</span><span class="gi"><span style="display:inline-block;width:2px;height:12px;background:#C98D76"></span> heute</span><span class="gi">Leiste ziehen (Desktop) oder ‹ › — verschiebt nur den Start.</span></div>';
+  let h='<div class="gcap"><span class="gi"><span style="display:inline-block;width:26px;height:10px;border-radius:5px;background:#CBB389"></span> geschätzte Dauer</span><span class="gi" style="color:var(--ink)">▼ Deadline (bleibt fix)</span><span class="gi"><span style="display:inline-block;width:2px;height:12px;background:#C98D76"></span> heute</span><span class="gi">Leiste ziehen (Desktop) oder ‹ › — verschiebt nur den Start.</span></div>';
   h+='<div class="ganttWrap"><div class="gantt" style="width:'+(LW+N*D)+'px">';
   h+='<div class="ghead"><div class="gheadLbl">Vorhaben</div><div class="gheadTrack" style="width:'+(N*D)+'px">';
   for(let i=0;i<N;i++){
@@ -2052,7 +2088,7 @@ function renderGantt(p){
       const dstr=iso(addDays(parseISO(s0),i));
       h+='<div class="gcell'+(dayIdx(parseISO(dstr))>=5?' wknd':'')+'" style="left:'+(i*D)+'px" data-drop="g" data-date="'+dstr+'"></div>';
     }
-    h+='<div class="gbar" style="left:'+(i0*D+2)+'px;width:'+(len*D-4)+'px;background:'+(ar?ar.color:'#CBB389')+'" draggable="true" data-drag="gtodo:'+p.id+'|'+it.t.id+'" data-act="editTodoSheet" data-kind="todo" data-id="'+it.t.id+'" title="Klicken: Vorhaben bearbeiten · ziehen oder ‹ ›: Start verschieben"><span class="gbt">'+esc(it.t.title.slice(0,Math.max(0,Math.floor((len*D-20)/6.2))))+'</span></div>';
+    h+='<div class="gbar" style="left:'+(i0*D+2)+'px;width:'+(len*D-4)+'px;background:'+(ar?itemColor(ar):themePalette()[0])+'" draggable="true" data-drag="gtodo:'+p.id+'|'+it.t.id+'" data-act="editTodoSheet" data-kind="todo" data-id="'+it.t.id+'" title="Klicken: Vorhaben bearbeiten · ziehen oder ‹ ›: Start verschieben"><span class="gbt">'+esc(it.t.title.slice(0,Math.max(0,Math.floor((len*D-20)/6.2))))+'</span></div>';
     if(it.du){
       const iD=Math.round((parseISO(it.du)-parseISO(s0))/86400000);
       if(iD>=0&&iD<N)h+='<div class="gdue" style="left:'+((iD+1)*D-8)+'px"></div>';
@@ -2265,7 +2301,7 @@ function apptCard(ap){
 function blockCard(bl,d,s){
   const p=bl.projectId?projOf(bl.projectId):null;
   const items=blockItems(bl).map(resolveBlockItem).filter(Boolean);
-  const ac=(p&&areaOf(p))?areaOf(p).color:'#C9C2B2';
+  const ac=(p&&areaOf(p))?itemColor(areaOf(p)):themePalette()[7];
   const ico=bl.kind==='bundle'||items.length>=2?(bl.typeId&&typeOf(bl.typeId)?typeOf(bl.typeId).emoji:'☑️'):(bl.kind==='projekt'?(p?(p.emoji||'📋'):'📋'):(bl.kind==='task'?'☑️':(bl.typeId&&typeOf(bl.typeId)?typeOf(bl.typeId).emoji:'🕯️')));
   const title=bl.kind==='projekt'&&p?p.name:bl.title;
   const openCnt=items.filter(r=>!r.t.done).length;
@@ -2320,7 +2356,7 @@ function renderYear(){
   h+='<div class="phlist"><div class="fh">Phasen '+y+'</div>';
   if(!phs.length)h+='<div class="sub">Noch keine Phasen in diesem Jahr — gut, dass auch das erlaubt ist. Oder direkt oben im Kalender zwei Daten anklicken.</div>';
   phs.forEach(p=>{
-    h+='<button class="phchip" style="--c:'+p.color+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+' · '+esc(p.desc||'')+'</span></span></button>';
+    h+='<button class="phchip" style="--c:'+itemColor(p)+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+' · '+esc(p.desc||'')+'</span></span></button>';
   });
   h+='<button class="btn" data-act="addPhase">＋ Phase anlegen</button></div>';
   return h;
@@ -2331,11 +2367,11 @@ function renderAreas(){
   h+='<div class="areaGrid">';
   S.areas.forEach(a=>{
     const ps=S.projects.filter(p=>p.areaId===a.id);
-    h+='<div class="card area" style="--ac:'+a.color+'"><div class="ahead"><span class="aemo">'+a.emoji+'</span><span class="aname">'+esc(a.name)+'</span><span class="acount">'+ps.length+' Projekt'+(ps.length===1?'':'e')+'</span></div><div class="chips">';
+    h+='<div class="card area" style="--ac:'+itemColor(a)+'"><div class="ahead"><span class="aemo">'+a.emoji+'</span><span class="aname">'+esc(a.name)+'</span><span class="acount">'+ps.length+' Projekt'+(ps.length===1?'':'e')+'</span></div><div class="chips">';
     if(!ps.length)h+='<span class="sub">noch keine Projekte — auch das ist okay</span>';
     ps.forEach(p=>{
       const done=p.todos.filter(t=>t.done).length;
-      h+='<button class="chip proj" style="--c:'+a.color+'" data-act="openProj" data-id="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+(p.todos.length?' <span class="pc">'+done+'/'+p.todos.length+'</span>':'')+'</button>';
+      h+='<button class="chip proj" style="--c:'+itemColor(a)+'" data-act="openProj" data-id="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+(p.todos.length?' <span class="pc">'+done+'/'+p.todos.length+'</span>':'')+'</button>';
     });
     h+='</div><div class="trow"><input class="inp slim grow" placeholder="Neues Projekt — Enter oder ＋" data-enter="addProject|'+a.id+'"><button class="btn mini" data-act="addProject" data-id="'+a.id+'">＋</button></div></div>';
   });
@@ -2362,7 +2398,7 @@ function renderProject(pid){
   const tab=(ui.projTab==='kanban'||ui.projTab==='gantt')?ui.projTab:'list';
   let h='<div class="crumb" data-act="nav" data-v="bereiche">← Bereiche</div>';
   h+='<div class="vhead"><div><div class="phead"><button class="emoBtn" data-act="pickEmoji" data-ctx="proj" data-id="'+p.id+'">'+(p.emoji||'📋')+'</button><input class="inp big grow" style="max-width:340px" data-field="projName" data-id="'+p.id+'" value="'+esc(p.name)+'"></div>'+
-    '<div class="sub" style="margin-top:6px">'+(a?'<span class="dot" style="background:'+a.color+'"></span> '+esc(a.name):'ohne Bereich')+(p.note?' · '+esc(p.note):'')+' · Projekt löschen: <button class="xbtn" data-act="delProj" data-id="'+p.id+'" style="vertical-align:baseline">🗑</button></div></div></div>';
+    '<div class="sub" style="margin-top:6px">'+(a?'<span class="dot" style="background:'+itemColor(a)+'"></span> '+esc(a.name):'ohne Bereich')+(p.note?' · '+esc(p.note):'')+' · Projekt löschen: <button class="xbtn" data-act="delProj" data-id="'+p.id+'" style="vertical-align:baseline">🗑</button></div></div></div>';
   h+='<div class="tabs"><button class="tab'+(tab==='list'?' on':'')+'" data-act="projTab" data-t="list">Liste</button>'+
     '<button class="tab'+(tab==='kanban'?' on':'')+'" data-act="projTab" data-t="kanban">Kanban</button>'+
     '<button class="tab'+(tab==='gantt'?' on':'')+'" data-act="projTab" data-t="gantt">Gantt</button></div>';
@@ -2439,14 +2475,14 @@ function renderConfig(){
     '<button class="chip" data-act="cfgScroll" data-to="cfg-privacy">📦 Datenexport &amp; Löschen</button>'+
   '</div>';
 
-  h+='<div class="fh" id="cfg-theme">🎨 Farbschema</div><div class="sub">Wähle eine ruhige Farbwelt; deine Energiefarben bleiben davon unabhängig.</div><div class="chips">'+THEMES.map(t=>'<button class="chip'+(S.settings.theme===t[0]?' on':'')+'" data-act="setTheme" data-theme="'+t[0]+'" aria-pressed="'+(S.settings.theme===t[0]?'true':'false')+'">'+esc(t[1])+'</button>').join('')+'</div>';
+  h+='<div class="fh" id="cfg-theme">🎨 Farbschema</div><div class="sub">Wähle eine Farbwelt. Schemafarben für Bereiche und Phasen passen sich an; selbst gewählte Farben und Energiefarben bleiben erhalten.</div><div class="chips">'+THEMES.map(t=>'<button class="chip'+(S.settings.theme===t[0]?' on':'')+'" data-act="setTheme" data-theme="'+t[0]+'" aria-pressed="'+(S.settings.theme===t[0]?'true':'false')+'">'+esc(t[1])+'</button>').join('')+'</div>';
   h+='<div class="fh" id="cfg-areas">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
   S.areas.forEach((a,idx)=>{
     h+='<div class="cfgRow" data-drop="reorder:area:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:area:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
       '<button class="emoBtn" data-act="pickEmoji" data-ctx="area" data-id="'+a.id+'">'+a.emoji+'</button>'+
       '<input class="inp slim grow" data-field="areaName" data-id="'+a.id+'" value="'+esc(a.name)+'">'+
-      '<div class="swatches">'+PHC.map(c=>'<button class="sw2'+(a.color===c?' sel':'')+'" style="--c:'+c+'" data-act="setAreaColor" data-id="'+a.id+'" data-c="'+c+'" title="'+c+'"></button>').join('')+'</div>'+
-      '<input type="color" class="colorInp" data-field="areaColor" data-id="'+a.id+'" value="'+esc(a.color)+'" title="Eigene Farbe wählen">'+
+      '<div class="swatches">'+themePalette().map((c,i)=>'<button class="sw2'+(a.colorIndex===i?' sel':'')+'" style="--c:'+c+'" data-act="setAreaColor" data-id="'+a.id+'" data-i="'+i+'" title="Schemafarbe '+(i+1)+'" aria-label="Schemafarbe '+(i+1)+'"></button>').join('')+'</div>'+
+      '<input type="color" class="colorInp" data-field="areaColor" data-id="'+a.id+'" value="'+esc(itemColor(a))+'" title="Eigene Farbe wählen">'+
       '<div class="arrows"><button class="xbtn" data-act="moveItem" data-k="areas" data-i="'+idx+'" data-d="-1" title="nach oben">▲</button><button class="xbtn" data-act="moveItem" data-k="areas" data-i="'+idx+'" data-d="1" title="nach unten">▼</button></div>'+
       '<button class="xbtn" data-act="delArea" data-id="'+a.id+'" title="Bereich entfernen — mit Entscheidung, was mit Projekten & To-dos passiert">✕</button></div>';
   });
@@ -2556,7 +2592,7 @@ function sheetSlot(d,s,w){
   let h='<div class="shead"><h3>'+(hasReal?'Termin ergänzen':'Block oder Termin eintragen')+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+(curAps.length?' · 📅 '+curAps.length+' Termin'+(curAps.length===1?'':'e')+' im Abschnitt — Block und Termine bleiben beide sichtbar.':' — Vorlage wählen (öffnet danach den Editor, sofern in der Vorlage nicht auf „direkt fertig“ gestellt).')+'</div></div>';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:2px 0 8px"><span class="fh" style="margin:0">'+(hasReal?'Termin-Vorlagen':'Blocktypen &amp; Vorlagen')+'</span><span style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn mini" data-act="quickAddTypeToggle" data-day="'+d+'" data-slot="'+s+'">'+(ui.quickTypeOpen?'✕ Schließen':'＋ Neuer Blocktyp')+'</button><button class="btn mini ghost" data-act="goTypesConfig" title="Blocktypen &amp; Vorlagen in der Konfiguration öffnen">⚙ Konfig</button></span></div>';
   if(ui.quickTypeOpen){
-    h+='<div class="card" style="background:#FAF7F0;margin-bottom:10px;padding:10px 12px"><div class="fh2" style="margin-top:0">Schnell neuen Blocktyp anlegen</div>'+
+    h+='<div class="card" style="background:var(--soft);margin-bottom:10px;padding:10px 12px"><div class="fh2" style="margin-top:0">Schnell neuen Blocktyp anlegen</div>'+
       '<div class="row2"><input class="inp slim" id="qt-emo" value="🫂" maxlength="4" style="width:54px;text-align:center" title="Emoji"><input class="inp slim grow" id="qt-name" placeholder="Name, z. B. Socializing, Kurs, Sport" style="min-width:140px"><select class="inp slim" id="qt-ampel">'+['none','gruen','gelb','orange','rot'].map(v=>'<option value="'+v+'"'+(v==='gruen'?' selected':'')+'>'+AMP[v].label+'</option>').join('')+'</select></div>'+
       '<div class="row2" style="margin-top:6px"><input class="inp slim grow" id="qt-subs" placeholder="Unterkategorien optional (Komma-getrennt, z. B. Anna, Fanni, Spieleabend)" style="min-width:190px"><label class="checkrow" style="margin:0;white-space:nowrap"><input type="checkbox" id="qt-asappt"'+(hasReal?' checked':'')+'><span>wie Termin</span></label></div>'+
       '<div class="sheetBtns" style="margin-top:8px"><button class="btn primary mini" data-act="quickAddTypeSave" data-day="'+d+'" data-slot="'+s+'" data-use="1">Anlegen &amp; hier einsetzen</button><button class="btn mini" data-act="quickAddTypeSave" data-day="'+d+'" data-slot="'+s+'" data-use="0">Nur anlegen</button></div></div>';
@@ -2862,7 +2898,8 @@ function sheetEmoji(){
 function sheetPhase(id,preStart,preEnd){
   const p=(id&&id!=='new')?S.phases.find(x=>x.id===id):null;
   if(!ui.phIdx)ui.phIdx=1;
-  ui.phColor=p?p.color:PHC[(ui.phIdx++)%PHC.length];
+  ui.phColorIndex=p?(validColorIndex(p.colorIndex)?p.colorIndex:null):(ui.phIdx++)%PHC.length;
+  ui.phColor=p?itemColor(p):themePalette()[ui.phColorIndex];
   const st=p?p.start:(preStart||ui.year+'-01-01');
   const en=p?p.end:(preEnd||ui.year+'-01-31');
   let h='<div class="shead"><h3>'+(p?'Phase: '+esc(p.title):'Neue Phase')+'</h3><div class="sub">'+(p?'Zeitraum, Ausrichtung und Farbe frei anpassbar.':'Eine Intention für einen Zeitraum — ohne Verpflichtung, ohne Zuordnung.')+'</div></div>';
@@ -2870,7 +2907,7 @@ function sheetPhase(id,preStart,preEnd){
   h+='<label class="f">Titel (Thema)</label><input class="inp" id="ph-title" value="'+esc(p?p.title:'')+'" placeholder="z. B. Fundament legen">';
   h+='<label class="f">Beschreibung</label><textarea class="inp" id="ph-desc" rows="2" placeholder="Worin besteht die Ausrichtung?">'+esc(p?p.desc||'':'')+'</textarea>';
   h+='<div class="row2"><div style="flex:1;min-width:150px"><label class="f">Beginn</label><input class="inp" type="date" id="ph-start" value="'+st+'"></div><div style="flex:1;min-width:150px"><label class="f">Ende</label><input class="inp" type="date" id="ph-end" value="'+en+'"></div></div>';
-  h+='<label class="f">Farbe — Palette oder eigene Farbe wählen</label><div class="swatches">'+PHC.map(c=>'<button class="sw2'+(ui.phColor===c?' sel':'')+'" style="--c:'+c+'" data-act="phaseColor" data-c="'+c+'"></button>').join('')+'</div><input type="color" class="colorInp" id="ph-color" data-field="phColor" value="'+esc(ui.phColor)+'" title="Eigene Farbe wählen" style="margin-top:8px">';
+  h+='<label class="f">Farbe — Schemafarbe oder eigene Farbe wählen</label><div class="swatches">'+themePalette().map((c,i)=>'<button class="sw2'+(ui.phColorIndex===i?' sel':'')+'" style="--c:'+c+'" data-act="phaseColor" data-c="'+c+'" data-i="'+i+'" aria-label="Schemafarbe '+(i+1)+'"></button>').join('')+'</div><input type="color" class="colorInp" id="ph-color" data-field="phColor" value="'+esc(ui.phColor)+'" title="Eigene Farbe wählen" style="margin-top:8px">';
   h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="phaseSave" data-id="'+(id||'new')+'">Speichern</button>'+(p?'<button class="btn danger" data-act="phaseDel" data-id="'+p.id+'">Löschen</button>':'')+(ui.route.view!=='jahr'?'<button class="btn" data-act="goYearFromPhase">→ Jahreskalender</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
 }
@@ -4021,7 +4058,7 @@ const ACT={
     if(!phs.length){ACT.addPhaseForWeek({date:dstr}); return}
     let h='<div class="shead"><h3>🍂 Überlappende Phasen ('+phs.length+')</h3><div class="sub">Am '+esc(fmtDate(parseISO(dstr)))+' sind mehrere Phasen aktiv — zum Bearbeiten anklicken:</div></div>';
     phs.forEach(p=>{
-      h+='<button class="phchip" style="--c:'+p.color+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+(p.desc?' · '+esc(p.desc):'')+'</span></span></button>';
+      h+='<button class="phchip" style="--c:'+itemColor(p)+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+(p.desc?' · '+esc(p.desc):'')+'</span></span></button>';
     });
     h+='<div class="sheetBtns"><button class="btn" data-act="addPhaseForWeek" data-date="'+dstr+'">＋ Weitere Phase anlegen</button><button class="btn" data-act="goYearFromPhase">→ Jahreskalender</button><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
     openSheet(h);
@@ -4050,7 +4087,7 @@ const ACT={
     render();
   },
   yearSelCancel(){ui.yearSel=null; render()},
-  phaseColor(a,t){ui.phColor=a.c; const ci=document.getElementById('ph-color'); if(ci)ci.value=a.c; t.parentElement.querySelectorAll('.sw2').forEach(b=>b.classList.remove('sel')); t.classList.add('sel')},
+  phaseColor(a,t){ui.phColor=a.c; ui.phColorIndex=+a.i; const ci=document.getElementById('ph-color'); if(ci)ci.value=a.c; t.parentElement.querySelectorAll('.sw2').forEach(b=>b.classList.remove('sel')); t.classList.add('sel')},
   phaseSave(a){
     const title=document.getElementById('ph-title').value.trim();
     const start=document.getElementById('ph-start').value;
@@ -4058,8 +4095,8 @@ const ACT={
     if(!title){toast('Titel fehlt'); return}
     if(!start||!end||start>end){toast('Zeitraum prüfen'); return}
     const desc=document.getElementById('ph-desc').value.trim();
-    if(a.id==='new')S.phases.push({id:uid(),start:start,end:end,title:title,desc:desc,color:ui.phColor});
-    else{const p=S.phases.find(x=>x.id===a.id); if(p){p.start=start; p.end=end; p.title=title; p.desc=desc; p.color=ui.phColor}}
+    if(a.id==='new')S.phases.push({id:uid(),start:start,end:end,title:title,desc:desc,color:ui.phColor,colorIndex:ui.phColorIndex});
+    else{const p=S.phases.find(x=>x.id===a.id); if(p){p.start=start; p.end=end; p.title=title; p.desc=desc; p.color=ui.phColor; p.colorIndex=ui.phColorIndex}}
     save(); closeModal(); render(); toast('Phase gespeichert.');
   },
   phaseDel(a){
@@ -4083,7 +4120,7 @@ const ACT={
     if(!v){toast('Zeichen eingeben — oder unten auswählen.'); return}
     ACT.setEmoji({e:[...v][0]||v});
   },
-  setAreaColor(a){const x=S.areas.find(y=>y.id===a.id); if(x){x.color=a.c; save(); render()}},
+  setAreaColor(a){const x=S.areas.find(y=>y.id===a.id), i=Number(a.i); if(x&&validColorIndex(i)){x.color=themePalette()[i]; x.colorIndex=i; save(); render()}},
   syncNow(){
     syncCycle(true).then(()=>{render(); toast('Synchronisation abgeschlossen.')});
   },
@@ -4177,7 +4214,12 @@ const ACT={
     ui.authBusy=true;ui.authErr='';render();
     try{
       const result=await sb.auth.signInWithPassword({email,password}); password='';
-      if(result.error||!result.data||!result.data.session){ui.authErr='E-Mail oder Passwort stimmen nicht oder das Konto ist noch nicht bestätigt.'}
+      if(result.error||!result.data||!result.data.session){
+        const err=result.error||{}, code=String(err.code||'');
+        if(code==='invalid_credentials'||code==='email_not_confirmed')ui.authErr='E-Mail oder Passwort stimmen nicht oder das Konto ist noch nicht bestätigt.';
+        else if(err.status===429)ui.authErr='Zu viele Anmeldeversuche. Bitte warte kurz und versuche es erneut.';
+        else ui.authErr='Die Anmeldung ist gerade nicht verfügbar. Bitte prüfe deine Verbindung und versuche es erneut.';
+      }
       else if(!AUTH.session){bindAuthSession(result.data.session);fetchAccountProfile();syncCycle(true);startSync()}
     }catch(e){password='';ui.authErr='Anmeldung fehlgeschlagen. Bitte prüfe deine Verbindung.'}
     ui.authBusy=false;render();
@@ -4423,7 +4465,7 @@ const ACT={
       toast('Netzwerkfehler — bitte erneut versuchen.');
     }
   },
-  addArea(){S.areas.push({id:uid(),name:'Neuer Bereich',emoji:'🌱',color:PHC[S.areas.length%PHC.length]}); save(); render(); toast('Bereich angelegt — unten benennen und färben.')},
+  addArea(){const i=S.areas.length%PHC.length; S.areas.push({id:uid(),name:'Neuer Bereich',emoji:'🌱',color:themePalette()[i],colorIndex:i}); save(); render(); toast('Bereich angelegt — unten benennen und färben.')},
   delArea(a){sheetAreaDel(a.id)},
   areaDelKeep(a){
     S.areas=S.areas.filter(x=>x.id!==a.id);
@@ -4508,8 +4550,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const el=e.target; const f=el.dataset.field||'';
   if(f==='areaName'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
-  else if(f==='areaColor'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.color=el.value; save(); render(); toast('Eigene Farbe gesetzt.')}}
-  else if(f==='phColor'){ui.phColor=el.value; save(); render()}
+  else if(f==='areaColor'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.color=el.value; delete x.colorIndex; save(); render(); toast('Eigene Farbe gesetzt.')}}
+  else if(f==='phColor'){ui.phColor=el.value; ui.phColorIndex=null; const overlay=$('#overlay'); if(overlay&&overlay.querySelectorAll)overlay.querySelectorAll('.sw2.sel').forEach(b=>b.classList.remove('sel'))}
   else if(f==='motto'){(S.motto||(S.motto={}))[el.dataset.year]=el.value.trim(); save(); if(!isEditingInMain())render()}
   else if(f==='liveOn'){S.settings.liveSync.on=el.checked; save(); startSync(); render()}
   else if(f==='liveInterval'){S.settings.liveSync.interval=+el.value; save(); startSync(); render()}

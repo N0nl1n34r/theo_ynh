@@ -157,7 +157,7 @@ function bootAppInstance(opts = {}) {
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
   vm.runInContext(
-    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml};',
+    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle};',
     sandbox
   );
   return { ex: sandbox.__EX, els, store, handlers };
@@ -195,7 +195,7 @@ function bootAppInstance(opts = {}) {
     'Abgelaufener Magic-Link (otp_expired) zeigt klaren deutschen Hinweis zum Neu-Anfordern');
 
   // Responsive login layout and optional discovery survey, with no remote persistence.
-  ok(appHtml.includes('#wrap.auth-gated{display:block}') && gateHtml1.includes('auth-password') && gateHtml1.includes('authPassword'),
+  ok(appHtml.includes('#wrap.auth-gated{display:block}') && gateHtml1.includes('auth-password') && gateHtml1.includes('placeholder="Passwort eingeben"') && gateHtml1.includes('authPassword'),
     'Auth-Gate füllt das verfügbare Raster und bietet Passwort-Login');
   const gSurvey = bootAppInstance({ protocol: 'https:', search: '?mode=demo' });
   await new Promise((r) => setTimeout(r, 25));
@@ -214,11 +214,52 @@ function bootAppInstance(opts = {}) {
   ok(gSurvey.ex.S().settings.theme === 'meer' && JSON.parse(gSurvey.store['theo-demo-state']).settings.theme === 'meer',
     'Farbschema wird in der Demo gespeichert');
 
+  const defaultArea = gSurvey.ex.S().areas[0];
+  const defaultPhase = gSurvey.ex.S().phases[0];
+  const seaAreaColor = gSurvey.ex.itemColor(defaultArea);
+  const seaPhaseColor = gSurvey.ex.itemColor(defaultPhase);
+  gSurvey.ex.ACT.setTheme({ theme: 'nacht' });
+  ok(gSurvey.ex.S().settings.theme === 'nacht' && gSurvey.ex.itemColor(defaultArea) !== seaAreaColor && gSurvey.ex.itemColor(defaultPhase) !== seaPhaseColor,
+    'Nachtschema passt Schemafarben von Bereichen und Phasen an');
+  ok(appHtml.includes(':root[data-theme="nacht"]') && appHtml.includes('color-scheme:dark') && appHtml.includes('Schemafarbe'),
+    'Nachtschema hat eigene Oberflächen und Farbauswahl');
+  gSurvey.handlers.change({target:{dataset:{field:'areaColor',id:defaultArea.id},value:'#123456'}});
+  gSurvey.ex.ACT.setTheme({ theme: 'wald' });
+  ok(gSurvey.ex.itemColor(defaultArea) === '#123456' && !('colorIndex' in defaultArea),
+    'Eigene Bereichsfarbe bleibt bei Farbschema-Wechsel erhalten');
+  const oldPhase = {color:'#a3b98f'};
+  ok(gSurvey.ex.itemColor(oldPhase) === '#a3b98f', 'Alte Farben ohne Herkunft bleiben unverändert erhalten');
+  gSurvey.ex.ACT.setAreaColor({id:defaultArea.id,i:'1'});
+  ok(defaultArea.colorIndex === 1 && gSurvey.ex.itemColor(defaultArea) === gSurvey.ex.themePalette()[1],
+    'Schemafarb-Auswahl kann eigene Farbe wieder ersetzen');
+  gSurvey.ex.ACT.addPhase();
+  for (const id of ['ph-title','ph-desc','ph-start','ph-end']) gSurvey.els[id] = {value:''};
+  gSurvey.els['ph-title'].value = 'Testphase';
+  gSurvey.els['ph-desc'].value = '';
+  gSurvey.els['ph-start'].value = '2026-01-01';
+  gSurvey.els['ph-end'].value = '2026-01-03';
+  gSurvey.ex.ACT.phaseSave({id:'new'});
+  const createdPhase=gSurvey.ex.S().phases.at(-1);
+  const beforePhase=gSurvey.ex.itemColor(createdPhase);
+  gSurvey.ex.ACT.setTheme({theme:'nacht'});
+  ok(Number.isInteger(createdPhase.colorIndex) && beforePhase !== gSurvey.ex.itemColor(createdPhase),
+    'Neu erstellte Phase folgt dem gewählten Farbschema');
+  gSurvey.ex.ACT.editPhase({id:createdPhase.id});
+  gSurvey.handlers.change({target:{dataset:{field:'phColor'},value:'#234567'}});
+  gSurvey.els['ph-title'].value = 'Testphase';
+  gSurvey.els['ph-desc'].value = '';
+  gSurvey.els['ph-start'].value = '2026-01-01';
+  gSurvey.els['ph-end'].value = '2026-01-03';
+  gSurvey.ex.ACT.phaseSave({id:createdPhase.id});
+  gSurvey.ex.ACT.setTheme({theme:'meer'});
+  ok(gSurvey.ex.itemColor(createdPhase) === '#234567' && createdPhase.colorIndex === null,
+    'Eigene Phasenfarbe bleibt bei Farbschema-Wechsel erhalten');
+
   const signed = { access_token: 'test-token', user: { id: 'test-account-a', email: 'a@example.com' } };
   const authClient = {
     auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({}),
       signInWithPassword: async ({ email, password }) => email === 'a@example.com' && password === 'local-test-only'
-        ? { data: { session: signed }, error: null } : { data: {}, error: { message: 'invalid' } },
+        ? { data: { session: signed }, error: null } : { data: {}, error: { message: 'invalid', code: 'invalid_credentials' } },
       signOut: async () => ({}) },
     from: () => ({ select: () => Promise.resolve({ data: [], error: null }) }),
     rpc: async () => ({ data: [], error: null })
@@ -229,6 +270,15 @@ function bootAppInstance(opts = {}) {
   gPassword.els['auth-password'] = { value: 'wrong-password' };
   await gPassword.ex.ACT.authPassword();
   ok(!gPassword.ex.AUTH.session && gPassword.els['q:#main'].innerHTML.includes('stimmen nicht'), 'Falsches Passwort wird abgewiesen');
+  authClient.auth.signInWithPassword = async () => ({data: {}, error: {status: 429}});
+  gPassword.els['auth-password'] = { value: 'wrong-password' };
+  await gPassword.ex.ACT.authPassword();
+  ok(gPassword.els['q:#main'].innerHTML.includes('Zu viele Anmeldeversuche'), 'Rate-Limit meldet nicht fälschlich ein falsches Passwort');
+  authClient.auth.signInWithPassword = async () => ({data: {}, error: {status: 500}});
+  gPassword.els['auth-password'] = { value: 'wrong-password' };
+  await gPassword.ex.ACT.authPassword();
+  ok(gPassword.els['q:#main'].innerHTML.includes('Anmeldung ist gerade nicht verfügbar'), 'Serverfehler wird nicht als falsches Passwort dargestellt');
+  authClient.auth.signInWithPassword = async ({email,password}) => email === 'a@example.com' && password === 'local-test-only' ? {data:{session:signed},error:null} : {data:{},error:{code:'invalid_credentials'}};
   gPassword.els['auth-password'] = { value: 'local-test-only' };
   await gPassword.ex.ACT.authPassword();
   ok(gPassword.ex.AUTH.user.id === 'test-account-a' && gPassword.els['auth-password'].value === '' && !JSON.stringify(gPassword.store).includes('local-test-only'),
