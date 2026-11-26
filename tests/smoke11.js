@@ -16,7 +16,7 @@ global.document={
   addEventListener(n,f){__h[n]=f}
 };
 global.localStorage={_m:{},getItem(k){return this._m[k]||null},setItem(k,v){this._m[k]=String(v)},removeItem(k){delete this._m[k]}};
-global.navigator={clipboard:{writeText:async()=>{}}};
+Object.defineProperty(global,'navigator',{value:{clipboard:{writeText:async()=>{}}},configurable:true,writable:true});
 const calls=[]; const davFiles={}; /* Mini-DAV: PUT legt ab, DELETE löscht, GET export liefert alles */
 global.fetch=async(url,opt)=>{
   opt=opt||{}; const u=String(url); calls.push({url:u,method:opt.method||'GET'});

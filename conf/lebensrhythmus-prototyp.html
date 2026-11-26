@@ -643,9 +643,9 @@ function fromIcsHM(v){
 function icsStamp(){return iso(new Date()).replace(/-/g,'')+'T'+pad(new Date().getUTCHours())+pad(new Date().getUTCMinutes())+'00Z'}
 function icsUnesc(s){return String(s||'').replace(/\\\\/g,'\u0000').replace(/\\n/g,'\n').replace(/\\;/g,';').replace(/\\,/g,',').replace(/\u0000/g,'\\')}
 function todoICS(t,p){
-  const done=!!t.done, kan=kanOf(t);
-  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VTODO','UID:'+icsUid('todo',t.id),'DTSTAMP:'+icsStamp(),'SUMMARY:'+icsEsc(t.title),'STATUS:'+(done?'COMPLETED':(kan==='arbeit'?'IN-PROCESS':'NEEDS-ACTION'))];
-  if(done){L.push('PERCENT-COMPLETE:100','COMPLETED:'+icsStamp())}
+  const done=!!t.done, kan=kanOf(t), stamp=iso(new Date()).replace(/-/g,'')+'T120000Z';
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VTODO','UID:'+icsUid('todo',t.id),'DTSTAMP:'+stamp,'SUMMARY:'+icsEsc(t.title),'STATUS:'+(done?'COMPLETED':(kan==='arbeit'?'IN-PROCESS':'NEEDS-ACTION'))];
+  if(done){L.push('PERCENT-COMPLETE:100','COMPLETED:'+stamp)}
   if(t.due)L.push('DUE;VALUE=DATE:'+t.due.replace(/-/g,''));
   if(t.firstStep)L.push('DESCRIPTION:'+icsEsc('Erster Schritt: '+t.firstStep));
   if(t.start)L.push('X-LR-START:'+t.start);
@@ -663,34 +663,62 @@ function buildTodos(){
   for(const t of S.tasks)out.push(todoICS(t,null));
   return out;
 }
+function estSig(est){
+  if(!est)return '';
+  if(est.mode==='pert')return 'P:'+(+est.to||0)+','+(+est.tm||0)+','+(+est.tp||0);
+  if(est.simple)return 'S:'+(+est.simple||0);
+  return '';
+}
+function todoSig(t){
+  return [String(t.title||''),t.done?'1':'0',kanOf(t),t.due||'',t.start||'',String(t.delegated||'').trim(),estSig(t.est),String(t.firstStep||'').trim()].join('\u0001');
+}
 function applyServerTodo(t,e){
+  const before=todoSig(t);
   let due=''; for(const k in e){if(k.toUpperCase().indexOf('DUE')===0)due=e[k]}
   if(e.SUMMARY)t.title=icsUnesc(e.SUMMARY);
   t.due=fromIcsDate(due)||null;
+  const isTheo=/LR-TODO/i.test(e.CATEGORIES||'')||e['X-LR-KAN']!==undefined;
   const kan=(e['X-LR-KAN']||'').trim();
   if(/COMPLETED/i.test(e.STATUS||'')){t.done=true; t.kanban='fertig'}
-  else{t.done=false; t.kanban=kan&&KCOLS.some(k=>k[0]===kan)?kan:'offen'}
+  else{t.done=false; t.kanban=kan&&KCOLS.some(k=>k[0]===kan)?kan:(/IN-PROCESS/i.test(e.STATUS||'')?'arbeit':'offen')}
   if(e['X-LR-START']!==undefined)t.start=fromIcsDate(e['X-LR-START'])||null;
+  else if(isTheo)t.start=null;
   if(e['X-LR-DEL']!==undefined)t.delegated=icsUnesc(e['X-LR-DEL']).trim()||null;
+  else if(isTheo)t.delegated=null;
   const est=(e['X-LR-EST']||'').trim();
   if(est){const pp=est.split(','); if(pp[0]==='PERT')t.est={mode:'pert',to:+pp[1]||0,tm:+pp[2]||0,tp:+pp[3]||0}; else if(pp[0]==='SIMPLE')t.est={mode:'simple',simple:+pp[1]||0}}
   else t.est=null;
   const dsc=e.DESCRIPTION?icsUnesc(e.DESCRIPTION):'';
   const fs=dsc.replace(/^Erster Schritt:\s*/,'').trim();
   t.firstStep=fs||null;
+  return todoSig(t)!==before;
 }
 function processTodos(text){
   const res=parseICSAll(text); let upd=0,imp=0;
   for(const e of res.todos){
     const u=(e.UID||'').trim(); if(!u)continue;
     if(tombDead(u)){wdDeleteUid(u); continue} /* Grabstein: gelöscht — Import überspringen, DELETE wiederholen */
-    let t=null;
+    let t=null, inTasks=false;
     const m=u.match(/^theo-todo-(.+)@theo-app$/);
-    if(m){const f=findTodo(m[1]); if(f)t=f.t; else{const st=S.tasks.find(x=>x.id===m[1]); if(st)t=st}}
+    if(m){const f=findTodo(m[1]); if(f)t=f.t; else{const st=S.tasks.find(x=>x.id===m[1]); if(st){t=st; inTasks=true}}}
     if(!t){t=S.tasks.find(x=>x.remoteUid===u)||null;
       if(!t)for(const p of S.projects){const tt=p.todos.find(x=>x.remoteUid===u); if(tt){t=tt; break}}}
-    if(t){applyServerTodo(t,e); upd++}
-    else if(m)continue; /* eigenes theo-todo-UID, lokal nicht (mehr) vorhanden → nicht wiederbeleben */
+    if(t){
+      if(applyServerTodo(t,e))upd++;
+      if(inTasks&&e['X-LR-PROJECT']){const prj=projOf(e['X-LR-PROJECT'].trim()); if(prj){S.tasks=S.tasks.filter(x=>x!==t); prj.todos.push(t); upd++}}
+    }
+    else if(m){
+      /* Auf anderem Theo-Gerät angelegtes To-do (trägt LR-TODO, lokal noch nie gesehen) übernehmen;
+         bereits synchronisierte/alte Leichen ohne LR-TODO nicht wiederbeleben */
+      if(!/LR-TODO/i.test(e.CATEGORIES||'')||S.synced['theo-todo-'+m[1]])continue;
+      const nt={id:m[1],title:'Aufgabe',done:false,planned:null};
+      applyServerTodo(nt,e);
+      const pid=(e['X-LR-PROJECT']||'').trim();
+      const prj=pid?projOf(pid):null;
+      if(prj)prj.todos.push(nt); else S.tasks.push(nt);
+      S.synced['theo-todo-'+m[1]]=1;
+      imp++;
+    }
     else{
       let due=''; for(const k in e){if(k.toUpperCase().indexOf('DUE')===0)due=e[k]}
       const dsc=e.DESCRIPTION?icsUnesc(e.DESCRIPTION):'';
@@ -704,6 +732,9 @@ function processTodos(text){
   return {updated:upd,imported:imp};
 }
 /* ================= Theo-Kapsel (Motto, Eingangskiste, Bereiche, Projekte, Typen als VJOURNAL) ================= */
+function hasCapsuleContent(){
+  return !!(Object.keys(S.motto||{}).length||(S.inbox||[]).length||(S.areas||[]).length||(S.projects||[]).length);
+}
 function capsuleJson(){
   return {
     /* stabil, wenn nie lokal gespeichert wurde — sonst würde die Kapsel in JEDEM Sync-Zyklus als „geändert“ gelten */
@@ -715,15 +746,30 @@ function capsuleJson(){
   };
 }
 const CAP_UID='theo-state@theo-app';
+const CAP_SLUG='theo-kapsel';
 function capsuleICS(json){
   return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VJOURNAL','UID:'+CAP_UID,'DTSTAMP:'+icsStamp(),'SUMMARY:'+icsEsc('Theo Kapsel'),'X-LR-TS:'+json.ts,'X-LR-STATE:'+icsEsc(JSON.stringify(json)),'CATEGORIES:LR-STATE','END:VJOURNAL','END:VCALENDAR'].join('\r\n');
+}
+/* Nextcloud-Kalender aus der Web-UI führen oft nur VEVENT,VTODO in supported-calendar-component-set
+   und lehnen VJOURNAL-PUTs mit 403 InvalidComponentType ab. Theo legt dann automatisch eine
+   reine VJOURNAL-Sammlung „theo-kapsel“ an (in Nextcloud Kalender & Tasks unsichtbar). */
+function capCalHref(cal){
+  const s=String(cal||'');
+  const m=s.match(/^(.*\/calendars\/[^/]+\/)([^/]+)\/?$/i);
+  if(m)return m[2].toLowerCase()===CAP_SLUG?null:m[1]+CAP_SLUG+'/';
+  const b=wdBase(), c=wdCfg();
+  if(b&&c.user){const h=b+'/calendars/'+encodeURIComponent(c.user)+'/'+CAP_SLUG+'/'; return h===s?null:h}
+  return null;
 }
 function adoptCapsule(o){
   /* Neugerät: vor dem ersten Lesen ist der Server die Wahrheit — das eigene
      capsuleTs wurde nur lokal generiert (save() beim Verbinden) und darf die
-     Server-Kapsel nicht überstimmen. */
+     Server-Kapsel nicht überstimmen. Gleiches gilt für ein noch komplett leeres
+     Zweitgerät, das erstmals eine gefüllte Kapsel sieht. */
   if(!o||!o.ts)return false;
-  if(S.meta.pulled!==false&&o.ts<=(S.capsuleTs||0))return false;
+  const localEmpty=!hasCapsuleContent()&&!Object.keys(S.tomb||{}).length&&SYNC.capJson===null;
+  const remoteFull=!!(Object.keys(o.motto||{}).length||(o.inbox||[]).length||(o.areas||[]).length||(o.projects||[]).length);
+  if(S.meta.pulled!==false&&!(localEmpty&&remoteFull)&&o.ts<=(S.capsuleTs||0))return false;
   if(o.motto)S.motto=o.motto;
   if(Array.isArray(o.inbox))S.inbox=o.inbox;
   if(Array.isArray(o.areas))S.areas=o.areas;
@@ -964,6 +1010,7 @@ function appPwLink(url){
 }
 function wdHuman(status,txt){
   if(status===401)return '✖ 401 — die Anmeldung wird abgelehnt. Häufigste Ursache: das <b>Login-Passwort</b> statt eines <b>App-Passworts</b> (bei 2FA und bei vielen Hostern zwingend) oder ein Tippfehler. App-Passwort erstellen: '+appPwLink(wdCfg().url)+wdServerMsg(txt);
+  if((status===403||status===415||status===400)&&/supported-calendar-component|InvalidComponentType|component of type/i.test(txt))return '✖ HTTP '+status+' — dieser Kalender erlaubt den Objekt-Typ (z. B. <code>VJOURNAL</code>) nicht; Theo weicht für die Kapsel automatisch auf eine eigene Sammlung <code>theo-kapsel</code> aus.'+wdServerMsg(txt);
   if(status===403){
     if(/throttl|brute|zu viele/i.test(txt))return '✖ 403 — <b>Brute-Force-Schutz</b> der Nextcloud: Nach früheren Fehlversuchen ist die Anmeldung vorübergehend gesperrt — das gilt auch für jetzt richtige Passwörter. <b>15–30 Minuten warten</b>, dann einmalig mit App-Passwort versuchen ('+appPwLink(wdCfg().url)+'). Als Instanz-Admin sofort entriegelbar: <code>occ security:bruteforce:reset &lt;deine-IP&gt;</code>.'+wdServerMsg(txt);
     return '✖ 403 — der Server verweigert den Zugriff trotz Anmeldung. Mögliche Ursachen: Brute-Force-Sperre nach früheren Fehlversuchen (kurz warten und erneut versuchen), Schutzmechanismen des Hosters, oder fehlende Rechte am Pfad. In jedem Fall ein <b>App-Passwort</b> verwenden ('+appPwLink(wdCfg().url)+').'+wdServerMsg(txt);
@@ -972,7 +1019,53 @@ function wdHuman(status,txt){
   return '✖ HTTP '+status+' — Server antwortete abweichend.'+wdServerMsg(txt);
 }
 /* ================= Live-Sync ================= */
-const SYNC={timer:null,running:false,last:null,msg:'',capJson:null};
+const SYNC={timer:null,running:false,last:null,msg:'',capJson:null,capMode:null,capFor:null};
+function resetCapCache(cal){if(SYNC.capFor!==cal){SYNC.capFor=cal; SYNC.capMode=null}}
+async function putCapsule(cal,cobj){
+  resetCapCache(cal);
+  const body=capsuleICS(cobj), hdr={'Content-Type':'text/calendar; charset=utf-8'}, fn=encodeURIComponent(CAP_UID)+'.ics';
+  if(SYNC.capMode!=='sub'){
+    const r=await wdFetch(cal+fn,{method:'PUT',headers:hdr,body:body});
+    if(r.ok||r.status===201||r.status===204){SYNC.capMode='direct'; return {ok:true,status:r.status,text:'',sub:false}}
+    const txt=await wdBody(r);
+    const compRej=r.status===400||r.status===415||r.status===501||(r.status===403&&!/throttl|brute|zu viele/i.test(txt));
+    if(!compRej)return {ok:false,status:r.status,text:txt,sub:false};
+  }
+  const sub=capCalHref(cal);
+  if(!sub)return {ok:false,status:403,text:'Kalender akzeptiert kein VJOURNAL.',sub:false};
+  const r2=await wdFetch(sub+fn,{method:'PUT',headers:hdr,body:body});
+  if(r2.ok||r2.status===201||r2.status===204){SYNC.capMode='sub'; return {ok:true,status:r2.status,text:'',sub:true}}
+  const t2=await wdBody(r2);
+  if(r2.status===404||r2.status===409||r2.status===400||r2.status===403){
+    const mkXml='<?xml version="1.0" encoding="utf-8"?><c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>Theo Kapsel</d:displayname><c:supported-calendar-component-set><c:comp name="VJOURNAL"/></c:supported-calendar-component-set></d:prop></d:set></c:mkcalendar>';
+    const mk=await wdFetch(sub,{method:'MKCALENDAR',headers:{'Content-Type':'application/xml; charset=utf-8'},body:mkXml});
+    if(mk.ok||mk.status===201||mk.status===405){
+      const r3=await wdFetch(sub+fn,{method:'PUT',headers:hdr,body:body});
+      if(r3.ok||r3.status===201||r3.status===204){SYNC.capMode='sub'; return {ok:true,status:r3.status,text:'',sub:true}}
+      return {ok:false,status:r3.status,text:await wdBody(r3),sub:true};
+    }
+    return {ok:false,status:mk.status,text:await wdBody(mk),sub:true};
+  }
+  return {ok:false,status:r2.status,text:t2,sub:true};
+}
+async function pullCapsule(cal,exportTxt){
+  resetCapCache(cal);
+  const cp=processCapsule(exportTxt);
+  if(cp.ts>0){SYNC.capMode='direct'; return {adopted:cp.adopted,ts:cp.ts,checked:true,sub:false}}
+  if(SYNC.capMode==='direct')return {adopted:false,ts:0,checked:true,sub:false};
+  const sub=capCalHref(cal);
+  if(!sub)return {adopted:false,ts:0,checked:true,sub:false};
+  try{
+    const r=await wdFetch(sub+encodeURIComponent(CAP_UID)+'.ics',{method:'GET'});
+    if(r.ok){
+      const cp2=processCapsule(await r.text());
+      if(cp2.ts>0){SYNC.capMode='sub'; return {adopted:cp2.adopted,ts:cp2.ts,checked:true,sub:true}}
+      return {adopted:false,ts:0,checked:true,sub:false};
+    }
+    if(r.status===404)return {adopted:false,ts:0,checked:true,sub:false};
+    return {adopted:false,ts:0,checked:false,sub:false};
+  }catch(e){return {adopted:false,ts:0,checked:false,sub:false}}
+}
 function syncStatusText(){
   const ls=S.settings.liveSync||{};
   return (ls.on?'an':'aus')+' · alle '+(ls.interval||60)+' s'+(SYNC.last?' · zuletzt '+pad(SYNC.last.getHours())+':'+pad(SYNC.last.getMinutes())+':'+pad(SYNC.last.getSeconds()):'')+(SYNC.msg?' · '+SYNC.msg:'');
@@ -994,10 +1087,11 @@ async function pushAll(){
     /* Neugeräte-Schutz: wer noch nie aus dem Kalender gelesen hat, darf seine
        (leere) Kapsel nicht über die volle Server-Kapsel schreiben. */
     if(S.meta.pulled!==false&&cstr!==SYNC.capJson){
-      const r=await wdFetch(cal+encodeURIComponent(CAP_UID)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:capsuleICS(cobj)});
-      if(r.ok){SYNC.capJson=cstr; ok++}
+      const cr=await putCapsule(cal,cobj);
+      if(cr.ok){SYNC.capJson=cstr; ok++}
+      else fail++;
     }
-  }catch(e){}
+  }catch(e){fail++}
   if(fail===0&&S.meta.dirty){S.meta.dirty=false; saveQuiet()}
   return {ok:ok, fail:fail};
 }
@@ -1034,18 +1128,19 @@ async function syncCycle(){
       SYNC.msg='Companion-Ziel ('+px.target+') ≠ eingetragene URL — bitte anpassen'; return;
     }
     const rev=S.capsuleTs||0;
+    let m='';
     /* Neugeräte-Schutz: ein frisch verbundenes Gerät ist zwar „dirty“ (nur durch
        das Speichern der Verbindung) — aber es darf nicht VOR dem ersten Lesen
        seine leere Kapsel hochschreiben, sonst plättet sie die volle Server-Kapsel. */
     if(S.meta.dirty && S.meta.pulled!==false){
       const pr=await pushAll();
-      SYNC.msg='geschrieben '+pr.ok+(pr.fail?' / ✖ '+pr.fail:'');
+      m='geschrieben '+pr.ok+(pr.fail?' / ✖ '+pr.fail:'');
       if((S.capsuleTs||0)!==rev)S.meta.dirty=true; /* während des Pushes weitereditiert */
     }
     if((S.capsuleTs||0)!==rev){
       /* Pull würde frische lokale Änderungen mit dem alten Serverstand überschreiben — nächsten Zyklus warten */
       SYNC.last=new Date();
-      SYNC.msg=(SYNC.msg?SYNC.msg+' · ':'')+'Pull übersprungen — lokale Änderungen werden zuerst gepusht';
+      SYNC.msg=(m?m+' · ':'')+'Pull übersprungen — lokale Änderungen werden zuerst gepusht';
       return;
     }
     const r=await wdFetch(cal+'?export',{method:'GET'});
@@ -1053,19 +1148,21 @@ async function syncCycle(){
       const txt=await r.text();
       importICS(txt);
       const pr=processRemote(txt);
+      const cp=await pullCapsule(cal,txt);
       const tr=processTodos(txt);
-      const cp=processCapsule(txt);
-      if(!S.meta.pulled)S.meta.pulled=true; /* ab jetzt darf dieses Gerät schreiben */
+      if(!S.meta.pulled&&cp.checked)S.meta.pulled=true; /* ab jetzt darf dieses Gerät schreiben */
+      if(!cp.ts&&cp.checked&&S.meta.pulled&&SYNC.capJson===null&&hasCapsuleContent())S.meta.dirty=true; /* Erst-Nachschub für Quellgerät, falls Server noch keine Kapsel hat */
       let txt2='';
       if(cal2){const r2=await wdFetch(cal2+'?export',{method:'GET'}); if(r2.ok){txt2=await r2.text(); importICS(txt2)}}
       reconcileDeleted([txt,txt2]);
       SYNC.last=new Date();
-      SYNC.msg=(SYNC.msg?SYNC.msg+' · ':'')+'gelesen'+(pr.placed?' · '+pr.placed+' eingeordnet':'')+(pr.queued?' · 📥 '+pr.queued+' zuzuordnen':'')+(tr.updated?' · '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?' · '+tr.imported+' Aufgaben aus Kalender':'')+(cp.adopted?' · Kapsel übernommen':'');
+      m=(m?m+' · ':'')+'gelesen'+(pr.placed?' · '+pr.placed+' eingeordnet':'')+(pr.queued?' · 📥 '+pr.queued+' zuzuordnen':'')+(tr.updated?' · '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?' · '+tr.imported+' Aufgaben aus Kalender':'')+(cp.adopted?' · Kapsel übernommen':'');
       saveQuiet();
-      if(S.meta.dirty){ /* Erstverbindung: das Nachzieh-Schreiben läuft im selben Zyklus (Dirty-Konvention halten) */
+      if(S.meta.dirty && S.meta.pulled!==false){ /* Erstverbindung / fehlende Server-Kapsel: Nachzieh-Schreiben im selben Zyklus */
         const pr2=await pushAll();
-        SYNC.msg=(SYNC.msg?SYNC.msg+' · ':'')+'geschrieben '+pr2.ok+(pr2.fail?' / ✖ '+pr2.fail:'');
+        m=(m?m+' · ':'')+'geschrieben '+pr2.ok+(pr2.fail?' / ✖ '+pr2.fail:'');
       }
+      SYNC.msg=m;
       if(!$('#overlay').classList.contains('on'))render();
     }else{
       SYNC.msg='Lesen scheiterte (HTTP '+r.status+')';
@@ -1087,7 +1184,7 @@ function parseCals(xml){
     if(rt<0)continue;
     if(!/<(?:[A-Za-z0-9]+:)?calendar\s*\/?>/i.test(b.slice(rt)))continue;
     const href=(b.match(/<(?:[A-Za-z0-9]+:)?href>\s*([^<]+?)\s*<\//i)||[])[1];
-    if(!href||/\.ics$/i.test(href))continue;
+    if(!href||/\.ics$/i.test(href)||/\/theo-kapsel\/?$/i.test(href))continue;
     const name=(b.match(/<(?:[A-Za-z0-9]+:)?displayname>\s*([^<]+?)\s*<\//i)||[])[1];
     out.push({href:href.endsWith('/')?href:href+'/',name:name||decodeURIComponent((href.replace(/\/+$/,'').split('/').pop()||'Kalender'))});
   }
@@ -1578,7 +1675,7 @@ function renderConfig(){
     h+='<label class="f">Phasen-Kalender (optional — Phasen werden dort transparent geführt, belegen keine Zeit)</label><select class="inp" data-field="wdCal2" id="wd-cal2"><option value="">— wie Hauptkalender —</option>'+ui.wdCals.map(c=>'<option value="'+esc(c.href)+'"'+(wd.cal2===c.href?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select>';
     h+='<div class="sub" style="margin-top:6px"><b>Schreiben:</b> legt deine Blöcke, Termine, MITs und Phasen als VEVENTs im gewählten Kalender ab (Überschreiben per UID — fremde Termine bleiben unberührt). <b>Lesen:</b> lädt den Kalenderinhalt zurück (Wiederherstellung).</div>';
     h+='<div class="fh" style="margin-top:10px">Was wird synchronisiert?</div><div class="sub" style="margin:0 0 6px">'+
-      '<b>VEVENT</b> (Hauptkalender): Blöcke, Termine, MITs (transparent, wie Phasen) · <b>VEVENT, transparent</b> (Phasen-Kalender): Jahresphasen · <b>VTODO</b> (Hauptkalender): Vorhaben &amp; To-dos inkl. Status (Kanban-Spalte), Deadline, „Erster Schritt“, Delegation, Schätzung — fremde Aufgaben (z. B. aus Tasks.org/DAVx⁵) werden als eigene Aufgaben übernommen · <b>VJOURNAL „Theo-Kapsel“</b>: Jahresmotto, Eingangskiste, Bereiche, Projekte (Metadaten), Blocktypen, Wochenfokus, Zuordnungs-Merklisten, Blockzeiten &amp; Sync-Einstellungen. <b>Fremde Termine</b> erhalten bei der Zuordnung eine Markierung im Kalender (<code>LR-ASSIGNED</code> + Slot; Zeiten unverändert), Zeit-Änderungen werden als Spiegel mit gleicher UID zurückgeschrieben. <b>Nicht synchronisiert:</b> Zugangsdaten (bleiben auf diesem Gerät).</div>';
+      '<b>VEVENT</b> (Hauptkalender): Blöcke, Termine, MITs (transparent, wie Phasen) · <b>VEVENT, transparent</b> (Phasen-Kalender): Jahresphasen · <b>VTODO</b> (Hauptkalender): Vorhaben &amp; To-dos inkl. Status (Kanban-Spalte), Deadline, „Erster Schritt“, Delegation, Schätzung — fremde Aufgaben (z. B. aus Tasks.org/DAVx⁵) werden als eigene Aufgaben übernommen · <b>VJOURNAL „Theo-Kapsel“</b> (im Hauptkalender bzw. automatisch in einer unsichtbaren <code>theo-kapsel</code>-Sammlung, falls der Kalender kein VJOURNAL erlaubt): Jahresmotto, Eingangskiste, Bereiche, Projekte (Metadaten), Blocktypen, Wochenfokus, Zuordnungs-Merklisten, Blockzeiten &amp; Sync-Einstellungen. <b>Fremde Termine</b> erhalten bei der Zuordnung eine Markierung im Kalender (<code>LR-ASSIGNED</code> + Slot; Zeiten unverändert), Zeit-Änderungen werden als Spiegel mit gleicher UID zurückgeschrieben. <b>Nicht synchronisiert:</b> Zugangsdaten (bleiben auf diesem Gerät).</div>';
     h+='<div class="sheetBtns"><button class="btn primary" data-act="wdPush">→ In Kalender schreiben</button><button class="btn" data-act="wdPull">← Aus Kalender lesen</button></div>';
   }else if(calHref){
     h+='<div class="sub" style="margin-top:8px">Gewählter Kalender: <code>'+esc(calHref)+'</code></div>';
@@ -2339,6 +2436,10 @@ const ACT={
   },
   delProj(a){
     const p=projOf(a.id); if(!p)return;
+    p.todos.forEach(t=>{
+      if(t.planned)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot];
+      const u=icsUid('todo',t.id); delete S.synced[u.split('@')[0]]; tombMark(u); wdDeleteUid(u);
+    });
     S.projects=S.projects.filter(x=>x.id!==a.id);
     ui.route={view:'bereiche'};
     save(); render(); toast('Projekt „'+p.name+'“ gelöscht.');
@@ -2622,17 +2723,17 @@ const ACT={
     if(ph.length)await putAll(ph,cal2||cal);
     if(tds.length)await putAll(tds,cal);
     registerSynced(main); registerSynced(ph); registerSynced(tds); saveQuiet();
-    let capSkip=false;
+    let capSkip=false, capSub=false;
     try{
       const cobj=capsuleJson(); const cstr=JSON.stringify(cobj);
       if(S.meta.pulled===false){capSkip=true} /* Erstverbindung: erst lesen, dann schreiben */
       else if(cstr!==SYNC.capJson){
-        const r=await wdFetch(cal+encodeURIComponent(CAP_UID)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:capsuleICS(cobj)});
-        if(r.ok||r.status===201||r.status===204){ok++; SYNC.capJson=cstr}
-        else{fail++; if(!lastS){lastS=r.status; lastT=await wdBody(r)}}
+        const cr=await putCapsule(cal,cobj);
+        if(cr.ok){ok++; SYNC.capJson=cstr; capSub=!!cr.sub}
+        else{fail++; if(!lastS){lastS=cr.status; lastT=cr.text}}
       }
     }catch(e){fail++}
-    if(ok)ui.wdMsg='✔ '+ok+' Objekte geschrieben (per UID überschrieben — wiederholtes Schreiben ist gefahrlos).'+(cal2?' Phasen liegen im zweiten Kalender und sind dort transparent (nicht „besetzt").':'')+' To-dos als VTODO, Kapsel (Motto/Kiste/Struktur) als VJOURNAL.'+(fail?' ✖ '+fail+' fehlgeschlagen: '+wdHuman(lastS,lastT):'');
+    if(ok)ui.wdMsg='✔ '+ok+' Objekte geschrieben (per UID überschrieben — wiederholtes Schreiben ist gefahrlos).'+(cal2?' Phasen liegen im zweiten Kalender und sind dort transparent (nicht „besetzt").':'')+' To-dos als VTODO, Kapsel (Motto/Kiste/Struktur) als VJOURNAL'+(capSub||SYNC.capMode==='sub'?' (in eigener VJOURNAL-Sammlung <code>theo-kapsel</code>)':'')+'.'+(fail?' ✖ '+fail+' fehlgeschlagen: '+wdHuman(lastS,lastT):'');
     else ui.wdMsg='✖ Schreiben nicht möglich. '+wdHuman(lastS||0,lastT);
     if(capSkip)ui.wdMsg+=' Kapsel (Motto/Kiste/Bereiche/Typen) bewusst übersprungen — dieses Gerät hat noch nie aus dem Kalender gelesen; nach dem ersten Lesen wird sie automatisch mitgeschrieben (Schutz vor Überschreiben).';
     render();
@@ -2647,10 +2748,9 @@ const ACT={
       if(!r.ok){ui.wdMsg='✖ Lesen scheitert. '+wdHuman(r.status,await wdBody(r)); render(); return}
       const txt=await r.text();
       const res=importICS(txt);
+      const cp=await pullCapsule(cal,txt);
       const tr=processTodos(txt);
-      const cp=processCapsule(txt);
-      if(!S.meta.pulled)S.meta.pulled=true; /* ab jetzt darf dieses Gerät schreiben */
-      const c=wdCfg();
+      if(!S.meta.pulled&&cp.checked)S.meta.pulled=true; /* ab jetzt darf dieses Gerät schreiben */
       let txt2='';
       if(c.cal2&&c.cal2!==c.cal){const r2=await wdFetch(c.cal2+'?export',{method:'GET'}); if(r2.ok){txt2=await r2.text(); const p2=importICS(txt2); res.phases+=p2.phases}}
       reconcileDeleted([txt,txt2]);
@@ -2659,7 +2759,7 @@ const ACT={
         if(!S.unmapped.some(x=>x.uid===f.uid)){S.unmapped.push(f); added++}
       }
       saveQuiet(); render();
-      ui.wdMsg='✔ Gelesen: '+res.blocks+' Blöcke, '+res.appts+' Termine, '+res.mits+' MITs, '+res.phases+' Phasen'+(tr.updated?', '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?', '+tr.imported+' Aufgaben aus VTODO':'')+(cp.adopted?', Kapsel übernommen (Motto/Kiste/Struktur)':'')+(added?' · 📥 '+added+' fremde Einträge warten auf Zuordnung':'')+ '.';
+      ui.wdMsg='✔ Gelesen: '+res.blocks+' Blöcke, '+res.appts+' Termine, '+res.mits+' MITs, '+res.phases+' Phasen'+(tr.updated?', '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?', '+tr.imported+' Aufgaben aus VTODO':'')+(cp.adopted?', Kapsel übernommen (Motto/Kiste/Struktur'+(cp.sub?' aus theo-kapsel':'')+')':'')+(added?' · 📥 '+added+' fremde Einträge warten auf Zuordnung':'')+ '.';
       render();
     }catch(e){
       ui.wdMsg='✖ Lesen nicht möglich (Netzwerk/CORS) — siehe Hinweis unten.';
@@ -2712,7 +2812,10 @@ const ACT={
     if(ui.areaDelConfirm===a.id){
       const aid=a.id;
       const ps=S.projects.filter(p=>p.areaId===aid);
-      ps.forEach(p=>{p.todos.forEach(t=>{if(t.planned)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]})});
+      ps.forEach(p=>{p.todos.forEach(t=>{
+        if(t.planned)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot];
+        const u=icsUid('todo',t.id); delete S.synced[u.split('@')[0]]; tombMark(u); wdDeleteUid(u);
+      })});
       S.projects=S.projects.filter(p=>p.areaId!==aid);
       S.areas=S.areas.filter(x=>x.id!==aid);
       ui.areaDelConfirm=null; save(); closeModal(); render();

@@ -8,7 +8,7 @@ python3 -c "import re;h=open('../conf/lebensrhythmus-prototyp.html',encoding='ut
 node --check /tmp/theo.js
 
 # 2) alle Driver:
-for s in 7 8 9 10 11 12 13 14 15; do node smoke$s.js; done
+for s in 7 8 9 10 11 12 13 14 15 16; do node smoke$s.js; done
 ```
 
 **Erwartung: alle grün.** Inhalte:
@@ -24,5 +24,6 @@ for s in 7 8 9 10 11 12 13 14 15; do node smoke$s.js; done
 | smoke13 | R12 | asAppt-Zeiten, Phasen „ | ", Wochensprung, Grabsteine, Gantt-Reparatur (28) |
 | smoke14 | R13 | asAppt-Erstell-Flow mit Uhrzeit, Gantt-Balken = Estimate (12) |
 | smoke15 | R13b | **Kapsel-Neugeräte-Schutz**: Adoption trotz lokalem ts, kein Kapsel-PUT vor erstem Lesen, Konvergenz, Legacy unverändert (13) |
+| smoke16 | R13c | **Nextcloud-VJOURNAL (`theo-kapsel` per MKCALENDAR) & To-do-Änderungserkennung**: 403-Ausweichen, kein Verschlucken von Kapsel-Fehlern, kein Falsch-Positiv bei unveränderten VTODOs, Multi-Gerät-Projekt-To-dos (17) |
 
 Driver-Konventionen/Fallstricke: siehe HANDOFF.md §4. `/tmp` ist flüchtig — vor jeder Validierung neu extrahieren. Ältere Driver setzen `S.meta.pulled=true` (etabliertes Gerät); nur smoke15 deckt den Neugeräte-Pfad ab.
