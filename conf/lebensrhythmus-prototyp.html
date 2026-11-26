@@ -137,6 +137,35 @@ label.f{display:block; font-size:12.5px; color:var(--sub); margin:12px 0 5px}
 .noamp{font-size:11px; color:#A49E91; border:1px dashed #D9D3C6; border-radius:8px; padding:1px 7px; white-space:nowrap}
 .noampDot{width:11px; height:11px; border-radius:50%; border:1.4px dashed #D2CBB9; display:inline-block; flex:none}
 .cfgTpl{width:100%; background:#FAF7F0; border-top:1px dashed #E8E2D4; margin-top:6px; padding-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px}
+.cfgNav{display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 12px}
+.dragTrashCell{display:flex; align-items:center; justify-content:center; min-height:30px}
+.dragTrash{display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:10px; border:1.5px dashed #D5B8AE; background:#FBF3F0; color:#9E5B49; font-size:11.5px; font-weight:600; opacity:0; pointer-events:none; transform:scale(.9); transition:opacity .14s ease,transform .14s ease,background .12s ease,border-color .12s ease; user-select:none}
+body.dragging-ev .dragTrash{opacity:1; pointer-events:auto; transform:scale(1)}
+.dragTrash.drop{background:#F1D6CE; border-color:#B85B45; color:#6E2B1C; outline:2px solid #D98B76; outline-offset:1px}
+.mobTrashWrap{display:none; margin-bottom:8px}
+body.dragging-ev .mobTrashWrap{display:flex; justify-content:flex-start}
+.subChips{display:flex; gap:5px; flex-wrap:wrap; margin:4px 0 6px}
+.subChip{border:1px solid #E5DECFE6; background:#FAF7F0; color:#5C564A; border-radius:999px; padding:2px 9px; font-size:11.5px; cursor:pointer; line-height:1.4}
+.subChip:hover{background:#EFEAE0; border-color:#CFC7B5}
+.typeRowWrap{display:flex; flex-direction:column; gap:3px}
+.typeSubsInline{display:flex; gap:4px; flex-wrap:wrap; padding:0 4px 3px 30px}
+.bRetBtn{margin-top:5px; border:1px dashed #D5CBB8; background:#FAF7F0; color:#6B6457; border-radius:8px; padding:2px 7px; font-size:11px; cursor:pointer; align-self:flex-start}
+.bRetBtn:hover{background:#EFEAE0; color:#3D3A33}
+.repBox{background:#FAF7F0; border:1px solid #ECE6D9; border-radius:12px; padding:9px 11px; margin-top:10px}
+.slotPickGrid{display:grid; grid-template-columns:78px repeat(7,minmax(0,1fr)); gap:5px; margin-top:8px; font-size:11.5px}
+.spCell{border:1px dashed #D8D1C2; border-radius:8px; padding:6px 3px; text-align:center; cursor:pointer; background:#FFF; color:#5C564A; font-size:11px}
+.spCell.on{background:#4A453C; color:#FBF9F2; border-color:#4A453C; border-style:solid; font-weight:600}
+.spCell.occ{background:#F2EFE8; color:#B3AC9D; border-style:solid; cursor:not-allowed}
+.inbMd p{margin:0 0 6px}
+.inbMd p:last-child{margin-bottom:0}
+.inbMd ul,.inbMd ol{margin:4px 0 6px; padding-left:20px}
+.inbMd li{margin:2px 0}
+.inbMd h1,.inbMd h2,.inbMd h3{font-size:14.5px; font-weight:700; margin:4px 0}
+.inbMd code{background:#F3EFE5; border-radius:5px; padding:1px 5px; font-size:12.5px}
+.inbMd pre{background:#F3EFE5; border-radius:8px; padding:7px 9px; overflow-x:auto; margin:5px 0; font-size:12px}
+.inbMd blockquote{margin:4px 0; padding-left:9px; border-left:2.5px solid #D5CBB8; color:#6F6A5F}
+.agRow{cursor:pointer; border-radius:8px; padding:6px 6px}
+.agRow:hover{background:#FAF7F0}
 .uprow[draggable="true"]:hover{background:#FAF7F0; border-radius:9px}
 .upGrip{color:#C1BAAB; cursor:grab; user-select:none; font-size:13px; padding:0 2px}
 .wmobile{display:none}
@@ -401,12 +430,15 @@ function normalizeType(t){
   if(t.defNote===undefined)t.defNote='';
   if(t.defT0===undefined)t.defT0='';
   if(t.defT1===undefined)t.defT1='';
+  if(!Array.isArray(t.subs)){
+    t.subs=typeof t.subs==='string'&&t.subs.trim()?t.subs.split(',').map(s=>s.trim()).filter(Boolean):[];
+  }
   return t;
 }
 
 /* ================= Zustand ================= */
 let S=null;
-const ui={route:{view:'woche'},anchor:mondayOf(new Date()),year:new Date().getFullYear(),mobileDay:dayIdx(new Date()),projTab:'list',suggestion:null,pickCtx:null,ampCtx:null,emojiCtx:null,inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,menuOpen:false,wdCals:null,wdMsg:'',agRange:'woche',pickerWeek:null,pickerTitle:'',expSlots:{},tplOpen:{},deferRender:false};
+const ui={route:{view:'woche'},anchor:mondayOf(new Date()),jumpMonth:null,year:new Date().getFullYear(),mobileDay:dayIdx(new Date()),projTab:'list',suggestion:null,pickCtx:null,ampCtx:null,emojiCtx:null,inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,menuOpen:false,wdCals:null,wdMsg:'',agRange:'woche',pickerWeek:null,pickerTitle:'',expSlots:{},tplOpen:{},quickTypeOpen:false,repSlots:{},bundleSel:{},deferRender:false};
 
 let storeOk=false;
 try{localStorage.setItem('__lr','1'); localStorage.removeItem('__lr'); storeOk=true}catch(e){}
@@ -486,6 +518,271 @@ function findTodo(tid){for(const p of S.projects){const t=p.todos.find(x=>x.id==
 function blocksFor(w){return S.blocks[w]||(S.blocks[w]={})}
 function apsFor(w){return S.appts[w]||(S.appts[w]={})}
 function mitOf(d){return S.mit[d]||null}
+
+/* ================= R13f: Markdown, Phasen-Streifen, Unterkategorien & To-do-Bündel ================= */
+function renderMd(raw){
+  if(!raw)return '';
+  const src=String(raw).replace(/\r\n?/g,'\n');
+  const codes=[];
+  function mdInl(s){
+    let x=esc(s);
+    x=x.replace(/`([^`\n]+)`/g,(_,c)=>{const i=codes.push('<code>'+c+'</code>')-1; return '\u0002C'+i+'\u0002'});
+    x=x.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    x=x.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
+    x=x.replace(/~~([^~\n]+)~~/g,'<span class="strike">$1</span>');
+    x=x.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?:;]|$)/g,'$1<i>$2</i>');
+    x=x.replace(/\u0002C(\d+)\u0002/g,(_,i)=>codes[+i]||'');
+    return x;
+  }
+  const lines=src.split('\n');
+  const out=[];
+  let i=0;
+  while(i<lines.length){
+    const ln=lines[i];
+    if(/^```/.test(ln.trim())){
+      const buf=[]; i++;
+      while(i<lines.length&&!/^```/.test(lines[i].trim())){buf.push(esc(lines[i])); i++}
+      if(i<lines.length)i++;
+      out.push('<pre><code>'+buf.join('\n')+'</code></pre>');
+      continue;
+    }
+    if(!ln.trim()){i++; continue}
+    const hm=ln.match(/^(#{1,3})\s+(.+)$/);
+    if(hm){out.push('<h'+hm[1].length+'>'+mdInl(hm[2])+'</h'+hm[1].length+'>'); i++; continue}
+    if(/^>\s?/.test(ln)){
+      const q=[];
+      while(i<lines.length&&/^>\s?/.test(lines[i])){q.push(mdInl(lines[i].replace(/^>\s?/,''))); i++}
+      out.push('<blockquote>'+q.join('<br>')+'</blockquote>');
+      continue;
+    }
+    if(/^\s*[-*+]\s+/.test(ln)){
+      const items=[];
+      while(i<lines.length&&/^\s*[-*+]\s+/.test(lines[i])){
+        let body=lines[i].replace(/^\s*[-*+]\s+/,'');
+        if(/^\[[ xX]\]\s+/.test(body)){
+          const chk=/^\[[xX]\]/.test(body);
+          body=(chk?'☑ ':'☐ ')+body.replace(/^\[[ xX]\]\s+/,'');
+        }
+        items.push('<li>'+mdInl(body)+'</li>'); i++;
+      }
+      out.push('<ul>'+items.join('')+'</ul>');
+      continue;
+    }
+    if(/^\s*\d+\.\s+/.test(ln)){
+      const items=[];
+      while(i<lines.length&&/^\s*\d+\.\s+/.test(lines[i])){
+        items.push('<li>'+mdInl(lines[i].replace(/^\s*\d+\.\s+/,''))+'</li>'); i++;
+      }
+      out.push('<ol>'+items.join('')+'</ol>');
+      continue;
+    }
+    const p=[];
+    while(i<lines.length&&lines[i].trim()&&!/^```/.test(lines[i].trim())&&!/^(#{1,3})\s+/.test(lines[i])&&!/^>\s?/.test(lines[i])&&!/^\s*[-*+]\s+/.test(lines[i])&&!/^\s*\d+\.\s+/.test(lines[i])){
+      p.push(mdInl(lines[i])); i++;
+    }
+    out.push('<p>'+p.join('<br>')+'</p>');
+  }
+  return out.join('');
+}
+function phaseBgStyle(phs){
+  if(!phs||!phs.length)return '';
+  if(phs.length===1)return 'background:'+phs[0].color+';';
+  const n=phs.length;
+  const stops=phs.map((p,i)=>p.color+' '+(i*100/n).toFixed(2)+'% '+((i+1)*100/n).toFixed(2)+'%').join(',');
+  return 'background:linear-gradient(135deg,'+stops+');';
+}
+function slotTimeFitsSlot(t0,t1,s,span){
+  if(!t0)return false;
+  const ms=mapSlotForTime(t0,t1||null);
+  if(ms<0)return true;
+  const sp=Math.max(1,span||1);
+  return ms>=+s&&ms<(+s+sp);
+}
+function typeSuggestions(tid,limit){
+  const t=typeOf(tid); if(!t)return [];
+  normalizeType(t);
+  const max=limit||5, out=[], seen={};
+  const baseName=String(t.name||'').trim().toLowerCase();
+  function pushSug(lbl,pinned){
+    const clean=String(lbl||'').replace(/\s*\((?:Teil \d+|\d+\/\d+)\)\s*$/i,'').trim();
+    if(!clean)return;
+    const low=clean.toLowerCase();
+    if(low===baseName||low==='block'||low==='termin')return;
+    if(seen[low])return;
+    seen[low]=1;
+    out.push({label:clean,pinned:!!pinned});
+  }
+  (t.subs||[]).forEach(s=>pushSug(s,true));
+  const bWeeks=Object.keys(S.blocks||{}).sort().reverse();
+  for(const w of bWeeks){
+    const bs=S.blocks[w]||{};
+    for(const k of Object.keys(bs)){
+      const bl=bs[k];
+      if(bl&&bl.typeId===tid&&bl.title)pushSug(bl.title,false);
+      if(out.length>=max+4)break;
+    }
+  }
+  const aWeeks=Object.keys(S.appts||{}).sort().reverse();
+  for(const w of aWeeks){
+    const aps=S.appts[w]||{};
+    for(const k of Object.keys(aps)){
+      const ap=aps[k];
+      if(ap&&ap.typeId===tid&&ap.title)pushSug(ap.title,false);
+      if(ap&&ap.stack)ap.stack.forEach(sa=>{if(sa&&sa.typeId===tid&&sa.title)pushSug(sa.title,false)});
+    }
+  }
+  return out.slice(0,max);
+}
+function blockItems(bl){
+  if(!bl)return [];
+  const out=[], seen={};
+  function add(kind,id){
+    if(!kind||!id)return;
+    const k=kind+':'+id;
+    if(seen[k])return;
+    seen[k]=1;
+    out.push({kind:kind,id:id});
+  }
+  if(Array.isArray(bl.items))bl.items.forEach(it=>{if(it)add(it.kind,it.id)});
+  if(bl.todoId)add('todo',bl.todoId);
+  if(bl.taskId)add('task',bl.taskId);
+  return out;
+}
+function resolveBlockItem(it){
+  if(!it)return null;
+  if(it.kind==='todo'){const f=findTodo(it.id); return f?{kind:'todo',id:it.id,t:f.t,p:f.p}:null}
+  if(it.kind==='task'){const t=S.tasks.find(x=>x.id===it.id); return t?{kind:'task',id:it.id,t:t,p:null}:null}
+  return null;
+}
+function hasBlockTodoItems(bl){
+  if(!bl||isAsApptBlock(bl))return false;
+  return !!(bl.kind==='bundle'||bl.todoId||bl.taskId||(Array.isArray(bl.items)&&bl.items.length));
+}
+function syncBlockPrimaryFields(bl){
+  if(!bl)return [];
+  const valid=blockItems(bl).filter(it=>!!resolveBlockItem(it));
+  if(!valid.length){
+    delete bl.items; bl.todoId=null; bl.taskId=null;
+    if(bl.kind==='bundle')bl.kind='typ';
+    return [];
+  }
+  if(valid.length===1&&bl.kind!=='bundle'){
+    delete bl.items;
+    bl.todoId=valid[0].kind==='todo'?valid[0].id:null;
+    bl.taskId=valid[0].kind==='task'?valid[0].id:null;
+    const r0=resolveBlockItem(valid[0]);
+    if(r0)bl.done=!!r0.t.done;
+    return valid;
+  }
+  bl.items=valid;
+  if(valid.length>=2)bl.kind='bundle';
+  const fTodo=valid.find(x=>x.kind==='todo'), fTask=valid.find(x=>x.kind==='task');
+  bl.todoId=fTodo?fTodo.id:null;
+  bl.taskId=(!fTodo&&fTask)?fTask.id:null;
+  bl.done=valid.every(it=>{const r=resolveBlockItem(it); return !!(r&&r.t.done)});
+  if(bl.kind==='bundle'&&(!bl.title||/^To-do-Bündel(\s*\(\d+\))?$/.test(bl.title)||!bl._customTitle)){
+    bl.title='To-do-Bündel ('+valid.length+')';
+  }
+  return valid;
+}
+function syncBlockItemsPlanned(w,d,s,bl){
+  blockItems(bl).forEach(it=>{
+    const r=resolveBlockItem(it);
+    if(r)r.t.planned={wk:w,day:+d,slot:+s};
+  });
+}
+function detachItemFromBlock(w,d,s,kind,id){
+  const bs=blocksFor(w), key=d+'|'+s, bl=bs[key];
+  if(!bl)return;
+  const rem=blockItems(bl).filter(it=>!(it.kind===kind&&it.id===id));
+  if(!rem.length){
+    if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(w,+d,+s,sa)); delete bl.stack}
+    delete bs[key];
+    retireLocalBlockUid(w,+d,+s);
+    return;
+  }
+  bl.items=rem;
+  if(rem.length===1&&bl.kind==='bundle'&&!bl._customTitle){
+    const r0=resolveBlockItem(rem[0]);
+    if(r0){
+      if(r0.kind==='todo'){bl.kind='projekt'; bl.projectId=r0.p.id; bl.title=r0.p.name}
+      else{bl.kind='task'; bl.projectId=null; bl.title=r0.t.title}
+    }
+  }
+  syncBlockPrimaryFields(bl);
+}
+function detachItemEverywhere(kind,id,skipW,skipD,skipS){
+  const r=resolveBlockItem({kind:kind,id:id});
+  if(r&&r.t.planned){
+    const pl=r.t.planned;
+    if(!(pl.wk===skipW&&+pl.day===+skipD&&+pl.slot===+skipS)){
+      detachItemFromBlock(pl.wk,pl.day,pl.slot,kind,id);
+    }
+    r.t.planned=null;
+  }
+}
+function combineItemIntoBlock(w,d,s,dstBl,item){
+  if(!dstBl||!item)return false;
+  detachItemEverywhere(item.kind,item.id,w,d,s);
+  const cur=blockItems(dstBl);
+  if(!cur.some(x=>x.kind===item.kind&&x.id===item.id))cur.push({kind:item.kind,id:item.id});
+  dstBl.items=cur;
+  if(cur.length>=2)dstBl.kind='bundle';
+  syncBlockPrimaryFields(dstBl);
+  syncBlockItemsPlanned(w,d,s,dstBl);
+  return true;
+}
+function returnOpenFromBlock(w,d,s){
+  const bs=blocksFor(w), key=d+'|'+s, bl=bs[key];
+  if(!bl)return {returned:0,kept:0};
+  const items=blockItems(bl);
+  const openIt=[], doneIt=[];
+  items.forEach(it=>{
+    const r=resolveBlockItem(it);
+    if(!r)return;
+    if(r.t.done)doneIt.push(it);
+    else{r.t.planned=null; openIt.push(it)}
+  });
+  if(!openIt.length)return {returned:0,kept:doneIt.length};
+  if(!doneIt.length){
+    if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(w,+d,+s,sa)); delete bl.stack}
+    delete bs[key];
+    retireLocalBlockUid(w,+d,+s);
+    return {returned:openIt.length,kept:0};
+  }
+  bl.items=doneIt;
+  if(doneIt.length===1&&!bl._customTitle){
+    const r0=resolveBlockItem(doneIt[0]);
+    if(r0){
+      if(r0.kind==='todo'){bl.kind='projekt'; bl.projectId=r0.p.id; bl.title=r0.p.name}
+      else{bl.kind='task'; bl.projectId=null; bl.title=r0.t.title}
+    }
+  }
+  syncBlockPrimaryFields(bl);
+  bl.done=true;
+  return {returned:openIt.length,kept:doneIt.length};
+}
+function isSlotInPast(w,d,s){
+  const dt=iso(addDays(parseISO(w),+d)), td=todayISO();
+  if(dt<td)return true;
+  if(dt>td)return false;
+  const now=new Date(), hm=pad(now.getHours())+':'+pad(now.getMinutes());
+  return hm>(slotWin(+s).e||'22:00');
+}
+function serializeBlockItems(bl){
+  const items=blockItems(bl);
+  if(items.length<=1&&bl.kind!=='bundle')return '';
+  return items.map(it=>it.kind+':'+it.id).join(';');
+}
+function parseBlockItemsStr(raw){
+  if(!raw)return null;
+  const out=[];
+  String(raw).split(';').forEach(tok=>{
+    const m=tok.trim().match(/^(todo|task):(.+)$/);
+    if(m)out.push({kind:m[1],id:m[2]});
+  });
+  return out.length?out:null;
+}
 function relDue(due){
   if(!due)return '';
   const t=todayISO();
@@ -710,7 +1007,7 @@ function buildEvents(only){
       ev({uid:icsUid('block',w+'-'+p[0]+'-'+p[1]),dtstart:tm.start,dtend:tm.end,
         sum:(bl.title||'Block')+' · '+SLOTS[+p[1]].label,
         desc:(bl.note||'')+(bl.done?' (erledigt)':''),cat:cat,
-        x:{KIND:bl.kind||'typ',SLOT:p[1],SPAN:String(bl.span||1),DATE:date,WEEK:w,DAY:p[0],PROJECT:bl.projectId||'',TODO:bl.todoId||'',TASK:bl.taskId||'',TYPE:bl.typeId||'',T0:bl.t0||'',T1:bl.t1||'',FB:bl.fb||'',FBNOTE:bl.fbNote||''}});
+        x:{KIND:bl.kind||'typ',SLOT:p[1],SPAN:String(bl.span||1),DATE:date,WEEK:w,DAY:p[0],PROJECT:bl.projectId||'',TODO:bl.todoId||'',TASK:bl.taskId||'',ITEMS:serializeBlockItems(bl),TYPE:bl.typeId||'',T0:bl.t0||'',T1:bl.t1||'',FB:bl.fb||'',FBNOTE:bl.fbNote||''}});
     }
   }
   function emitLocalAppt(w,ap,uidSuffix){
@@ -1176,9 +1473,13 @@ function reconcileDeleted(texts){
     }else if((m=uid.match(/^theo-todo-(.+)$/))){
       const f=findTodo(m[1]);
       if(f){
-        if(f.t.planned){const bl=blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl&&bl.todoId===m[1])delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]}
+        if(f.t.planned)detachItemFromBlock(f.t.planned.wk,f.t.planned.day,f.t.planned.slot,'todo',m[1]);
         f.p.todos=f.p.todos.filter(x=>x.id!==m[1]);
-      }else S.tasks=S.tasks.filter(x=>x.id!==m[1]);
+      }else{
+        const tk=S.tasks.find(x=>x.id===m[1]);
+        if(tk&&tk.planned)detachItemFromBlock(tk.planned.wk,tk.planned.day,tk.planned.slot,'task',m[1]);
+        S.tasks=S.tasks.filter(x=>x.id!==m[1]);
+      }
     }
     delete S.synced[uid];
     delete S.tomb[uid]; /* Server hat die Abwesenheit bestätigt — Grabstein abgeräumt */
@@ -1284,9 +1585,12 @@ function importICS(text){
       if(x('TYPE'))bl.typeId=x('TYPE');
       if(x('TODO'))bl.todoId=x('TODO');
       if(x('TASK'))bl.taskId=x('TASK');
+      if(x('ITEMS')){const pit=parseBlockItemsStr(icsUnesc(x('ITEMS'))); if(pit){bl.items=pit; if(bl.title&&!/^To-do-Bündel(\s*\(\d+\))?$/.test(bl.title))bl._customTitle=true}}
       if(x('T0')){bl.t0=x('T0'); if(x('T1'))bl.t1=x('T1')}
       if(e.UID)S.synced[String(e.UID).split('@')[0]]=1;
-      blocksFor(w)[dayIdx(d0)+'|'+slot]=bl; nb++;
+      blocksFor(w)[dayIdx(d0)+'|'+slot]=bl;
+      syncBlockItemsPlanned(w,dayIdx(d0),+slot,bl);
+      nb++;
     }else if(cats.includes('LR-APPT')){
       if(tombDead(e.UID)){skip++; wdDeleteUid(String(e.UID).split('@')[0],c.cal); continue}
       const date=x('DATE'), slot=x('SLOT');
@@ -1736,13 +2040,14 @@ function render(){
 function renderWeek(){
   const days=[0,1,2,3,4,5,6].map(i=>addDays(ui.anchor,i));
   const cur=isCurrentWeek(), tI=dayIdx(new Date());
+  const jumpVal=ui.jumpMonth||iso(addDays(ui.anchor,3)).slice(0,7);
   let h='<div class="vhead"><div><h1>Woche</h1><div class="sub">'+fmtDate(days[0])+' – '+fmtDate(days[6])+' · KW '+isoWeek(days[0])+'</div></div>'+
-    '<div class="hbtns"><input type="month" class="inp slim" data-field="weekJump" value="'+ui.anchor.toISOString().slice(0,7)+'" title="Monat wählen — springt in die erste Woche dieses Monats (z. B. Januar 2028)" style="width:150px"><button class="btn mini" data-act="weekPrev">‹ zurück</button><button class="btn mini" data-act="weekThis">Heute</button><button class="btn mini" data-act="weekNext">weiter ›</button></div></div>';
+    '<div class="hbtns"><input type="month" class="inp slim" data-field="weekJump" value="'+jumpVal+'" title="Monat wählen — springt in die erste Woche dieses Monats (z. B. Juni 2026)" style="width:150px"><button class="btn mini" data-act="weekPrev">‹ zurück</button><button class="btn mini" data-act="weekThis">Heute</button><button class="btn mini" data-act="weekNext">weiter ›</button></div></div>';
   h+=orientBar();
   if(ui.suggestion)h+=suggHtml();
   if(S.unmapped.length)h+='<div class="sugg" style="background:#F4F1E9;border-color:#E7E1D4">📥 <span><b>'+S.unmapped.length+' Kalendereintrag'+(S.unmapped.length===1?'':'e')+'</b> aus Nextcloud warten auf Zuordnung.</span><button class="btn mini" data-act="openAssign">Jetzt zuordnen</button></div>';
-  if(!S.meta.intro)h+='<div class="intro"><b>🌿 Kurz gesagt.</b><ul><li>Jeder Tag hat drei Blöcke: Vormittag, Mittag &amp; Nachmittag, Abend.</li><li>Ein Block trägt meist <b>einen</b> Schwerpunkt — ein Projekt, ein Termin oder einfach Regeneration.</li><li>Alles Weitere (Projekte, MIT, Jahresphasen) ist optional. Freie Blöcke sind völlig in Ordnung.</li></ul><button class="btn mini" data-act="introOk">Alles klar</button></div>';
-  h+='<div class="wgrid"><div></div>'+days.map(d=>{
+  if(!S.meta.intro)h+='<div class="intro"><b>🌿 Kurz gesagt.</b><ul><li>Jeder Tag hat drei Blöcke: Vormittag, Mittag &amp; Nachmittag, Abend.</li><li>Ein Block trägt meist <b>einen</b> Schwerpunkt — oder ein <b>To-do-Bündel</b> für mehrere kleine Aufgaben.</li><li>Alles Weitere (Projekte, MIT, Jahresphasen) ist optional. Freie Blöcke sind völlig in Ordnung.</li></ul><button class="btn mini" data-act="introOk">Alles klar</button></div>';
+  h+='<div class="wgrid"><div class="dragTrashCell"><div class="dragTrash" id="drag-trash" data-drop="trash" title="Hierhin ziehen, um direkt ohne Fenster zu löschen">🗑<span>Löschen</span></div></div>'+days.map(d=>{
     const m=mitOf(iso(d));
     return '<div class="dh'+(iso(d)===todayISO()?' today':'')+'" style="cursor:pointer" data-act="editMit" data-date="'+iso(d)+'" title="MIT für diesen Tag ansehen oder setzen">'+fmtDate(d)+(m?' · 🎯':'')+'</div>';
   }).join('');
@@ -1753,7 +2058,7 @@ function renderWeek(){
   h+='</div>';
   const md=Math.min(ui.mobileDay??tI,6);
   const mMit=mitOf(iso(days[md]));
-  h+='<div class="wmobile"><div class="daychips">'+days.map((d,i)=>'<button class="chip'+(i===md?' on':'')+'" data-act="setDay" data-day="'+i+'">'+fmtDate(d)+(iso(d)===todayISO()?' · heute':'')+'</button>').join('')+'</div>';
+  h+='<div class="wmobile"><div class="mobTrashWrap"><div class="dragTrash" data-drop="trash" title="Hierhin ziehen, um direkt zu löschen">🗑<span>Zum Löschen hierher ziehen</span></div></div><div class="daychips">'+days.map((d,i)=>'<button class="chip'+(i===md?' on':'')+'" data-act="setDay" data-day="'+i+'">'+fmtDate(d)+(iso(d)===todayISO()?' · heute':'')+'</button>').join('')+'</div>';
   h+='<div class="orient" style="margin:2px 0 10px"><span class="chip" data-act="editMit" data-date="'+iso(days[md])+'">🎯 MIT ('+fmtDate(days[md])+'): '+(mMit?'<b class="'+(mMit.done?'strike':'')+'">'+esc(mMit.text)+'</b>':'<i class="dim">offen</i>')+' <button class="mini2" data-act="mitDone" data-date="'+iso(days[md])+'" title="erledigt umschalten">'+(mMit&&mMit.done?'↺':'✓')+'</button></span></div>';
   for(let s=0;s<3;s++){h+='<div class="mslotLabel">'+SLOTS[s].ico+' '+SLOTS[s].label+'</div>'+slotCell(md,s,cur,tI,true)}
   h+='</div>';
@@ -1880,15 +2185,15 @@ function renderAgenda(){
     if(it.bl){
       const ty=it.bl.typeId?typeOf(it.bl.typeId):null;
       const blTitle=it.bl.kind==='projekt'&&projOf(it.bl.projectId)?projOf(it.bl.projectId).name:(it.bl.title||'Block');
-      h+='<div class="agRow" data-act="openBlockW" data-w="'+it.w+'" data-day="'+it.day+'" data-slot="'+it.slot+'"><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+(ty?ty.emoji+' ':'')+esc(blTitle)+'</span>'+ampDot(it.bl.ampel)+'<span class="pc">'+(it.bl.t0?esc(apTimeStr(it.bl.t0,it.bl.t1)):SLOTS[it.slot].ico+' '+slotWin(it.slot).s+'–'+slotWin(it.slot).e)+(it.bl.span>1?' · '+it.bl.span+' Blöcke':'')+'</span></div>';
+      h+='<div class="agRow" data-act="jumpApptWeek" data-w="'+it.w+'" data-day="'+it.day+'" title="Zur Woche dieses Termins springen"><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+(ty?ty.emoji+' ':'')+esc(blTitle)+'</span>'+ampDot(it.bl.ampel)+'<span class="pc">'+(it.bl.t0?esc(apTimeStr(it.bl.t0,it.bl.t1)):SLOTS[it.slot].ico+' '+slotWin(it.slot).s+'–'+slotWin(it.slot).e)+(it.bl.span>1?' · '+it.bl.span+' Blöcke':'')+'</span><button class="xbtn" data-act="openBlockW" data-w="'+it.w+'" data-day="'+it.day+'" data-slot="'+it.slot+'" title="Bearbeiten">✎</button></div>';
     }else{
       const isMulti=it.endDate&&it.endDate>it.date;
       const dLbl=isMulti?(fmtDate(parseISO(it.date))+' – '+fmtDate(parseISO(it.endDate))):fmtDate(parseISO(it.date));
       const meta=isMulti?(it.multiTotal+' Tage'):(esc(it.ap.time||'')+(it.ap.span>1?' · '+it.ap.span+' Blöcke':''));
-      h+='<div class="agRow" data-act="openAppt" data-id="'+it.ap.id+'"><span class="agD"'+(isMulti?' style="width:auto;min-width:88px"':'')+'>'+esc(dLbl)+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+meta+'</span></div>';
+      h+='<div class="agRow" data-act="jumpApptWeek" data-w="'+it.w+'" data-day="'+it.day+'" title="Zur Woche dieses Termins springen"><span class="agD"'+(isMulti?' style="width:auto;min-width:88px"':'')+'>'+esc(dLbl)+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+meta+'</span><button class="xbtn" data-act="openAppt" data-id="'+it.ap.id+'" title="Termin bearbeiten">✎</button></div>';
     }
   });
-  h+='<div class="sheetBtns"><button class="btn" data-act="newAppt">＋ Termin (auch später)</button></div></div>';
+  h+='<div class="sheetBtns"><button class="btn" data-act="newAppt">＋ Termin (auch später)</button><button class="btn" data-act="openSeminar" data-day="0" data-slot="0">🎓 Mehrtägiges Seminar</button></div></div>';
   return h;
 }
 
@@ -1931,7 +2236,14 @@ function orientBar(){
   if(od&&S.settings.aids.mit)p+='<span class="chip" data-act="editMit" data-date="'+od+'">🎯 MIT ('+(od===todayISO()?'heute':fmtDate(parseISO(od)))+'): '+(mit?'<b class="'+(mit.done?'strike':'')+'">'+esc(mit.text)+'</b>':'<i class="dim">offen</i>')+' <button class="mini2" data-act="mitDone" data-date="'+od+'" title="erledigt umschalten">'+(mit&&mit.done?'↺':'✓')+'</button></span>';
   if(S.settings.aids.focus)p+='<span class="chip" data-act="editFocus">🧭 Fokus KW ('+fmtDate(parseISO(wk()))+'): '+(focus?'<b>'+esc(focus)+'</b>':'<i class="dim">offen</i>')+'</span>';
   const phs=od?activePhases(od):[];
-  if(S.settings.aids.year&&phs.length)p+='<span class="chip" data-act="nav" data-v="jahr">🍂 '+esc(phs.map(x=>x.title).join(' | '))+'</span>';
+  if(S.settings.aids.year&&ui.route.view!=='jahr'){
+    if(phs.length){
+      const phAct=phs.length===1?'data-act="editPhase" data-id="'+phs[0].id+'"':'data-act="openActivePhases" data-date="'+od+'"';
+      p+='<span class="chip" '+phAct+' title="Phase anpassen">🍂 '+esc(phs.map(x=>x.title).join(' | '))+'</span>';
+    }else{
+      p+='<span class="chip" data-act="addPhaseForWeek" data-date="'+(od||wk())+'" title="Phase für diesen Zeitraum festlegen">🍂 Phase: <i class="dim">offen</i></span>';
+    }
+  }
   return p?'<div class="orient">'+p+'</div>':'';
 }
 
@@ -2010,22 +2322,37 @@ function apptCard(ap){
 
 function blockCard(bl,d,s){
   const p=bl.projectId?projOf(bl.projectId):null;
-  const td=bl.todoId?findTodo(bl.todoId):null;
+  const items=blockItems(bl).map(resolveBlockItem).filter(Boolean);
   const ac=(p&&areaOf(p))?areaOf(p).color:'#C9C2B2';
-  const ico=bl.kind==='projekt'?(p?(p.emoji||'📋'):'📋'):(bl.kind==='task'?'☑️':(bl.typeId&&typeOf(bl.typeId)?typeOf(bl.typeId).emoji:'🕯️'));
+  const ico=bl.kind==='bundle'||items.length>=2?(bl.typeId&&typeOf(bl.typeId)?typeOf(bl.typeId).emoji:'☑️'):(bl.kind==='projekt'?(p?(p.emoji||'📋'):'📋'):(bl.kind==='task'?'☑️':(bl.typeId&&typeOf(bl.typeId)?typeOf(bl.typeId).emoji:'🕯️')));
   const title=bl.kind==='projekt'&&p?p.name:bl.title;
+  const openCnt=items.filter(r=>!r.t.done).length;
   let h='<div class="card block'+(bl.done?' done':'')+'" style="--ac:'+ac+'" draggable="true" data-drag="block:'+d+'|'+s+'" data-act="openBlock" data-day="'+d+'" data-slot="'+s+'">'+
     '<div class="brow"><span class="bico">'+ico+'</span><span class="bttl">'+esc(title)+'</span>'+ampDot(bl.ampel)+'</div>'+
     (bl.t0?'<div class="btime">🕐 '+esc(apTimeStr(bl.t0,bl.t1))+'</div>':'');
-  if(td)h+='<label class="tchip"><input type="checkbox" data-act="toggleTodoBox" data-id="'+td.t.id+'"'+(td.t.done?' checked':'')+'><span'+(td.t.done?' class="strike"':'')+'>'+esc(td.t.title)+'</span></label>';
+  if(items.length>=2||bl.kind==='bundle'){
+    items.forEach(r=>{
+      const tAct=r.kind==='todo'?'toggleTodoBox':'toggleTaskBox';
+      h+='<label class="tchip"><input type="checkbox" data-act="'+tAct+'" data-id="'+r.id+'"'+(r.t.done?' checked':'')+'><span'+(r.t.done?' class="strike"':'')+'>'+esc(r.t.title)+'</span></label>';
+    });
+  }else if(items.length===1&&items[0].kind==='todo'){
+    const td=items[0];
+    h+='<label class="tchip"><input type="checkbox" data-act="toggleTodoBox" data-id="'+td.t.id+'"'+(td.t.done?' checked':'')+'><span'+(td.t.done?' class="strike"':'')+'>'+esc(td.t.title)+'</span></label>';
+  }else if(items.length===1&&items[0].kind==='task'){
+    const tk=items[0];
+    h+='<label class="tchip"><input type="checkbox" data-act="toggleTaskBox" data-id="'+tk.t.id+'"'+(tk.t.done?' checked':'')+'><span'+(tk.t.done?' class="strike"':'')+'>'+esc(tk.t.title)+'</span></label>';
+  }
+  if(openCnt>0&&(items.length>=2||isSlotInPast(wk(),d,s))){
+    h+='<button class="bRetBtn" data-act="bundleReturnOpen" data-day="'+d+'" data-slot="'+s+'" title="Nicht geschaffte Aufgaben wieder zurück in die offenen To-dos legen">↩ Offene zurück ('+openCnt+')</button>';
+  }
   if(bl.note)h+='<div class="bnote">→ '+esc(bl.note)+'</div>';
-  h+='<div class="bsrc">'+(bl.kind==='projekt'?'Projektblock':'Block'+(bl.done?' · erledigt':''))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+(bl.fb?' · '+FBL[bl.fb]:'')+'</div></div>';
+  h+='<div class="bsrc">'+(bl.kind==='bundle'||items.length>=2?'To-do-Bündel ('+(items.length-openCnt)+'/'+items.length+' erledigt)':(bl.kind==='projekt'?'Projektblock':'Block'+(bl.done?' · erledigt':'')))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+(bl.fb?' · '+FBL[bl.fb]:'')+'</div></div>';
   return h;
 }
 
 function renderYear(){
   const y=ui.year;
-  let h='<div class="vhead"><div><div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><h1>Jahr '+y+'</h1><input class="mottoInp" data-field="motto" data-year="'+y+'" value="'+esc((S.motto&&S.motto[y])||'')+'" placeholder="Jahresmotto … (klicken &amp; tippen)"></div><div class="sub">Datum anklicken: Details einer Phase ansehen — oder zwei Daten wählen (Start + Ende), um eine neue Phase festzulegen. Phasen sind Intentionen, sie steuern nichts automatisch.</div></div>'+
+  let h='<div class="vhead"><div><div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><h1>Jahr '+y+'</h1><input class="mottoInp" data-field="motto" data-year="'+y+'" value="'+esc((S.motto&&S.motto[y])||'')+'" placeholder="Jahresmotto … (klicken &amp; tippen)"></div><div class="sub">Datum anklicken: Details einer Phase ansehen — oder zwei Daten wählen (Start + Ende), um eine neue Phase festzulegen. Überlappende Phasen werden mehrfarbig gestreift dargestellt.</div></div>'+
     '<div class="hbtns"><button class="btn mini" data-act="yearPrev">‹</button><button class="btn mini" data-act="yearThis">'+(new Date().getFullYear())+'</button><button class="btn mini" data-act="yearNext">›</button></div></div>';
   if(ui.yearSel)h+='<div class="yhint"><span>📅 Start gewählt: <b>'+esc(fmtDate(parseISO(ui.yearSel.start)))+'</b> — jetzt das Enddatum anklicken. Gleicher Tag = abbrechen.</span><button class="btn mini ghost" data-act="yearSelCancel">Abbrechen</button></div>';
   h+='<div class="ygrid">';
@@ -2036,11 +2363,12 @@ function renderYear(){
     for(let e=0;e<dayIdx(first);e++)h+='<div></div>';
     for(let dd=1;dd<=len;dd++){
       const dstr=y+'-'+pad(m+1)+'-'+pad(dd);
-      const ph=phaseOf(dstr);
-      let cls='mcell'+(ph?' ph':'');
+      const phs=activePhases(dstr);
+      let cls='mcell'+(phs.length?' ph':'');
       if(dstr===todayISO())cls+=' today';
       if(ui.yearSel&&ui.yearSel.start===dstr)cls+=' sel';
-      h+='<div class="'+cls+'" style="'+(ph?'background:'+ph.color+';':'')+'" data-act="yearDay" data-date="'+dstr+'" title="'+(ph?esc(ph.title)+(ph.desc?' — '+esc(ph.desc):''):'Tag '+dd+'. '+MONNAMES[m]+' — anklicken für Details oder Zeiträume')+'">'+dd+'</div>';
+      const tip=phs.length?phs.map(p=>esc(p.title)+(p.desc?' — '+esc(p.desc):'')).join(' | '):'Tag '+dd+'. '+MONNAMES[m]+' — anklicken für Details oder Zeiträume';
+      h+='<div class="'+cls+'" style="'+phaseBgStyle(phs)+'" data-act="yearDay" data-date="'+dstr+'" title="'+tip+'">'+dd+'</div>';
     }
     h+='</div></div>';
   }
@@ -2131,7 +2459,7 @@ function renderProject(pid){
 function renderInbox(){
   let h='<div class="vhead"><div><h1>Eingangskiste</h1><div class="sub">Hier darf alles liegen, was im Kopf herumläuft. Sortieren kann warten — nichts wird „fällig".</div></div></div>';
   h+='<div class="card capCard"><div class="capKinds">'+Object.keys(INBKINDS).map(k=>'<button class="chip'+(ui.inbKind===k?' on':'')+'" data-act="inbKind" data-k="'+k+'">'+INBKINDS[k][0]+' '+INBKINDS[k][1]+'</button>').join('')+'</div>'+
-    '<input class="inp" id="inb-inp" placeholder="Gedanke, Aufgabe, Idee, Alltagskram …" data-enter="inbAdd"><div class="sub" style="margin-top:8px">Enter oder unten ablegen. Nichts hier muss je sortiert werden.</div>'+
+    '<textarea class="inp" id="inb-inp" rows="2" placeholder="Gedanke, Aufgabe, Idee, Alltagskram … (Shift+Enter = Zeilenumbruch; leichtes Markdown wie **fett**, - Liste, # Titel wird unterstützt)" data-enter="inbAdd"></textarea><div class="sub" style="margin-top:8px">Enter legt direkt ab · Shift+Enter für neue Zeile · Markdown (`- Liste`, `**fett**`, `*kursiv*`, `` `Code` ``) wird formatiert angezeigt.</div>'+
     '<div class="sheetBtns"><button class="btn primary" data-act="inbAdd">Ablegen</button></div></div>';
   const kinds=[['alle','Alles']].concat(Object.keys(INBKINDS).map(k=>[k,INBKINDS[k][1]]));
   const cnt=f=>f==='alle'?S.inbox.length:S.inbox.filter(i=>i.kind===f).length;
@@ -2141,7 +2469,7 @@ function renderInbox(){
   if(!S.inbox.length)h+='<div class="card"><div class="sub">Alles abgeflossen oder gerade nichts Neues — beides ist okay. 🌿</div></div>';
   else if(!items.length)h+='<div class="card"><div class="sub">Nichts gefunden — Filter lockern oder Suchbegriff ändern?</div></div>';
   items.forEach(it=>{
-    h+='<div class="card inbItem"><div class="inbKind">'+INBKINDS[it.kind][0]+' '+INBKINDS[it.kind][1]+' · '+esc(it.ts||'')+'</div><div class="inbText">'+esc(it.text)+'</div>'+
+    h+='<div class="card inbItem"><div class="inbKind">'+INBKINDS[it.kind][0]+' '+INBKINDS[it.kind][1]+' · '+esc(it.ts||'')+'</div><div class="inbText inbMd">'+renderMd(it.text)+'</div>'+
       '<div class="inbActs"><button class="btn mini" data-act="inbEdit" data-id="'+it.id+'" title="bearbeiten">✎</button><button class="btn mini" data-act="inbConvert" data-id="'+it.id+'" data-target="task" title="mit Einstellungen umwandeln">→ Aufgabe</button><button class="btn mini" data-act="inbConvert" data-id="'+it.id+'" data-target="todo">→ Projekt-To-do</button><button class="btn mini" data-act="inbConvert" data-id="'+it.id+'" data-target="block">→ Block</button><button class="xbtn" data-act="inbDel" data-id="'+it.id+'" title="weglassen">✕</button></div></div>';
   });
   return h;
@@ -2149,7 +2477,8 @@ function renderInbox(){
 
 function renderConfig(){
   let h='<div class="vhead"><div><h1>Konfiguration</h1><div class="sub">Alles optional — das System funktioniert auch, wenn du hier nie etwas änderst.</div></div></div>';
-  h+='<div class="fh">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
+  h+='<div class="cfgNav"><button class="chip" data-act="cfgScroll" data-to="cfg-types">🧩 Blocktypen &amp; Vorlagen</button><button class="chip" data-act="cfgScroll" data-to="cfg-areas">🗂 Lebensbereiche</button><button class="chip" data-act="cfgScroll" data-to="cfg-slots">🌅 Blockzeiten</button><button class="chip" data-act="cfgScroll" data-to="cfg-dav">🔗 Nextcloud-Sync</button></div>';
+  h+='<div class="fh" id="cfg-areas">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
   S.areas.forEach((a,idx)=>{
     h+='<div class="cfgRow" data-drop="reorder:area:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:area:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
       '<button class="emoBtn" data-act="pickEmoji" data-ctx="area" data-id="'+a.id+'">'+a.emoji+'</button>'+
@@ -2161,26 +2490,31 @@ function renderConfig(){
   });
   h+='</div><button class="btn" data-act="addArea">＋ Bereich hinzufügen</button>';
   h+='<div class="sub" style="margin-top:6px">Beim Entfernen eines Bereichs entscheidest du: Projekte behalten (laufen unter „Ohne Bereich“ weiter) oder endgültig löschen — To-dos gehen nie verloren, ohne dass du es gewählt hast.</div>';
-  h+='<div class="fh">Blocktypen — Vorlagen für Blöcke &amp; Termin-Typen (▲▼ zum Sortieren)</div><div class="sub" style="margin:-4px 0 8px">Hier legst du pro Vorlage Standard-Ampel, Standard-Dauer und fest, ob sich nach dem Einsetzen direkt der Editor öffnet (z. B. zum Benennen von „Socializing → Anna“ oder „Erholung → Sauna“) oder der Block sofort fertig ist.</div><div class="cfgList">';
+  h+='<div class="fh" id="cfg-types">🧩 Blocktypen &amp; Vorlagen (inkl. Unterkategorien / Schnellvorschläge)</div><div class="sub" style="margin:-4px 0 8px">Jeder Blocktyp ist zugleich eine <b>Vorlage</b>: Du wählst Standard-Ampel, Dauer (1–3 Blöcke) und ob sich nach dem Einsetzen der Editor öffnet. Über <b>„⚙ Vorlage &amp; Unterkategorien“</b> kannst du feste Schnellvorschläge hinterlegen (z. B. bei Socializing: <i>Anna, Fanni, Spieleabend</i>) — zusätzlich lernt Theo automatisch deine letzten Einträge dieses Typs dazu. Normale Blöcke übernehmen immer automatisch das Zeitfenster des gewählten Tagesabschnitts (Vormittag / Mittag / Abend).</div><div class="cfgList">';
   S.types.forEach((t,idx)=>{
     normalizeType(t);
     const tpOpen=!!ui.tplOpen[t.id];
-    const hasExtra=!!(t.defNote||t.defT0||t.defT1);
+    const hasExtra=!!(t.defNote||t.defT0||t.defT1||(t.subs&&t.subs.length));
+    const learned=typeSuggestions(t.id,4).filter(s=>!s.pinned).map(s=>s.label);
     h+='<div class="cfgRow" data-drop="reorder:type:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:type:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
       '<button class="emoBtn" data-act="pickEmoji" data-ctx="type" data-id="'+t.id+'">'+t.emoji+'</button>'+
       '<input class="inp slim grow" style="min-width:130px" data-field="typeName" data-id="'+t.id+'" value="'+esc(t.name)+'">'+
       '<select class="inp slim" data-field="typeAmpel" data-id="'+t.id+'" title="Standard-Ampel">'+['none','gruen','gelb','orange','rot'].map(v=>'<option value="'+v+'"'+(t.ampel===v?' selected':'')+'>'+AMP[v].label+'</option>').join('')+'</select>'+
       '<select class="inp slim" data-field="typeDefSpan" data-id="'+t.id+'" title="Standard-Dauer der Vorlage">'+[[1,'1 Block'],[2,'2 Blöcke'],[3,'3 Blöcke']].map(o=>'<option value="'+o[0]+'"'+((t.defSpan||1)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
-      '<select class="inp slim" data-field="typeOpenEdit" data-id="'+t.id+'" title="Verhalten nach Auswahl oder Drop">'+[['1','✎ danach editieren'],['0','✓ direkt fertig']].map(o=>'<option value="'+o[0]+'"'+((t.openEdit!==false?'1':'0')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
+      '<select class="inp slim" data-field="typeOpenEdit" data-id="'+t.id+'" title="Verhalten nach Auswahl">'+[['1','✎ danach editieren'],['0','✓ direkt fertig']].map(o=>'<option value="'+o[0]+'"'+((t.openEdit!==false?'1':'0')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
       '<label class="checkrow" style="margin:0 4px;white-space:nowrap"><input type="checkbox" data-field="typeAsAppt" data-id="'+t.id+'"'+(t.asAppt?' checked':'')+'><span title="Verhält sich im Wochenraster wie ein Termin (Uhrzeit, erscheint bei Termine, erlaubt zusätzlichen Block im selben Abschnitt)">wie Termin</span></label>'+
-      '<button class="btn mini'+(tpOpen||hasExtra?' primary':'')+'" data-act="toggleTypeTpl" data-id="'+t.id+'" title="Weitere Vorlagen-Details (Standard-Notiz &amp; Uhrzeit)">⚙ Vorlage</button>'+
+      '<button class="btn mini'+(tpOpen||hasExtra?' primary':'')+'" data-act="toggleTypeTpl" data-id="'+t.id+'" title="Unterkategorien / Schnellvorschläge &amp; Standard-Notiz einstellen">⚙ Vorlage'+(t.subs&&t.subs.length?' ('+t.subs.length+')':'')+'</button>'+
       '<div class="arrows"><button class="xbtn" data-act="moveItem" data-k="types" data-i="'+idx+'" data-d="-1" title="nach oben">▲</button><button class="xbtn" data-act="moveItem" data-k="types" data-i="'+idx+'" data-d="1" title="nach unten">▼</button></div>'+
       '<button class="xbtn" data-act="delType" data-id="'+t.id+'">✕</button>'+
-      (tpOpen?'<div class="cfgTpl"><span class="pc">Standard-Notiz / Erster Schritt:</span><input class="inp slim grow" style="min-width:160px" data-field="typeDefNote" data-id="'+t.id+'" value="'+esc(t.defNote||'')+'" placeholder="optional, z. B. Handy weglegen, Thema sammeln"><span class="pc">Standard-Zeit:</span>'+timePickHtml(t.defT0||'','data-field="typeDefT0" data-id="'+t.id+'"','— Start —')+'<span class="pc">–</span>'+timePickHtml(t.defT1||'','data-field="typeDefT1" data-id="'+t.id+'"','— Ende —')+'</div>':'')+
+      (tpOpen?'<div class="cfgTpl">'+
+        '<div style="width:100%;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="pc"><b>Unterkategorien / Vorschläge</b> (Komma-getrennt):</span><input class="inp slim grow" style="min-width:200px" data-field="typeSubs" data-id="'+t.id+'" value="'+esc((t.subs||[]).join(', '))+'" placeholder="z. B. Anna, Fanni, Spieleabend">'+(learned.length?'<span class="pc">Zuletzt automatisch erkannt: <i>'+esc(learned.join(', '))+'</i></span>':'')+'</div>'+
+        '<div style="width:100%;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="pc">Standard-Notiz / Erster Schritt:</span><input class="inp slim grow" style="min-width:180px" data-field="typeDefNote" data-id="'+t.id+'" value="'+esc(t.defNote||'')+'" placeholder="optional, z. B. Handy weglegen, Thema sammeln">'+
+        ((t.asAppt||t.defT0||t.defT1)?'<span class="pc">Feste Termin-Uhrzeit (nur falls im passenden Abschnitt):</span>'+timePickHtml(t.defT0||'','data-field="typeDefT0" data-id="'+t.id+'"','— Start —')+'<span class="pc">–</span>'+timePickHtml(t.defT1||'','data-field="typeDefT1" data-id="'+t.id+'"','— Ende —')+(t.defT0||t.defT1?'<button class="btn mini ghost" data-act="clearTypeTime" data-id="'+t.id+'">✕ Zeit löschen</button>':''):'<span class="pc">🕐 Uhrzeit richtet sich automatisch nach Vormittag / Mittag / Abend.</span>')+
+        '</div></div>':'')+
       '</div>';
   });
   h+='</div><button class="btn" data-act="addType">＋ Blocktyp hinzufügen</button>';
-  h+='<div class="sub" style="margin-top:6px">Alle Vorlagen-Einstellungen werden automatisch über die Theo-Kapsel zwischen deinen Geräten synchronisiert.</div>';
+  h+='<div class="sub" style="margin-top:6px">Alle Vorlagen-Einstellungen &amp; Unterkategorien werden automatisch über die Theo-Kapsel zwischen deinen Geräten synchronisiert.</div>';
   const wd=wdCfg();
   const ls=S.settings.liveSync||{};
   h+='<div class="fh">Live-Sync</div>';
@@ -2190,10 +2524,10 @@ function renderConfig(){
     '<div class="cfgRow"><span class="lbl">Intervall</span><select class="inp slim" data-field="liveInterval">'+[[30,'30 Sekunden'],[60,'60 Sekunden'],[300,'5 Minuten']].map(o=>'<option value="'+o[0]+'"'+((ls.interval||60)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select><button class="btn mini" data-act="syncNow">Jetzt synchronisieren</button></div></div>';
   h+='<div class="sub" style="margin-bottom:8px">Fremde Einträge aus dem Kalender landen nach dem Abruf im Zuordnungs-Assistenten (📥 in der Wochenansicht), bevor sie sichtbar werden.</div>';
   const stt=S.settings.slotTimes||{};
-  h+='<div class="fh">Blockzeiten im Kalender</div>';
+  h+='<div class="fh" id="cfg-slots">Blockzeiten im Kalender</div>';
   h+='<div class="sub" style="margin-bottom:8px">Blöcke werden im Kalender mit diesen Uhrzeiten geführt; Termine mit expliziter Zeit (z. B. 17:45–21:00) behalten ihre echte Zeit.</div>';
   h+='<div class="cfgList">'+[0,1,2].map(s=>'<div class="cfgRow"><span class="lbl">'+SLOTS[s].label+'</span>'+timePickHtml((stt[s]||slotWin(s)).s,'data-field="slotS" data-slot="'+s+'"',false)+'<span class="pc">–</span>'+timePickHtml((stt[s]||slotWin(s)).e,'data-field="slotE" data-slot="'+s+'"',false)+'</div>').join('')+'</div>';
-  h+='<div class="fh">Verbindung — Nextcloud / WebDAV (Lesen &amp; Schreiben)</div>';
+  h+='<div class="fh" id="cfg-dav">Verbindung — Nextcloud / WebDAV (Lesen &amp; Schreiben)</div>';
   h+='<div class="sub" style="margin-bottom:8px">🔑 Bitte ein <b>App-Passwort</b> verwenden (nicht das Login-Passwort): '+appPwLink(wd.url||'')+' → „App-Passwörter erstellen“. Eintragen hier unten; nur die Server-Adresse nötig — Theo findet die Kalender selbst.</div>';
   h+='<div class="wdStatus" id="wd-status">'+(ui.wdMsg
     ?ui.wdMsg
@@ -2239,17 +2573,22 @@ function openSheet(h){$('#overlay').innerHTML='<div class="sheet">'+h+'</div>'; 
 function closeModal(){$('#overlay').classList.remove('on'); $('#overlay').innerHTML=''; ui.ampCtx=null; ui.ampSel=null; ui.ampSelK=null}
 function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2800)}
 
-function sheetTypeAppt(d,s,tid,span){
+function sheetTypeAppt(d,s,tid,span,preTitle){
   const t=typeOf(tid); if(!t)return;
   normalizeType(t);
+  const sugs=typeSuggestions(tid,5);
+  const fitTime=slotTimeFitsSlot(t.defT0,t.defT1,s,span);
   let h='<div class="shead"><h3>'+t.emoji+' '+esc(t.name)+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+' — dieser Typ verhält sich wie ein Termin: erscheint im Termin-Stil, unten bei Termine, und lässt parallel einen Block im selben Abschnitt zu.</div></div>';
-  h+='<label class="f">Titel</label><input class="inp" id="ta-title" value="'+esc(t.name)+'">';
+  h+='<label class="f">Titel</label><input class="inp" id="ta-title" value="'+esc(preTitle||t.name)+'">';
+  if(sugs.length){
+    h+='<div class="subChips"><span class="pc" style="align-self:center">Schnellwahl:</span>'+sugs.map(sg=>'<button type="button" class="subChip" data-act="pickTitleSug" data-target="ta-title" data-val="'+esc(sg.label)+'">'+(sg.pinned?'📌 ':'')+esc(sg.label)+'</button>').join('')+'</div>';
+  }
   h+='<label class="f">Notiz / Thema (optional)</label><input class="inp" id="ta-note" value="'+esc(t.defNote||'')+'" placeholder="optional, z. B. Agenda, Ort, Vorbereitung">';
-  h+='<label class="f">Uhrzeit im 15-Min-Raster (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2">'+timePickHtml(t.defT0||'','id="ta-t0" style="flex:1;min-width:125px"','— Start —')+'<span class="pc">–</span>'+timePickHtml(t.defT1||'','id="ta-t1" style="flex:1;min-width:125px"','— Ende —')+'</div>';
+  h+='<label class="f">Uhrzeit im 15-Min-Raster (optional — ohne Angabe zählt das Blockfenster '+slotWin(s).s+'–'+slotWin(s).e+')</label><div class="row2">'+timePickHtml(fitTime?(t.defT0||''):'','id="ta-t0" style="flex:1;min-width:125px"','— Start —')+'<span class="pc">–</span>'+timePickHtml(fitTime?(t.defT1||''):'','id="ta-t1" style="flex:1;min-width:125px"','— Ende —')+'</div>';
   h+='<label class="f">Dauer</label><select class="inp slim" id="ta-span">'+[1,2,3].map(v=>'<option value="'+v+'"'+(v===span?' selected':'')+'>'+(v===1?'1 Block':(v===2?'2 Blöcke':'3 Blöcke — ganzer Tag'))+'</option>').join('')+'</select>';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="typeApptSave" data-day="'+d+'" data-slot="'+s+'" data-tid="'+tid+'">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="typeApptSave" data-day="'+d+'" data-slot="'+s+'" data-tid="'+tid+'">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
-  const el=document.getElementById('ta-title'); if(el){el.focus(); try{el.select()}catch(x){}}
+  const el=document.getElementById('ta-title'); if(el){el.focus(); try{if(!preTitle)el.select()}catch(x){}}
 }
 
 function sheetSlot(d,s,w){
@@ -2258,6 +2597,13 @@ function sheetSlot(d,s,w){
   const curAps=slotApptDisplayList(W,d,s);
   const hasReal=!!realBlockAt(W,d,s);
   let h='<div class="shead"><h3>'+(hasReal?'Termin ergänzen':'Block oder Termin eintragen')+'</h3><div class="sub">'+esc(fmtDaySlot(d,s))+(curAps.length?' · 📅 '+curAps.length+' Termin'+(curAps.length===1?'':'e')+' im Abschnitt — Block und Termine bleiben beide sichtbar.':' — Vorlage wählen (öffnet danach den Editor, sofern in der Vorlage nicht auf „direkt fertig“ gestellt).')+'</div></div>';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:2px 0 8px"><span class="fh" style="margin:0">'+(hasReal?'Termin-Vorlagen':'Blocktypen &amp; Vorlagen')+'</span><span style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn mini" data-act="quickAddTypeToggle" data-day="'+d+'" data-slot="'+s+'">'+(ui.quickTypeOpen?'✕ Schließen':'＋ Neuer Blocktyp')+'</button><button class="btn mini ghost" data-act="goTypesConfig" title="Blocktypen &amp; Vorlagen in der Konfiguration öffnen">⚙ Konfig</button></span></div>';
+  if(ui.quickTypeOpen){
+    h+='<div class="card" style="background:#FAF7F0;margin-bottom:10px;padding:10px 12px"><div class="fh2" style="margin-top:0">Schnell neuen Blocktyp anlegen</div>'+
+      '<div class="row2"><input class="inp slim" id="qt-emo" value="🫂" maxlength="4" style="width:54px;text-align:center" title="Emoji"><input class="inp slim grow" id="qt-name" placeholder="Name, z. B. Socializing, Kurs, Sport" style="min-width:140px"><select class="inp slim" id="qt-ampel">'+['none','gruen','gelb','orange','rot'].map(v=>'<option value="'+v+'"'+(v==='gruen'?' selected':'')+'>'+AMP[v].label+'</option>').join('')+'</select></div>'+
+      '<div class="row2" style="margin-top:6px"><input class="inp slim grow" id="qt-subs" placeholder="Unterkategorien optional (Komma-getrennt, z. B. Anna, Fanni, Spieleabend)" style="min-width:190px"><label class="checkrow" style="margin:0;white-space:nowrap"><input type="checkbox" id="qt-asappt"'+(hasReal?' checked':'')+'><span>wie Termin</span></label></div>'+
+      '<div class="sheetBtns" style="margin-top:8px"><button class="btn primary mini" data-act="quickAddTypeSave" data-day="'+d+'" data-slot="'+s+'" data-use="1">Anlegen &amp; hier einsetzen</button><button class="btn mini" data-act="quickAddTypeSave" data-day="'+d+'" data-slot="'+s+'" data-use="0">Nur anlegen</button></div></div>';
+  }
   const availTypes=hasReal?S.types.filter(t=>t.asAppt):S.types;
   if(availTypes.length){
     h+='<div class="stack">'+availTypes.map(t=>{
@@ -2265,11 +2611,15 @@ function sheetSlot(d,s,w){
       const hints=[];
       if(t.asAppt)hints.push('wie Termin');
       if((t.defSpan||1)>1)hints.push(t.defSpan+' Blöcke');
-      if(t.defT0)hints.push(apTimeStr(t.defT0,t.defT1));
+      if(t.defT0&&slotTimeFitsSlot(t.defT0,t.defT1,s,t.defSpan||1))hints.push(apTimeStr(t.defT0,t.defT1));
       if(t.openEdit===false&&!t.asAppt)hints.push('direkt');
-      return '<button class="typeB" data-act="fillType" data-day="'+d+'" data-slot="'+s+'" data-tid="'+t.id+'"><span class="bico">'+t.emoji+'</span><span style="flex:1">'+esc(t.name)+(hints.length?' <span class="pc">· '+esc(hints.join(' · '))+'</span>':'')+'</span>'+(t.ampel&&t.ampel!=='none'?ampDot(t.ampel):'')+'</button>';
+      const sugs=typeSuggestions(t.id,3);
+      return '<div class="typeRowWrap"><button class="typeB" data-act="fillType" data-day="'+d+'" data-slot="'+s+'" data-tid="'+t.id+'"><span class="bico">'+t.emoji+'</span><span style="flex:1">'+esc(t.name)+(hints.length?' <span class="pc">· '+esc(hints.join(' · '))+'</span>':'')+'</span>'+(t.ampel&&t.ampel!=='none'?ampDot(t.ampel):'')+'</button>'+
+        (sugs.length?'<div class="typeSubsInline"><span class="pc">↳</span>'+sugs.map(sg=>'<button class="subChip" data-act="fillTypeSub" data-day="'+d+'" data-slot="'+s+'" data-tid="'+t.id+'" data-sub="'+esc(sg.label)+'" title="Direkt mit „'+esc(sg.label)+'“ vorbelegen">'+esc(sg.label)+'</button>').join('')+'</div>':'')+
+        '</div>';
     }).join('')+'</div>';
   }
+  h+='<div class="sheetBtns" style="margin-top:8px">'+(hasReal?'':'<button class="btn mini" data-act="openBundleNew" data-day="'+d+'" data-slot="'+s+'">☑️ To-do-Bündel (mehrere kleine Aufgaben)</button>')+'<button class="btn mini" data-act="openSeminar" data-day="'+d+'" data-slot="'+s+'">🎓 Mehrtägiges Seminar / Workshop…</button></div>';
   if(!hasReal){
     h+='<label class="f">Dauer (überschreibt bei Bedarf die Vorlage)</label><select class="inp slim" id="f-span"><option value="0">Standard der Vorlage (1 Block)</option><option value="1">1 Block</option><option value="2">2 Blöcke (z. B. Vormittag + Mittag)</option><option value="3">3 Blöcke — ganzer Tag (z. B. Workshop)</option></select>';
     h+='<div class="fh">Projekt</div>';
@@ -2282,11 +2632,80 @@ function sheetSlot(d,s,w){
     if(loose.length)h+='<div class="chips">'+loose.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
   }
   h+='<div class="fh">Termin eintragen — auch mehrtägig oder für spätere Wochen</div>';
-  h+='<input class="inp" id="ap-title" placeholder="Titel des Termins">';
+  h+='<input class="inp" id="ap-title" placeholder="Titel des Termins (Enter zum direkten Speichern)" data-enter="addApptSlot|'+d+'|'+s+'">';
   h+='<div class="row2"><input class="inp slim" type="date" id="ap-date" value="'+iso(addDays(ui.anchor,d))+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="ap-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
   h+='<div class="row2">'+timePickHtml('','id="ap-t0" style="flex:1;min-width:115px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="ap-t1" style="flex:1;min-width:115px"','— Ende —')+'<select class="inp slim" id="ap-span" style="flex:1;min-width:100px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke</option></select></div>';
   h+='<div class="row2"><select class="inp slim" id="ap-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="ap-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
   h+='<div class="sheetBtns"><button class="btn" data-act="addAppt" data-day="'+d+'" data-slot="'+s+'">Termin hinzufügen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetSeminar(d,s){
+  const startIso=iso(addDays(ui.anchor,+d||0));
+  const endIso=iso(addDays(parseISO(startIso),1));
+  let h='<div class="shead"><h3>🎓 Mehrtägiges Seminar / Workshop</h3><div class="sub">Trägt ein mehrtägiges Seminar, Retreat oder eine Konferenz in einem Schritt über alle Tage hinweg ein — gebündelt in der Termin-Übersicht und im Kalender.</div></div>';
+  h+='<label class="f">Titel</label><input class="inp" id="sem-title" placeholder="z. B. Fachseminar, Klausurtagung, Fortbildung">';
+  h+='<label class="f">Zeitraum &amp; Schnellwahl</label><div class="row2"><input class="inp slim" type="date" id="sem-start" value="'+startIso+'" style="flex:1;min-width:135px"><span class="pc">bis</span><input class="inp slim" type="date" id="sem-end" value="'+endIso+'" style="flex:1;min-width:135px"></div>';
+  h+='<div class="subChips" style="margin-top:6px"><span class="pc" style="align-self:center">Schnellwahl:</span>'+
+    '<button type="button" class="subChip" data-act="semQuickDays" data-mode="days" data-n="2">2 Tage</button>'+
+    '<button type="button" class="subChip" data-act="semQuickDays" data-mode="days" data-n="3">3 Tage</button>'+
+    '<button type="button" class="subChip" data-act="semQuickDays" data-mode="days" data-n="4">4 Tage</button>'+
+    '<button type="button" class="subChip" data-act="semQuickDays" data-mode="mofr">Mo–Fr (5 Tage)</button>'+
+    '<button type="button" class="subChip" data-act="semQuickDays" data-mode="wknd">Sa–So (Wochenende)</button></div>';
+  h+='<label class="f">Täglicher Umfang im Wochenraster</label><select class="inp slim" id="sem-scope">'+
+    '<option value="all">Ganzer Tag — alle 3 Blöcke täglich belegen</option>'+
+    '<option value="two">Vormittag + Mittag (2 Blöcke täglich)</option>'+
+    '<option value="one">Nur 1 Block täglich ('+esc(SLOTS[+s||0].label)+')</option></select>';
+  h+='<label class="f">Tägliche Uhrzeit im 15-Min-Raster (optional — leer = ganztägig)</label><div class="row2">'+timePickHtml('','id="sem-t0" style="flex:1;min-width:120px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="sem-t1" style="flex:1;min-width:120px"','— Ende —')+'</div>';
+  h+='<div class="row2" style="margin-top:8px"><select class="inp slim" id="sem-ampel" style="flex:1;min-width:150px"><option value="orange" selected>🟠 intensiv (Standard)</option><option value="rot">🔴 sehr intensiv</option><option value="gelb">🟡 Tunnelrisiko</option><option value="gruen">🟢 Erholung / Retreat</option><option value="">Ampel: keine</option></select>'+
+    '<select class="inp slim" id="sem-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="seminarSave" data-slot="'+(+s||0)+'">Seminar eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+  const el=document.getElementById('sem-title'); if(el)el.focus();
+}
+
+function sheetBundleNew(d,s,w){
+  const W=w||wk();
+  const openItems=[];
+  S.projects.forEach(p=>p.todos.forEach(t=>{if(!t.done&&!t.planned)openItems.push({kind:'todo',id:t.id,title:t.title,src:(p.emoji||'📋')+' '+p.name})}));
+  S.tasks.forEach(t=>{if(!t.done&&!t.planned)openItems.push({kind:'task',id:t.id,title:t.title,src:'Einzelne Aufgabe'})});
+  let h='<div class="shead"><h3>☑️ To-do-Bündel anlegen</h3><div class="sub">'+esc(fmtDaySlotW(W,d,s))+' — packe mehrere kleine Aufgaben in einen gemeinsamen Block. Nicht geschaffte Aufgaben gehen später per Klick einfach wieder zurück in deine offenen To-dos.</div></div>';
+  h+='<label class="f">Titel des Blocks (optional)</label><input class="inp" id="bn-title" placeholder="z. B. Kleinkram &amp; Orga (leer = automatisch gezählt)">';
+  if(openItems.length){
+    h+='<div class="fh">Offene Aufgaben auswählen</div><div class="cfgList" style="max-height:210px;overflow-y:auto">';
+    openItems.forEach(it=>{
+      const k=it.kind+':'+it.id, chk=!!ui.bundleSel[k];
+      h+='<label class="cfgRow" style="cursor:pointer;padding:7px 10px"><input type="checkbox" data-act="bundleToggleSel" data-k="'+esc(k)+'"'+(chk?' checked':'')+'><span style="flex:1">'+esc(it.title)+' <span class="pc">· '+esc(it.src)+'</span></span></label>';
+    });
+    h+='</div>';
+  }else{
+    h+='<div class="sub" style="margin:6px 0">Aktuell keine ungeplanten offenen To-dos vorhanden — du kannst unten direkt neue kleine Punkte eintippen.</div>';
+  }
+  h+='<label class="f">Neue kleine Aufgaben direkt ergänzen (optional, Komma-getrennt)</label><input class="inp" id="bn-quick" placeholder="z. B. Paket abgeben, Mail an Anna, Überweisung">';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="bundleCreateSave" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Bündel-Block setzen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  openSheet(h);
+}
+
+function sheetRepeatPick(d,s,w){
+  const W=w||wk();
+  const nextW=iso(addDays(parseISO(W),7));
+  const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
+  const days=[0,1,2,3,4,5,6].map(i=>addDays(parseISO(nextW),i));
+  let h='<div class="shead"><h3>🔁 „'+esc(bl.title||'Block')+'“ in nächste Woche kopieren</h3><div class="sub">KW '+isoWeek(days[0])+' ('+fmtDate(days[0])+' – '+fmtDate(days[6])+') — wähle einen oder mehrere freie Slots aus.</div></div>';
+  h+='<div class="slotPickGrid"><div></div>'+days.map(dt=>'<div class="dh" style="font-size:11px;padding:3px 2px">'+DAYSHORT[dayIdx(dt)]+'<br><span class="pc">'+dt.getDate()+'.'+(dt.getMonth()+1)+'.</span></div>').join('');
+  for(let si=0;si<3;si++){
+    h+='<div class="sl" style="font-size:10.5px;padding:4px 2px">'+SLOTS[si].ico+' '+SLOTS[si].label.split(' ')[0]+'</div>';
+    for(let di=0;di<7;di++){
+      const k=di+'|'+si;
+      const occ=isAsApptBlock(bl)?false:blockOccW(nextW,di,si);
+      const on=!!ui.repSlots[k];
+      if(occ)h+='<div class="spCell occ" title="Bereits durch einen Block belegt">—</div>';
+      else h+='<button type="button" class="spCell'+(on?' on':'')+'" data-act="repeatToggleSlot" data-k="'+k+'" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">'+(on?'✓ gewählt':'＋ frei')+'</button>';
+    }
+  }
+  h+='</div>';
+  const selCnt=Object.keys(ui.repSlots).filter(k=>ui.repSlots[k]).length;
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="repeatApplySlots" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">In '+selCnt+' gewählte'+(selCnt===1?'n Slot':' Slots')+' eintragen</button><button class="btn ghost" data-act="openBlockW" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">← Zurück zum Block</button></div>';
   openSheet(h);
 }
 
@@ -2307,11 +2726,13 @@ function sheetBlock(d,s,w,focusTitle){
   const W=w||wk();
   const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
   const p=bl.projectId?projOf(bl.projectId):null;
-  const td=bl.todoId?findTodo(bl.todoId):null;
+  const items=blockItems(bl).map(resolveBlockItem).filter(Boolean);
+  const openCnt=items.filter(r=>!r.t.done).length;
   const ty=bl.typeId?typeOf(bl.typeId):null;
   const isTA=!!(ty&&ty.asAppt);
   const slotAps=apptsInSlot(W,d,s);
-  let h='<div class="shead"><h3>'+esc(bl.kind==='projekt'&&p?p.name:bl.title)+'</h3><div class="sub">'+esc(fmtDaySlotW(W,d,s))+' · '+(bl.kind==='projekt'?'Projektblock'+(p?' — '+esc(p.name):''):(bl.kind==='task'?'Aufgabenblock':(isTA?'Termin-Vorlage: '+esc(ty.name):'Blocktyp: '+(ty?esc(ty.name):'frei definiert'))))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+'</div></div>';
+  const sugs=bl.typeId?typeSuggestions(bl.typeId,5):[];
+  let h='<div class="shead"><h3>'+esc(bl.kind==='projekt'&&p?p.name:bl.title)+'</h3><div class="sub">'+esc(fmtDaySlotW(W,d,s))+' · '+(bl.kind==='bundle'||items.length>=2?'To-do-Bündel ('+(items.length-openCnt)+'/'+items.length+' erledigt)':(bl.kind==='projekt'?'Projektblock'+(p?' — '+esc(p.name):''):(bl.kind==='task'?'Aufgabenblock':(isTA?'Termin-Vorlage: '+esc(ty.name):'Blocktyp: '+(ty?esc(ty.name):'frei definiert')))))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+'</div></div>';
   if(!isTA&&slotAps.length){
     h+='<div class="note">📅 <b>Gleichzeitige Termine in diesem Slot ('+slotAps.length+'):</b> '+slotAps.map(a=>esc((a.time&&a.time!=='—'?a.time+' ':'')+a.title)).join(' · ')+
       '<div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap"><button class="btn mini" data-act="splitBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">✂ Block teilen (Teil 2 im nächsten freien Slot)</button>'+
@@ -2321,6 +2742,10 @@ function sheetBlock(d,s,w,focusTitle){
     h+='<label class="f">Erster Schritt — macht den Einstieg billiger (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="z. B. nur die Überschrift schreiben, erst Materialsammlung">';
   }else{
     h+='<label class="f">Titel — frei benennbar</label><input class="inp" id="b-title" value="'+esc(bl.title||'')+'" placeholder="z. B. Anna, Sauna, Spazieren am Aasee">';
+    if(bl.typeId){
+      h+='<div class="subChips">'+(sugs.length?'<span class="pc" style="align-self:center">Schnellwahl:</span>'+sugs.map(sg=>'<button type="button" class="subChip" data-act="pickTitleSug" data-target="b-title" data-val="'+esc(sg.label)+'">'+(sg.pinned?'📌 ':'')+esc(sg.label)+'</button>').join(''):'')+
+        '<button type="button" class="subChip" data-act="pinTitleSub" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'" title="Aktuellen Titel dauerhaft als Unterkategorie dieses Blocktyps merken">＋ als Unterkategorie merken</button></div>';
+    }
     h+='<label class="f">Erster Schritt / Notiz (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="Was genau? z. B. erst Kaffee, dann 30 Min. lesen">';
   }
   h+='<label class="f">Blocktyp / Vorlage (optional — beim Speichern gibt er einen Ampel-Vorschlag)</label><select class="inp" id="b-type"><option value="">— frei definiert —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(bl.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+(t.asAppt?' (wie Termin)':'')+'</option>').join('')+'</select>';
@@ -2328,8 +2753,25 @@ function sheetBlock(d,s,w,focusTitle){
   if(isTA||bl.t0||bl.t1){
     h+='<label class="f">Start-/Endzeit im 15-Min-Raster (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2">'+timePickHtml(bl.t0||'','id="b-t0" style="flex:1;min-width:125px"','— Start —')+'<span class="pc">–</span>'+timePickHtml(bl.t1||'','id="b-t1" style="flex:1;min-width:125px"','— Ende —')+'</div>';
   }
-  const tk=bl.taskId?S.tasks.find(x=>x.id===bl.taskId):null;
-  if(tk)h+='<label class="checkrow"><input type="checkbox" data-act="toggleTaskBox" data-id="'+tk.id+'"'+(tk.done?' checked':'')+'><span>Aufgabe erledigt: '+esc(tk.title)+'</span></label>';
+  if(!isTA){
+    const availAdd=[];
+    const curKeys={}; items.forEach(r=>{curKeys[r.kind+':'+r.id]=1});
+    S.projects.forEach(pr=>pr.todos.forEach(t=>{if(!t.done&&!curKeys['todo:'+t.id])availAdd.push({val:'todo:'+t.id,lbl:t.title+' ('+pr.name+')'})}));
+    S.tasks.forEach(t=>{if(!t.done&&!curKeys['task:'+t.id])availAdd.push({val:'task:'+t.id,lbl:t.title+' (Einzelaufgabe)'})});
+    if(items.length||availAdd.length){
+      h+='<div class="fh">Aufgaben in diesem Block'+(items.length>1?' ('+(items.length-openCnt)+'/'+items.length+' erledigt)':'')+'</div>';
+      items.forEach(r=>{
+        const tAct=r.kind==='todo'?'toggleTodoBox':'toggleTaskBox';
+        h+='<div class="trow" style="padding:4px 0"><label class="checkrow" style="margin:0;flex:1"><input type="checkbox" data-act="'+tAct+'" data-id="'+r.id+'"'+(r.t.done?' checked':'')+'><span'+(r.t.done?' class="strike"':'')+'>'+esc(r.t.title)+(r.p?' <span class="pc">· '+esc(r.p.name)+'</span>':'')+'</span></label><button class="xbtn" data-act="bundleUnlinkItem" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'" data-kind="'+r.kind+'" data-id="'+r.id+'" title="Aus diesem Block lösen (Aufgabe bleibt erhalten)">✕</button></div>';
+      });
+      if(availAdd.length){
+        h+='<div class="row2" style="margin-top:6px"><select class="inp slim" data-field="bundleAddSelect" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'" style="flex:1;min-width:190px"><option value="">＋ Weitere kleine Aufgabe in diesen Block packen…</option>'+availAdd.map(o=>'<option value="'+esc(o.val)+'">'+esc(o.lbl)+'</option>').join('')+'</select></div>';
+      }
+      if(openCnt>0){
+        h+='<div style="margin-top:6px"><button class="btn mini" data-act="bundleReturnOpen" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">↩ Nicht geschaffte zurücklegen ('+openCnt+' offen → zurück in To-dos)</button></div>';
+      }
+    }
+  }
   h+='<div class="fh">Ampel — wird beim Speichern übernommen</div>'+ampRowSel(bl.ampel||'none','block');
   const fb=bl.fb||null;
   h+='<div class="fh">Rückmeldung — optional, für den späteren Blick</div><div class="ampRow">'+
@@ -2337,9 +2779,14 @@ function sheetBlock(d,s,w,focusTitle){
     '<button class="ampB'+(fb==='bad'?' sel':'')+'" data-act="fbSet" data-v="bad">✖ hat nicht funktioniert</button>'+
     '<button class="ampB'+(fb==='none'?' sel':'')+'" data-act="fbSet" data-v="none">— nichts Besonderes</button></div>';
   h+='<input class="inp" id="b-fbnote" style="margin-top:8px" value="'+esc(bl.fbNote||'')+'" placeholder="Was war anders? Freitext — landet im Export (X-LR-FBNOTE) und kann später z. B. per KI ausgewertet werden.">';
-  if(td)h+='<label class="checkrow"><input type="checkbox" data-act="toggleTodoBox" data-id="'+td.t.id+'"'+(td.t.done?' checked':'')+'><span>Aufgabe erledigt: '+esc(td.t.title)+'</span></label>';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="blockSave" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Speichern</button>'+
-    (td?'':'<button class="btn" data-act="blockDone" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">'+(bl.done?'Wieder öffnen':'Als erledigt markieren')+'</button>')+
+  h+='<div class="repBox"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="fh2" style="margin:0">🔁 Wiederholen (z. B. wöchentlicher Kurs)</span><span style="display:flex;gap:5px;flex-wrap:wrap">'+
+    '<button class="btn mini" data-act="repeatBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'" data-n="1">+1 Woche</button>'+
+    '<button class="btn mini" data-act="repeatBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'" data-n="2">+2 W.</button>'+
+    '<button class="btn mini" data-act="repeatBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'" data-n="4">+4 W.</button>'+
+    '<button class="btn mini" data-act="repeatBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'" data-n="8">+8 W.</button>'+
+    '<button class="btn mini" data-act="repeatBlockPick" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">📅 Freie Slots nächste Woche…</button></span></div></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="blockSave" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Speichern</button>'+
+    (items.length===1&&items[0].kind==='todo'?'':'<button class="btn" data-act="blockDone" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">'+(bl.done?'Wieder öffnen':'Als erledigt markieren')+'</button>')+
     (isTA&&(bl.span||1)===1?'<button class="btn" data-act="openSlotW" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">＋ Block dazulegen</button>':'')+
     '<button class="btn" data-act="moveBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Verschieben</button>'+
     '<button class="btn danger" data-act="freeSlot" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">🗑 Löschen</button></div>';
@@ -2347,7 +2794,7 @@ function sheetBlock(d,s,w,focusTitle){
   h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
   ui.ampCtx={t:'block',d:d,s:s,w:W};
   openSheet(h);
-  if(focusTitle){const el=document.getElementById('b-title'); if(el){el.focus(); try{el.select()}catch(x){}}}
+  if(focusTitle){const el=document.getElementById('b-title'); if(el){el.focus(); try{if(bl.title===(ty&&ty.name))el.select()}catch(x){}}}
 }
 
 function sheetAppt(id){
@@ -2371,7 +2818,7 @@ function sheetAppt(id){
     '<button class="ampB'+(fb==='bad'?' sel':'')+'" data-act="fbSet" data-v="bad">✖ hat nicht funktioniert</button>'+
     '<button class="ampB'+(fb==='none'?' sel':'')+'" data-act="fbSet" data-v="none">— nichts Besonderes</button></div>';
   h+='<input class="inp" id="a-fbnote" style="margin-top:8px" value="'+esc(ap.fbNote||'')+'" placeholder="Was war anders? Freitext — landet im Export (X-LR-FBNOTE).">';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="apptSave" data-id="'+ap.id+'">Speichern</button>'+(canAddBlk?'<button class="btn" data-act="openSlotW" data-w="'+apW+'" data-day="'+ap.day+'" data-slot="'+ap.slot+'">＋ Block dazulegen</button>':'')+'<button class="btn" data-act="splitAppt" data-id="'+ap.id+'" title="'+(ap.multiTotal>1?'Diesen Tag als einzelnen Termin ablösen':'Termin in zwei Teile auf Folgeslot aufteilen')+'">✂ '+(ap.multiTotal>1?'Diesen Tag ablösen':'Termin teilen')+'</button><button class="btn danger" data-act="apptDel" data-id="'+ap.id+'">🗑 Löschen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="apptSave" data-id="'+ap.id+'">Speichern</button>'+(canAddBlk?'<button class="btn" data-act="openSlotW" data-w="'+apW+'" data-day="'+ap.day+'" data-slot="'+ap.slot+'">＋ Block dazulegen</button>':'')+'<button class="btn" data-act="splitAppt" data-id="'+ap.id+'" title="'+(ap.multiTotal>1?'Diesen Tag als einzelnen Termin ablösen':'Termin in zwei Teile auf Folgeslot aufteilen')+'">✂ '+(ap.multiTotal>1?'Diesen Tag ablösen':'Termin teilen')+'</button><button class="btn danger" data-act="apptDel" data-id="'+ap.id+'">🗑 Löschen</button></div>';
   h+='<div class="sub" style="margin-top:10px">🔒 Kalenderspiegel: <code>VEVENT '+(ap.remoteUid?esc(ap.remoteUid):icsUid('appt',apW+'-'+ap.day+'-'+ap.slot))+'</code>'+(ap.ampel?' · LR-'+String(ap.ampel).toUpperCase():'')+' — Termine liegen als CalDAV-Objekte im Server-Kalender; Löschen entfernt auch das Server-Objekt.</div>';
   h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
   openSheet(h);
@@ -2411,8 +2858,10 @@ function slotPickerSheet(title){
     h+='<div class="daySec"><div class="daySecT">'+fmtDate(dt)+(iso(dt)===todayISO()?' · heute':'')+'</div>';
     for(let s=0;s<3;s++){
       const bl=realBlockAt(pw,d,s), aps=slotApptDisplayList(pw,d,s), cov=coveredByW(pw,d,s);
+      const canBundle=bl&&hasBlockTodoItems(bl)&&ui.pickCtx&&(ui.pickCtx.type==='todo'||ui.pickCtx.type==='task');
       h+='<div class="pickRow"><span class="lbl">'+SLOTS[s].ico+' '+SLOTS[s].label+'</span>';
-      if(bl)h+='<span class="st">Block: '+esc(bl.title||'')+'</span>';
+      if(canBundle)h+='<span class="st">☑️ '+esc(bl.title||'Aufgabenblock')+'</span><button class="btn mini" data-act="pickSlotCombine" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">＋ dazupacken</button>';
+      else if(bl)h+='<span class="st">Block: '+esc(bl.title||'')+'</span>';
       else if(cov&&!isAsApptBlock(cov))h+='<span class="st">belegt durch „'+esc(cov.title)+'“</span>';
       else if(aps.length)h+='<span class="st">📅 '+aps.length+' Termin'+(aps.length===1?' ('+esc(aps[0].title)+')':'e')+'</span><button class="btn mini" data-act="pickSlot" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">→ dazu einplanen</button>';
       else h+='<button class="btn mini" data-act="pickSlot" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">→ hier einplanen</button>';
@@ -2431,7 +2880,7 @@ function sheetMit(dateISO){
   h+='<label class="f">Tag — das MIT gehört zu genau diesem Tag</label><input class="inp" type="date" id="mit-date" value="'+d+'">';
   h+='<input class="inp" id="mit-inp" style="margin-top:8px" value="'+esc(m?m.text:'')+'" placeholder="Was ist an diesem Tag das Wichtigste?">';
   if(m)h+='<label class="checkrow"><input type="checkbox" id="mit-done"'+(m.done?' checked':'')+'><span>erledigt</span></label>';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="mitSave" data-date="'+d+'">Speichern</button>'+(m?'<button class="btn" data-act="mitClear" data-date="'+d+'">Für diesen Tag entfernen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="mitSave" data-date="'+d+'">Speichern</button>'+(m?'<button class="btn" data-act="mitClear" data-date="'+d+'">Für diesen Tag entfernen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
   const el=document.getElementById('mit-inp'); if(el)el.focus();
 }
@@ -2440,7 +2889,7 @@ function sheetFocus(){
   const f=S.focus[wk()];
   let h='<div class="shead"><h3>🧭 Wochenfokus</h3><div class="sub">Eine Intention für diese Woche — reine Orientierung, sie steuert nichts.</div></div>';
   h+='<input class="inp" id="focus-inp" value="'+esc(f?f:'')+'" placeholder="z. B. „Ruhe halten, drei Punkte“">';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="focusSave">Speichern</button>'+(f?'<button class="btn" data-act="focusClear">Entfernen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="focusSave">Speichern</button>'+(f?'<button class="btn" data-act="focusClear">Entfernen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
   const el=document.getElementById('focus-inp'); if(el)el.focus();
 }
@@ -2467,7 +2916,7 @@ function sheetPhase(id,preStart,preEnd){
   h+='<label class="f">Beschreibung</label><textarea class="inp" id="ph-desc" rows="2" placeholder="Worin besteht die Ausrichtung?">'+esc(p?p.desc||'':'')+'</textarea>';
   h+='<div class="row2"><div style="flex:1;min-width:150px"><label class="f">Beginn</label><input class="inp" type="date" id="ph-start" value="'+st+'"></div><div style="flex:1;min-width:150px"><label class="f">Ende</label><input class="inp" type="date" id="ph-end" value="'+en+'"></div></div>';
   h+='<label class="f">Farbe — Palette oder eigene Farbe wählen</label><div class="swatches">'+PHC.map(c=>'<button class="sw2'+(ui.phColor===c?' sel':'')+'" style="--c:'+c+'" data-act="phaseColor" data-c="'+c+'"></button>').join('')+'</div><input type="color" class="colorInp" id="ph-color" data-field="phColor" value="'+esc(ui.phColor)+'" title="Eigene Farbe wählen" style="margin-top:8px">';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="phaseSave" data-id="'+(id||'new')+'">Speichern</button>'+(p?'<button class="btn danger" data-act="phaseDel" data-id="'+p.id+'">Löschen</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="phaseSave" data-id="'+(id||'new')+'">Speichern</button>'+(p?'<button class="btn danger" data-act="phaseDel" data-id="'+p.id+'">Löschen</button>':'')+(ui.route.view!=='jahr'?'<button class="btn" data-act="goYearFromPhase">→ Jahreskalender</button>':'')+'<button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
 }
 
@@ -2489,11 +2938,12 @@ function sheetAssign(){
 
 function sheetNewAppt(){
   let h='<div class="shead"><h3>Termin eintragen</h3><div class="sub">Für jeden beliebigen Tag oder Zeitraum — auch mehrtägig oder Monate im Voraus. Er landet automatisch im passenden Block der jeweiligen Woche.</div></div>';
+  h+='<div class="sheetBtns" style="margin:0 0 8px"><button class="btn mini" data-act="openSeminar" data-day="0" data-slot="0">🎓 Stattdessen mehrtägiges Seminar / Workshop anlegen…</button></div>';
   h+='<label class="f">Titel</label><input class="inp" id="na-title" placeholder="z. B. Workshop, Zahnarzt, Konferenz, Urlaub">';
   h+='<div class="row2"><input class="inp slim" type="date" id="na-date" value="'+todayISO()+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="na-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
   h+='<div class="row2">'+timePickHtml('','id="na-t0" style="flex:1;min-width:115px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="na-t1" style="flex:1;min-width:115px"','— Ende —')+'<select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select></div>';
   h+='<div class="row2"><select class="inp slim" id="na-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="na-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="newApptSave">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="newApptSave">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
 }
 
@@ -2512,7 +2962,7 @@ function sheetTodo(a){
   if(t.est){const E=estDays(t); if(E)h+='<div class="sub">Erwartungswert: ≈'+(Math.round(E*10)/10)+' Tage</div>'}
   h+='<label class="f">Delegiert an — leer bedeutet: bei mir</label><input class="inp" id="ed-del" value="'+esc(t.delegated||'')+'" placeholder="z. B. „T. übernimmt das Exposé-Review“">';
   h+='<div class="sub" style="margin-top:10px">Delegierte Vorhaben zählen nicht als offene Posten — sie bleiben nur sichtbar, damit nichts verloren geht.</div>';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="edSave" data-kind="'+a.kind+'" data-id="'+a.id+'">Speichern</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="edSave" data-kind="'+a.kind+'" data-id="'+a.id+'">Speichern</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
 }
 
@@ -2631,50 +3081,167 @@ function toggleTodo(id,val){
   const f=findTodo(id); if(!f)return;
   f.t.done=val;
   f.t.kanban=val?'fertig':(f.t.kanban==='fertig'?'offen':f.t.kanban);
-  if(f.t.planned){const bl=getBlocksW(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl)bl.done=val}
+  if(f.t.planned){
+    const bl=getBlocksW(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot];
+    if(bl){
+      if(blockItems(bl).length>=2||bl.kind==='bundle')syncBlockPrimaryFields(bl);
+      else bl.done=val;
+    }
+  }
   save();
 }
 function setBlock(d,s,bl){getBlocks()[d+'|'+s]=bl; save()}
+function applySheetBlockEdits(W,d,s){
+  const bl=blocksFor(W)[d+'|'+s]; if(!bl)return null;
+  const tt=document.getElementById('b-title');
+  if(tt&&tt.value.trim()){
+    const nv=tt.value.trim();
+    if(nv!==bl.title)bl._customTitle=true;
+    bl.title=nv;
+  }
+  const nt=document.getElementById('b-note');
+  if(nt)bl.note=nt.value.trim();
+  const spEl=document.getElementById('b-span');
+  if(spEl){
+    const wantSp=Math.max(1,Math.min(3,parseInt(spEl.value,10)||1));
+    if(wantSp!==(bl.span||1)&&wantSp<=3-s&&blockSpanRoomW(W,d,s,wantSp,d+'|'+s))bl.span=wantSp;
+  }
+  const tyEl=document.getElementById('b-type');
+  if(tyEl){
+    bl.typeId=tyEl.value||null;
+    if(bl.typeId&&(!bl.ampel||bl.ampel==='none')){const ty2=typeOf(bl.typeId); if(ty2&&ty2.ampel&&ty2.ampel!=='none')bl.ampel=ty2.ampel}
+  }
+  const t0el=document.getElementById('b-t0'), t1el=document.getElementById('b-t1');
+  if(t0el){
+    if(t0el.value){bl.t0=t0el.value; if(t1el&&t1el.value)bl.t1=t1el.value; else delete bl.t1}
+    else{delete bl.t0; delete bl.t1}
+  }
+  if(ui.ampSel!=null&&ui.ampSelK==='block')bl.ampel=ui.ampSel==='none'?null:ui.ampSel;
+  const fn=document.getElementById('b-fbnote');
+  if(fn)bl.fbNote=fn.value.trim();
+  return bl;
+}
+function cloneBlockClean(bl){
+  const c={id:uid(),kind:(bl.kind==='projekt'?'projekt':'typ'),projectId:bl.projectId||null,typeId:bl.typeId||null,title:bl.title||'Block',ampel:bl.ampel||null,note:bl.note||'',done:false,span:bl.span||1};
+  if(bl.t0){c.t0=bl.t0; if(bl.t1)c.t1=bl.t1}
+  if(bl._customTitle)c._customTitle=true;
+  return c;
+}
 
 /* ================= Aktionen ================= */
 const ACT={
-  nav(a){ui.route={view:a.v}; ui.menuOpen=false; render()},
+  nav(a){
+    if(a.v==='woche'){ui.anchor=mondayOf(new Date()); ui.mobileDay=dayIdx(new Date()); ui.jumpMonth=null}
+    ui.route={view:a.v}; ui.menuOpen=false; render();
+  },
   toggleMenu(){ui.menuOpen=!ui.menuOpen; $('#nav').classList.toggle('open',ui.menuOpen)},
   backdrop(a,t,e){if(e.target===t)closeModal()},
   closeModal(){closeModal()},
   introOk(){S.meta.intro=true; save(); render()},
-  weekPrev(){ui.anchor=addDays(ui.anchor,-7); ui.mobileDay=dayIdx(new Date()); render()},
-  weekNext(){ui.anchor=addDays(ui.anchor,7); ui.mobileDay=dayIdx(new Date()); render()},
-  weekThis(){ui.anchor=mondayOf(new Date()); ui.mobileDay=dayIdx(new Date()); render()},
+  weekPrev(){ui.anchor=addDays(ui.anchor,-7); ui.jumpMonth=null; ui.mobileDay=dayIdx(new Date()); render()},
+  weekNext(){ui.anchor=addDays(ui.anchor,7); ui.jumpMonth=null; ui.mobileDay=dayIdx(new Date()); render()},
+  weekThis(){ui.anchor=mondayOf(new Date()); ui.jumpMonth=null; ui.mobileDay=dayIdx(new Date()); render()},
+  jumpApptWeek(a){
+    if(!a.w)return;
+    ui.route={view:'woche'};
+    ui.anchor=mondayOf(parseISO(a.w));
+    ui.mobileDay=a.day!==undefined?+a.day:0;
+    ui.jumpMonth=null;
+    render();
+    try{window.scrollTo({top:0,behavior:'smooth'})}catch(e){}
+    toast('Gesprungen zu KW '+isoWeek(ui.anchor)+' ('+fmtDate(ui.anchor)+').');
+  },
   setDay(a){ui.mobileDay=+a.day; render()},
-  openSlot(a){sheetSlot(+a.day,+a.slot)},
-  openSlotW(a){sheetSlot(+a.day,+a.slot,a.w||wk())},
+  openSlot(a){ui.quickTypeOpen=false; sheetSlot(+a.day,+a.slot)},
+  openSlotW(a){ui.quickTypeOpen=false; sheetSlot(+a.day,+a.slot,a.w||wk())},
+  goTypesConfig(){
+    closeModal();
+    ui.route={view:'konfig'};
+    render();
+    setTimeout(()=>{try{const el=document.getElementById('cfg-types'); if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},30);
+  },
+  cfgScroll(a){
+    try{const el=document.getElementById(a.to); if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}
+  },
+  quickAddTypeToggle(a){
+    ui.quickTypeOpen=!ui.quickTypeOpen;
+    sheetSlot(+a.day,+a.slot);
+    if(ui.quickTypeOpen){const el=document.getElementById('qt-name'); if(el)el.focus()}
+  },
+  quickAddTypeSave(a){
+    const name=((document.getElementById('qt-name')||{}).value||'').trim();
+    if(!name){toast('Bitte einen Namen für den Blocktyp eingeben.'); return}
+    const emo=(((document.getElementById('qt-emo')||{}).value||'').trim())||'•';
+    const amp=((document.getElementById('qt-ampel')||{}).value)||'none';
+    const subsRaw=((document.getElementById('qt-subs')||{}).value||'').trim();
+    const asAppt=!!((document.getElementById('qt-asappt')||{}).checked);
+    const id=uid();
+    const nt=normalizeType({id:id,name:name,emoji:[...emo][0]||emo,ampel:amp,asAppt:asAppt,defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:subsRaw});
+    S.types.push(nt);
+    ui.quickTypeOpen=false;
+    save();
+    if(a.use==='1'){
+      ACT.fillType({day:a.day,slot:a.slot,tid:id});
+    }else{
+      sheetSlot(+a.day,+a.slot);
+      toast('Blocktyp „'+name+'“ angelegt.');
+    }
+  },
+  clearTypeTime(a){
+    const x=typeOf(a.id); if(!x)return;
+    x.defT0=''; x.defT1=''; save(); render();
+    toast('Feste Vorlagen-Uhrzeit entfernt — es gilt wieder das jeweilige Blockfenster.');
+  },
+  pickTitleSug(a){
+    const el=document.getElementById(a.target||'b-title');
+    if(el){el.value=a.val||''; el.focus()}
+  },
+  pinTitleSub(a){
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    const bl=blocksFor(W)[d+'|'+s]; if(!bl||!bl.typeId)return;
+    const t=typeOf(bl.typeId); if(!t)return;
+    normalizeType(t);
+    const val=(((document.getElementById('b-title')||{}).value)||bl.title||'').trim();
+    if(!val||val.toLowerCase()===t.name.toLowerCase()){toast('Bitte erst einen konkreten Namen (z. B. Person oder Ort) ins Titelfeld tippen.'); return}
+    if(!t.subs.some(x=>x.toLowerCase()===val.toLowerCase())){
+      t.subs.push(val);
+      bl.title=val; bl._customTitle=true;
+      save();
+      sheetBlock(d,s,W,false);
+      toast('„'+val+'“ als feste Unterkategorie bei '+t.name+' gemerkt.');
+    }else toast('„'+val+'“ ist bereits als Unterkategorie hinterlegt.');
+  },
+  fillTypeSub(a){
+    ACT.fillType({day:a.day,slot:a.slot,tid:a.tid,sub:a.sub});
+  },
   fillType(a){
     const t=typeOf(a.tid); if(!t)return;
     normalizeType(t);
     const d=+a.day, s=+a.slot, W=wk();
+    const chosenTitle=(a.sub&&String(a.sub).trim())||t.name;
     const sel=document.getElementById('f-span');
     const explicitSpan=sel?parseInt(sel.value,10):0;
     let want=readSpanForType(t);
     const avail=3-s;
+    const fitTime=slotTimeFitsSlot(t.defT0,t.defT1,s,want);
     if(t.asAppt){
       if(explicitSpan>=1&&want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
       if(want>avail)want=avail;
       if(t.openEdit===false){
         if(!blocksFor(W)[d+'|'+s]){
-          const bl={id:uid(),kind:'typ',typeId:t.id,title:t.name,ampel:t.ampel==='none'?null:t.ampel,note:t.defNote||'',done:false,span:want>1?want:1};
-          if(t.defT0){bl.t0=t.defT0; if(t.defT1)bl.t1=t.defT1}
+          const bl={id:uid(),kind:'typ',typeId:t.id,title:chosenTitle,ampel:t.ampel==='none'?null:t.ampel,note:t.defNote||'',done:false,span:want>1?want:1};
+          if(fitTime&&t.defT0){bl.t0=t.defT0; if(t.defT1)bl.t1=t.defT1}
           setBlockW(W,d,s,bl);
         }else{
-          const apN={id:uid(),day:d,slot:s,title:t.name,time:apTimeStr(t.defT0||'',t.defT1||''),ampel:t.ampel==='none'?null:t.ampel,src:'Manuell',areaId:null,span:want>1?want:1,typeId:t.id};
-          if(t.defT0){apN.t0=t.defT0; if(t.defT1)apN.t1=t.defT1}
+          const apN={id:uid(),day:d,slot:s,title:chosenTitle,time:fitTime?apTimeStr(t.defT0||'',t.defT1||''):apTimeStr('',''),ampel:t.ampel==='none'?null:t.ampel,src:'Manuell',areaId:null,span:want>1?want:1,typeId:t.id};
+          if(fitTime&&t.defT0){apN.t0=t.defT0; if(t.defT1)apN.t1=t.defT1}
           if(t.defNote)apN.fbNote=t.defNote;
           placeApptInSlot(W,d,s,apN); save();
         }
-        closeModal(); render(); toast('„'+t.name+'“ eingetragen'+(t.defT0?' · '+apTimeStr(t.defT0,t.defT1):''));
+        closeModal(); render(); toast('„'+chosenTitle+'“ eingetragen'+(fitTime&&t.defT0?' · '+apTimeStr(t.defT0,t.defT1):''));
         return;
       }
-      sheetTypeAppt(d,s,t.id,want); return;
+      sheetTypeAppt(d,s,t.id,want,a.sub||''); return;
     }
     if(explicitSpan>=1){
       if(want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
@@ -2683,14 +3250,15 @@ const ACT={
       while(want>1&&(want>avail||!blockSpanRoomW(W,d,s,want)))want--;
       if(!blockSpanRoomW(W,d,s,want)){toast('Dieser Block ist bereits belegt.'); return}
     }
-    const bl={id:uid(),kind:'typ',typeId:t.id,title:t.name,ampel:t.ampel==='none'?null:t.ampel,note:t.defNote||'',done:false,span:want>1?want:1};
-    if(t.defT0){bl.t0=t.defT0; if(t.defT1)bl.t1=t.defT1}
+    const bl={id:uid(),kind:'typ',typeId:t.id,title:chosenTitle,ampel:t.ampel==='none'?null:t.ampel,note:t.defNote||'',done:false,span:want>1?want:1};
+    if(a.sub)bl._customTitle=true;
+    if(fitTime&&t.defT0){bl.t0=t.defT0; if(t.defT1)bl.t1=t.defT1}
     setBlockW(W,d,s,bl);
     if(t.openEdit!==false){
       render();
       sheetBlock(d,s,W,true);
     }else{
-      closeModal(); render(); toast('Block belegt: '+t.name+(want>1?' (über '+want+' Blöcke)':''));
+      closeModal(); render(); toast('Block belegt: '+chosenTitle+(want>1?' (über '+want+' Blöcke)':''));
     }
   },
   typeApptSave(a){
@@ -2777,6 +3345,192 @@ const ACT={
     if(t0){apN.t0=t0; if(t1)apN.t1=t1}
     placeApptInSlot(w,dd,s0,apN);
     save(); closeModal(); render(); toast('Termin für '+fmtDate(parseISO(dIn))+' eingetragen'+(sp>1?' (über '+sp+' Blöcke)':'')+'.');
+  },
+  addApptSlot(raw){
+    const p=String(raw||'').split('|');
+    ACT.addAppt({day:p[0]||'0',slot:p[1]||'0'});
+  },
+  openSeminar(a){sheetSeminar(+a.day||0,+a.slot||0)},
+  semQuickDays(a){
+    const sEl=document.getElementById('sem-start'), eEl=document.getElementById('sem-end');
+    if(!sEl||!eEl)return;
+    let st=sEl.value||todayISO();
+    if(a.mode==='mofr'){
+      st=iso(mondayOf(parseISO(st)));
+      sEl.value=st;
+      eEl.value=iso(addDays(parseISO(st),4));
+    }else if(a.mode==='wknd'){
+      st=iso(addDays(mondayOf(parseISO(st)),5));
+      sEl.value=st;
+      eEl.value=iso(addDays(parseISO(st),1));
+    }else{
+      const n=Math.max(2,parseInt(a.n,10)||2);
+      eEl.value=iso(addDays(parseISO(st),n-1));
+    }
+  },
+  seminarSave(a){
+    const title=((document.getElementById('sem-title')||{}).value||'').trim();
+    const dIn=((document.getElementById('sem-start')||{}).value||'').trim();
+    const dEnd=((document.getElementById('sem-end')||{}).value||'').trim()||dIn;
+    if(!title){toast('Bitte einen Titel für das Seminar eingeben.'); return}
+    if(!dIn||dEnd<dIn){toast('Bitte einen gültigen Zeitraum wählen (Ende ≥ Start).'); return}
+    const scope=((document.getElementById('sem-scope')||{}).value)||'all';
+    const t0=((document.getElementById('sem-t0')||{}).value)||'';
+    const t1=((document.getElementById('sem-t1')||{}).value)||'';
+    const amp=((document.getElementById('sem-ampel')||{}).value)||null;
+    const ty=((document.getElementById('sem-type')||{}).value)||null;
+    const baseSlot=scope==='one'?(+a.slot||0):0;
+    const daySpan=scope==='all'?3:(scope==='two'?2:1);
+    const tot=Math.min(90,Math.max(1,Math.round((parseISO(dEnd)-parseISO(dIn))/86400000)+1));
+    const mid=tot>1?uid():null;
+    const dailyTime=t0?apTimeStr(t0,t1):'ganztägig';
+    let lastW=wk(), lastD=0, lastS=0;
+    for(let i=0;i<tot;i++){
+      const dc=iso(addDays(parseISO(dIn),i)), cw=iso(mondayOf(parseISO(dc))), cd=dayIdx(parseISO(dc));
+      let sl=baseSlot;
+      if(scope==='one'&&t0){const ms=mapSlotForTime(t0,t1||null); if(ms>=0)sl=ms}
+      const apObj={id:uid(),day:cd,slot:sl,title:title,time:dailyTime,ampel:amp,src:'Manuell',areaId:null,span:daySpan,typeId:ty};
+      if(t0){apObj.t0=t0; if(t1)apObj.t1=t1}
+      if(tot>1){apObj.multiId=mid; apObj.multiStart=dIn; apObj.multiEnd=dEnd; apObj.multiIdx=i+1; apObj.multiTotal=tot}
+      placeApptInSlot(cw,cd,sl,apObj);
+      lastW=cw; lastD=cd; lastS=Math.min(2,sl+daySpan-1);
+    }
+    save(); closeModal(); render();
+    if(amp==='rot'&&lastW===wk())setTimeout(()=>offerRegen(lastD,lastS),50);
+    toast('🎓 Seminar „'+title+'“ ('+tot+(tot===1?' Tag':' Tage')+') eingetragen.');
+  },
+  openBundleNew(a){ui.bundleSel={}; sheetBundleNew(+a.day,+a.slot,a.w||wk())},
+  bundleToggleSel(a,t){if(a.k)ui.bundleSel[a.k]=!!(t&&t.checked)},
+  bundleCreateSave(a){
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    if(blockOccW(W,d,s)){toast('Dieser Block ist bereits belegt.'); return}
+    const chosen=[];
+    Object.keys(ui.bundleSel||{}).forEach(k=>{
+      if(!ui.bundleSel[k])return;
+      const m=k.match(/^(todo|task):(.+)$/);
+      if(m)chosen.push({kind:m[1],id:m[2]});
+    });
+    const quickRaw=((document.getElementById('bn-quick')||{}).value||'').trim();
+    if(quickRaw){
+      quickRaw.split(',').map(x=>x.trim()).filter(Boolean).forEach(qt=>{
+        const nt={id:uid(),title:qt,done:false,planned:null};
+        S.tasks.push(nt);
+        chosen.push({kind:'task',id:nt.id});
+      });
+    }
+    if(!chosen.length){toast('Bitte mindestens eine Aufgabe auswählen oder unten eintippen.'); return}
+    const customT=((document.getElementById('bn-title')||{}).value||'').trim();
+    const bl={id:uid(),kind:'bundle',typeId:null,title:customT||('To-do-Bündel ('+chosen.length+')'),ampel:'gelb',note:'',done:false,span:1,items:[]};
+    if(customT)bl._customTitle=true;
+    chosen.forEach(it=>detachItemEverywhere(it.kind,it.id,W,d,s));
+    bl.items=chosen;
+    syncBlockPrimaryFields(bl);
+    setBlockW(W,d,s,bl);
+    syncBlockItemsPlanned(W,d,s,bl);
+    ui.bundleSel={};
+    save(); closeModal(); render();
+    toast('☑️ '+chosen.length+' Aufgaben gemeinsam in '+fmtDaySlotW(W,d,s)+' gebündelt.');
+  },
+  bundleUnlinkItem(a){
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    const r=resolveBlockItem({kind:a.kind,id:a.id});
+    if(r)r.t.planned=null;
+    detachItemFromBlock(W,d,s,a.kind,a.id);
+    save();
+    if(blocksFor(W)[d+'|'+s]){render(); sheetBlock(d,s,W,false)}
+    else{closeModal(); render()}
+    toast('Aufgabe aus Block gelöst — bleibt als offene Aufgabe erhalten.');
+  },
+  bundleReturnOpen(a,t,e){
+    if(e&&e.stopPropagation)e.stopPropagation();
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    const res=returnOpenFromBlock(W,d,s);
+    if(!res.returned){toast('Keine offenen Aufgaben zum Zurücklegen in diesem Block.'); return}
+    save(); closeModal(); render();
+    toast('↩ '+res.returned+' offene Aufgabe'+(res.returned===1?'':'n')+' zurück in die offenen To-dos gelegt'+(res.kept?' ('+res.kept+' erledigte bleibt im Block)':'')+'.');
+  },
+  pickSlotCombine(a){
+    const c=ui.pickCtx||{};
+    const W=a.week||c.week||wk(), d=+a.day, s=+a.slot;
+    const dstBl=blocksFor(W)[d+'|'+s];
+    if(!dstBl||!hasBlockTodoItems(dstBl)){toast('Zielblock kann nicht gebündelt werden.'); return}
+    if(c.type==='todo'||c.type==='task'){
+      combineItemIntoBlock(W,d,s,dstBl,{kind:c.type,id:c.id});
+      ui.pickCtx=null; ui.pickerWeek=null;
+      save(); closeModal(); render();
+      toast('☑️ Zum Aufgaben-Bündel hinzugefügt ('+blockItems(dstBl).length+' Aufgaben).');
+    }
+  },
+  repeatBlock(a){
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    const bl=applySheetBlockEdits(W,d,s); if(!bl)return;
+    ui.ampSel=null; ui.ampSelK=null;
+    const n=Math.max(1,Math.min(26,parseInt(a.n,10)||1));
+    const isTA=isAsApptBlock(bl);
+    let placed=0, skipped=0;
+    for(let k=1;k<=n;k++){
+      const tw=iso(addDays(parseISO(W),7*k));
+      const cp=cloneBlockClean(bl);
+      if(isTA){
+        if(!blocksFor(tw)[d+'|'+s])setBlockW(tw,d,s,cp);
+        else{
+          const apN={id:uid(),day:d,slot:s,title:cp.title||'Termin',time:apTimeStr(cp.t0||'',cp.t1||''),ampel:cp.ampel||null,src:'Manuell',areaId:null,span:cp.span||1,typeId:cp.typeId||null};
+          if(cp.t0){apN.t0=cp.t0; if(cp.t1)apN.t1=cp.t1}
+          if(cp.note)apN.fbNote=cp.note;
+          placeApptInSlot(tw,d,s,apN);
+        }
+        placed++;
+      }else if(blockSpanRoomW(tw,d,s,cp.span||1)){
+        setBlockW(tw,d,s,cp);
+        placed++;
+      }else skipped++;
+    }
+    save(); closeModal(); render();
+    toast(placed?('🔁 „'+bl.title+'“ in +'+n+(n===1?' Woche':' Wochen')+' eingetragen ('+placed+'× angelegt'+(skipped?', '+skipped+'× belegt übersprungen':'')+').'):'Ziel-Slots in den Folgewochen sind bereits belegt.');
+  },
+  repeatBlockPick(a){
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    const bl=applySheetBlockEdits(W,d,s); if(!bl)return;
+    ui.ampSel=null; ui.ampSelK=null;
+    save();
+    const nextW=iso(addDays(parseISO(W),7));
+    ui.repSlots={};
+    if(isAsApptBlock(bl)||blockSpanRoomW(nextW,d,s,bl.span||1))ui.repSlots[d+'|'+s]=true;
+    sheetRepeatPick(d,s,W);
+  },
+  repeatToggleSlot(a){
+    if(a.k)ui.repSlots[a.k]=!ui.repSlots[a.k];
+    sheetRepeatPick(+a.day,+a.slot,a.w||wk());
+  },
+  repeatApplySlots(a){
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
+    const nextW=iso(addDays(parseISO(W),7));
+    const keys=Object.keys(ui.repSlots||{}).filter(k=>ui.repSlots[k]);
+    if(!keys.length){toast('Bitte mindestens einen Slot auswählen.'); return}
+    const isTA=isAsApptBlock(bl);
+    let placed=0;
+    keys.forEach(k=>{
+      const p=k.split('|'), td=+p[0], ts=+p[1];
+      const cp=cloneBlockClean(bl);
+      if(cp.span>3-ts)cp.span=Math.max(1,3-ts);
+      if(isTA){
+        if(!blocksFor(nextW)[td+'|'+ts])setBlockW(nextW,td,ts,cp);
+        else{
+          const apN={id:uid(),day:td,slot:ts,title:cp.title||'Termin',time:apTimeStr(cp.t0||'',cp.t1||''),ampel:cp.ampel||null,src:'Manuell',areaId:null,span:cp.span||1,typeId:cp.typeId||null};
+          if(cp.t0){apN.t0=cp.t0; if(cp.t1)apN.t1=cp.t1}
+          if(cp.note)apN.fbNote=cp.note;
+          placeApptInSlot(nextW,td,ts,apN);
+        }
+        placed++;
+      }else if(blockSpanRoomW(nextW,td,ts,cp.span||1)){
+        setBlockW(nextW,td,ts,cp);
+        placed++;
+      }
+    });
+    ui.repSlots={};
+    save(); closeModal(); render();
+    toast('🔁 „'+bl.title+'“ in '+placed+(placed===1?' Slot':' Slots')+' der nächsten Woche eingetragen.');
   },
   newAppt(){sheetNewAppt()},
   newApptSave(){
@@ -2897,7 +3651,11 @@ const ACT={
     const W=a.w||wk();
     const bl=blocksFor(W)[a.day+'|'+a.slot]; if(!bl)return;
     const tt=document.getElementById('b-title');
-    if(tt&&tt.value.trim())bl.title=tt.value.trim();
+    if(tt&&tt.value.trim()){
+      const nv=tt.value.trim();
+      if(nv!==bl.title)bl._customTitle=true;
+      bl.title=nv;
+    }
     const nt=document.getElementById('b-note');
     if(nt)bl.note=nt.value.trim();
     const spEl=document.getElementById('b-span');
@@ -2987,16 +3745,19 @@ const ACT={
     const W=a.w||wk();
     const bl=blocksFor(W)[a.day+'|'+a.slot]; if(!bl)return;
     bl.done=!bl.done;
-    if(bl.todoId){const f=findTodo(bl.todoId); if(f){f.t.done=bl.done; f.t.kanban=bl.done?'fertig':'offen'}}
-    if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.done=bl.done}
+    blockItems(bl).forEach(it=>{
+      const r=resolveBlockItem(it);
+      if(!r)return;
+      r.t.done=bl.done;
+      if(r.kind==='todo')r.t.kanban=bl.done?'fertig':'offen';
+    });
     save(); closeModal(); render(); toast(bl.done?'Erledigt — gut, dass es dran war.':'Wieder geöffnet.');
   },
   freeSlot(a){
     const d=+a.day, s=+a.slot;
     const W=a.w||wk();
     const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
-    if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned=null}
-    if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned=null}
+    blockItems(bl).forEach(it=>{const r=resolveBlockItem(it); if(r)r.t.planned=null});
     if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,d,s,sa)); delete bl.stack}
     const uid=icsUid('block',W+'-'+d+'-'+s).split('@')[0];
     delete S.synced[uid];
@@ -3055,18 +3816,17 @@ const ACT={
       delete blocksFor(srcW)[key];
       retireLocalBlockUid(srcW,c.from.day,c.from.slot);
       setBlockW(W,d,s,bl);
-      if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:d,slot:s}}
-      if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:d,slot:s}}
+      syncBlockItemsPlanned(W,d,s,bl);
       toast('Verschoben nach '+fmtDaySlotW(W,d,s));
     }else if(c.type==='todo'){
       const f=findTodo(c.id); if(!f)return;
-      if(f.t.planned){delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; retireLocalBlockUid(f.t.planned.wk,f.t.planned.day,f.t.planned.slot)}
+      detachItemEverywhere('todo',c.id,W,d,s);
       f.t.planned={wk:W,day:d,slot:s};
       setBlockW(W,d,s,{id:uid(),kind:'projekt',projectId:f.p.id,todoId:c.id,title:f.p.name,ampel:'gelb',note:f.t.firstStep||'',done:false});
       toast('„'+f.t.title+'“ geplant: '+fmtDaySlotW(W,d,s));
     }else if(c.type==='task'){
       const t=S.tasks.find(x=>x.id===c.id); if(!t)return;
-      if(t.planned){delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]; retireLocalBlockUid(t.planned.wk,t.planned.day,t.planned.slot)}
+      detachItemEverywhere('task',c.id,W,d,s);
       t.planned={wk:W,day:d,slot:s};
       setBlockW(W,d,s,{id:uid(),kind:'task',taskId:t.id,typeId:null,title:t.title,ampel:'none',note:t.firstStep||'',done:false});
       toast('Aufgabe geplant: '+fmtDaySlotW(W,d,s));
@@ -3085,20 +3845,31 @@ const ACT={
   },
   pickerPrev(){ui.pickerWeek=iso(addDays(parseISO(ui.pickerWeek||wk()),-7)); slotPickerSheet(ui.pickerTitle||'Block verschieben')},
   pickerNext(){ui.pickerWeek=iso(addDays(parseISO(ui.pickerWeek||wk()),7)); slotPickerSheet(ui.pickerTitle||'Block verschieben')},
-  toggleTodoBox(a,t,e){toggleTodo(a.id,e.target.checked); render()},
+  toggleTodoBox(a,t,e){
+    toggleTodo(a.id,e.target.checked);
+    render();
+    if(ui.ampCtx&&ui.ampCtx.t==='block'&&$('#overlay').classList.contains('on'))sheetBlock(ui.ampCtx.d,ui.ampCtx.s,ui.ampCtx.w,false);
+  },
   toggleTaskBox(a,t,e){
     const task=S.tasks.find(x=>x.id===a.id); if(!task)return;
     task.done=e.target.checked;
-    if(task.planned){const bl=getBlocksW(task.planned.wk)[task.planned.day+'|'+task.planned.slot]; if(bl)bl.done=task.done}
+    if(task.planned){
+      const bl=getBlocksW(task.planned.wk)[task.planned.day+'|'+task.planned.slot];
+      if(bl){
+        if(blockItems(bl).length>=2||bl.kind==='bundle')syncBlockPrimaryFields(bl);
+        else bl.done=task.done;
+      }
+    }
     save(); render();
+    if(ui.ampCtx&&ui.ampCtx.t==='block'&&$('#overlay').classList.contains('on'))sheetBlock(ui.ampCtx.d,ui.ampCtx.s,ui.ampCtx.w,false);
   },
   planTodo(a){ui.pickCtx={type:'todo',id:a.id}; slotPickerSheet('Aufgabe in Block überführen')},
   planTask(a){ui.pickCtx={type:'task',id:a.id}; slotPickerSheet('Aufgabe in Block überführen')},
   unplanTodo(a){
     const f=findTodo(a.id); if(!f)return;
     if(f.t.planned){
-      const pl=f.t.planned, bl=blocksFor(pl.wk)[pl.day+'|'+pl.slot];
-      if(bl){delete blocksFor(pl.wk)[pl.day+'|'+pl.slot]; retireLocalBlockUid(pl.wk,pl.day,pl.slot)}
+      const pl=f.t.planned;
+      detachItemFromBlock(pl.wk,pl.day,pl.slot,'todo',a.id);
       f.t.planned=null;
     }
     save(); render(); toast('Planung gelöst — Aufgabe bleibt bestehen.');
@@ -3107,14 +3878,14 @@ const ACT={
     const t=S.tasks.find(x=>x.id===a.id); if(!t)return;
     if(t.planned){
       const pl=t.planned;
-      if(blocksFor(pl.wk)[pl.day+'|'+pl.slot]){delete blocksFor(pl.wk)[pl.day+'|'+pl.slot]; retireLocalBlockUid(pl.wk,pl.day,pl.slot)}
+      detachItemFromBlock(pl.wk,pl.day,pl.slot,'task',a.id);
       t.planned=null;
     }
     save(); render(); toast('Planung gelöst.');
   },
   delTodo(a){
     const f=findTodo(a.id); if(!f)return;
-    if(f.t.planned){const bl=blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; if(bl&&bl.todoId===a.id)delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]}
+    if(f.t.planned)detachItemFromBlock(f.t.planned.wk,f.t.planned.day,f.t.planned.slot,'todo',a.id);
     f.p.todos=f.p.todos.filter(x=>x.id!==a.id);
     delete S.synced[icsUid('todo',a.id).split('@')[0]];
     tombMark(icsUid('todo',a.id));
@@ -3123,7 +3894,7 @@ const ACT={
   },
   delTask(a){
     const t=S.tasks.find(x=>x.id===a.id); if(!t)return;
-    if(t.planned){const bl=blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]; if(bl&&bl.taskId===a.id)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]}
+    if(t.planned)detachItemFromBlock(t.planned.wk,t.planned.day,t.planned.slot,'task',a.id);
     const fullUid=t.remoteUid||icsUid('todo',a.id);
     S.tasks=S.tasks.filter(x=>x.id!==a.id);
     delete S.synced[fullUid.split('@')[0]];
@@ -3197,7 +3968,7 @@ const ACT={
   delProj(a){
     const p=projOf(a.id); if(!p)return;
     p.todos.forEach(t=>{
-      if(t.planned)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot];
+      if(t.planned)detachItemFromBlock(t.planned.wk,t.planned.day,t.planned.slot,'todo',t.id);
       const u=icsUid('todo',t.id); delete S.synced[u.split('@')[0]]; tombMark(u); wdDeleteUid(u);
     });
     S.projects=S.projects.filter(x=>x.id!==a.id);
@@ -3339,11 +4110,37 @@ const ACT={
   yearNext(){ui.year++; render()},
   yearThis(){ui.year=new Date().getFullYear(); render()},
   addPhase(){sheetPhase('new')},
+  addPhaseForWeek(a){
+    const base=(a&&a.date)?iso(mondayOf(parseISO(a.date))):wk();
+    sheetPhase('new',base,iso(addDays(parseISO(base),27)));
+  },
+  openActivePhases(a){
+    const dstr=(a&&a.date)||todayISO();
+    const phs=activePhases(dstr);
+    if(phs.length===1){sheetPhase(phs[0].id); return}
+    if(!phs.length){ACT.addPhaseForWeek({date:dstr}); return}
+    let h='<div class="shead"><h3>🍂 Überlappende Phasen ('+phs.length+')</h3><div class="sub">Am '+esc(fmtDate(parseISO(dstr)))+' sind mehrere Phasen aktiv — zum Bearbeiten anklicken:</div></div>';
+    phs.forEach(p=>{
+      h+='<button class="phchip" style="--c:'+p.color+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+(p.desc?' · '+esc(p.desc):'')+'</span></span></button>';
+    });
+    h+='<div class="sheetBtns"><button class="btn" data-act="addPhaseForWeek" data-date="'+dstr+'">＋ Weitere Phase anlegen</button><button class="btn" data-act="goYearFromPhase">→ Jahreskalender</button><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
+    openSheet(h);
+  },
+  goYearFromPhase(){
+    closeModal();
+    ui.route={view:'jahr'};
+    ui.year=parseISO(wk()).getFullYear();
+    render();
+  },
   editPhase(a){sheetPhase(a.id)},
   yearDay(a){
     const dstr=a.date;
-    const ph=phaseOf(dstr);
-    if(ph&&!ui.yearSel){sheetPhase(ph.id); return}
+    const phs=activePhases(dstr);
+    if(phs.length&&!ui.yearSel){
+      if(phs.length===1)sheetPhase(phs[0].id);
+      else ACT.openActivePhases({date:dstr});
+      return;
+    }
     if(!ui.yearSel){ui.yearSel={start:dstr}; render(); return}
     const st=ui.yearSel.start;
     if(dstr===st){ui.yearSel=null; render(); return}
@@ -3578,7 +4375,7 @@ const ACT={
       const aid=a.id;
       const ps=S.projects.filter(p=>p.areaId===aid);
       ps.forEach(p=>{p.todos.forEach(t=>{
-        if(t.planned)delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot];
+        if(t.planned)detachItemFromBlock(t.planned.wk,t.planned.day,t.planned.slot,'todo',t.id);
         const u=icsUid('todo',t.id); delete S.synced[u.split('@')[0]]; tombMark(u); wdDeleteUid(u);
       })});
       S.projects=S.projects.filter(p=>p.areaId!==aid);
@@ -3694,7 +4491,20 @@ document.addEventListener('change',e=>{
   else if(f==='weekJump'){
     const v=el.value||'';
     const m=v.match(/^(\d{4})-(\d{2})/);
-    if(m){ui.anchor=mondayOf(new Date(+m[1],+m[2]-1,1)); ui.mobileDay=0; render(); toast('Gesprungen: '+MONNAMES[+m[2]-1]+' '+m[1]+' — Woche ab '+fmtDate(ui.anchor)+'.')}
+    if(m){ui.anchor=mondayOf(new Date(+m[1],+m[2]-1,1)); ui.jumpMonth=m[1]+'-'+m[2]; ui.mobileDay=0; render(); toast('Gesprungen: '+MONNAMES[+m[2]-1]+' '+m[1]+' — Woche ab '+fmtDate(ui.anchor)+'.')}
+  }
+  else if(f==='bundleAddSelect'){
+    const val=el.value||'';
+    const m=val.match(/^(todo|task):(.+)$/);
+    if(m){
+      const W=el.dataset.w||wk(), d=+el.dataset.day, s=+el.dataset.slot;
+      const dstBl=blocksFor(W)[d+'|'+s];
+      if(dstBl){
+        combineItemIntoBlock(W,d,s,dstBl,{kind:m[1],id:m[2]});
+        save(); render(); sheetBlock(d,s,W,false);
+        toast('☑️ Aufgabe in diesen Block dazugepackt ('+blockItems(dstBl).length+' im Block).');
+      }
+    }
   }
   else if(f==='wdCal'){const c=wdCfg(); c.cal=el.value; save(); render(); toast('Kalender gewählt — Live-Sync kann jetzt laufen.')}
   else if(f==='kanState'){setKan(el.dataset.tid,el.value); render()}
@@ -3702,8 +4512,9 @@ document.addEventListener('change',e=>{
   else if(f==='typeName'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
   else if(f==='typeAmpel'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.ampel=el.value; save()}}
   else if(f==='typeDefSpan'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defSpan=Math.max(1,Math.min(3,+el.value||1)); save(); toast('Vorlagen-Dauer: '+x.defSpan+(x.defSpan===1?' Block':' Blöcke'))}}
-  else if(f==='typeOpenEdit'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.openEdit=!!el.checked; save(); toast(x.openEdit?'Vorlage öffnet nach Auswahl den Editor.':'Vorlage trägt direkt ohne Editor ein.')}}
+  else if(f==='typeOpenEdit'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.openEdit=(el.value==='0'||el.value==='false')?false:((el.value==='1'||el.value==='true')?true:!!el.checked); save(); toast(x.openEdit?'Vorlage öffnet nach Auswahl den Editor.':'Vorlage trägt direkt ohne Editor ein.')}}
   else if(f==='typeDefNote'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defNote=el.value; save()}}
+  else if(f==='typeSubs'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.subs=String(el.value||'').split(',').map(s=>s.trim()).filter(Boolean); save(); render(); toast('Unterkategorien gespeichert ('+x.subs.length+').')}}
   else if(f==='typeDefT0'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defT0=el.value||''; if(!x.defT0)x.defT1=''; save(); render()}}
   else if(f==='typeDefT1'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.defT1=el.value||''; save()}}
   else if(f==='typeAsAppt'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.asAppt=!!el.checked; save(); render(); toast(x.asAppt?'Vorlage verhält sich jetzt wie ein Termin (Optik, Agenda & Koexistenz).':'Vorlage zählt wieder als normaler Arbeitsblock.')}}
@@ -3732,6 +4543,9 @@ document.addEventListener('input',e=>{
   }else if(f==='typeDefNote'){
     const x=S.types.find(y=>y.id===el.dataset.id);
     if(x){x.defNote=el.value; save()}
+  }else if(f==='typeSubs'){
+    const x=S.types.find(y=>y.id===el.dataset.id);
+    if(x){x.subs=String(el.value||'').split(',').map(s=>s.trim()).filter(Boolean); save()}
   }else if(f==='motto'){
     (S.motto||(S.motto={}))[el.dataset.year]=el.value.trim();
     save();
@@ -3743,21 +4557,38 @@ document.addEventListener('focusout',()=>{
   },60);
 });
 document.addEventListener('keydown',e=>{
-  if(e.key!=='Enter')return;
+  if(e.key!=='Enter'||e.isComposing)return;
   const el=e.target;
   if(el&&el.dataset&&el.dataset.enter){
+    if(String(el.tagName||'').toUpperCase()==='TEXTAREA'&&e.shiftKey)return;
+    if(e.preventDefault)e.preventDefault();
     const parts=el.dataset.enter.split('|');
     if(ACT[parts[0]])ACT[parts[0]](parts.slice(1).join('|'),el);
+    return;
+  }
+  if(!e.shiftKey&&$('#overlay')&&$('#overlay').classList.contains('on')){
+    const tg=String((el&&el.tagName)||'').toUpperCase();
+    if(tg!=='TEXTAREA'&&tg!=='BUTTON'){
+      const sub=$('#overlay').querySelector&&$('#overlay').querySelector('[data-default-submit="1"]');
+      if(sub&&sub.dataset&&ACT[sub.dataset.act]){
+        if(e.preventDefault)e.preventDefault();
+        ACT[sub.dataset.act](sub.dataset,sub,e);
+      }
+    }
   }
 });
 document.addEventListener('dragstart',e=>{
   const el=closestEl(e.target,'[data-drag]');
   if(!el)return;
   dragPayload=el.dataset.drag||'';
+  if(dragPayload.startsWith('block:')||dragPayload.startsWith('appt:')){
+    try{document.body.classList.add('dragging-ev')}catch(x){}
+  }
   if(e.dataTransfer){try{e.dataTransfer.setData('text/plain',dragPayload); e.dataTransfer.effectAllowed='move'}catch(x){}}
 });
 document.addEventListener('dragend',()=>{
   dragPayload=''; dragEndTs=Date.now();
+  try{document.body.classList.remove('dragging-ev')}catch(x){}
   try{document.querySelectorAll('.drop').forEach(x=>x.classList.remove('drop'))}catch(x){}
 });
 document.addEventListener('dragover',e=>{
@@ -3773,10 +4604,28 @@ document.addEventListener('drop',e=>{
   if(!el)return;
   e.preventDefault();
   el.classList.remove('drop');
+  try{document.body.classList.remove('dragging-ev')}catch(x){}
   const data=(e.dataTransfer&&e.dataTransfer.getData&&e.dataTransfer.getData('text/plain'))||dragPayload;
   dragPayload='';
   if(!data)return;
   const drop=el.dataset.drop;
+  if(drop==='trash'){
+    if(data.startsWith('block:')){
+      const p=data.slice(6).split('|'), fd=+p[0], fs=+p[1], W=wk();
+      const bl=blocksFor(W)[fd+'|'+fs];
+      if(bl){
+        blockItems(bl).forEach(it=>{const r=resolveBlockItem(it); if(r)r.t.planned=null});
+        if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
+        const buid=icsUid('block',W+'-'+fd+'-'+fs).split('@')[0];
+        delete S.synced[buid]; tombMark(buid); wdDeleteUid(buid);
+        delete blocksFor(W)[fd+'|'+fs];
+        save(); render(); toast('🗑 Block direkt gelöscht.');
+      }
+    }else if(data.startsWith('appt:')){
+      ACT.apptDel({id:data.slice(5)});
+    }
+    return;
+  }
   if(drop[0]==='w'&&data.startsWith('block:')){
     const from=data.slice(6).split('|');
     const to=drop.slice(1).match(/(\d)s(\d)/);
@@ -3806,15 +4655,25 @@ document.addEventListener('drop',e=>{
       save(); render(); toast('Termin verschoben nach '+fmtDaySlot(td,ts));
       return;
     }
+    if(dstBl&&hasBlockTodoItems(bl)&&hasBlockTodoItems(dstBl)){
+      const srcItems=blockItems(bl);
+      if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
+      delete getBlocks()[srcKey];
+      retireLocalBlockUid(W,fd,fs);
+      srcItems.forEach(it=>{
+        const r=resolveBlockItem(it); if(r)r.t.planned=null;
+        combineItemIntoBlock(W,td,ts,dstBl,it);
+      });
+      save(); render(); toast('☑️ Aufgaben zu einem Bündel kombiniert ('+blockItems(dstBl).length+' im Block).');
+      return;
+    }
     if(dstBl&&!isAsApptBlock(dstBl)&&spn===1&&(dstBl.span||1)===1){
       getBlocks()[srcKey]=dstBl;
       getBlocks()[dstKey]=bl;
       const suid=icsUid('block',W+'-'+fd+'-'+fs).split('@')[0], duid=icsUid('block',W+'-'+td+'-'+ts).split('@')[0];
       delete S.tomb[suid]; delete S.tomb[duid];
-      if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:td,slot:ts}}
-      if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:td,slot:ts}}
-      if(dstBl.todoId){const f2=findTodo(dstBl.todoId); if(f2)f2.t.planned={wk:W,day:fd,slot:fs}}
-      if(dstBl.taskId){const t2=S.tasks.find(x=>x.id===dstBl.taskId); if(t2)t2.planned={wk:W,day:fd,slot:fs}}
+      syncBlockItemsPlanned(W,td,ts,bl);
+      syncBlockItemsPlanned(W,fd,fs,dstBl);
       save(); render(); toast('Blöcke getauscht: '+fmtDaySlot(fd,fs)+' ⇄ '+fmtDaySlot(td,ts));
       return;
     }
@@ -3824,8 +4683,7 @@ document.addEventListener('drop',e=>{
     delete getBlocks()[srcKey];
     retireLocalBlockUid(W,fd,fs);
     setBlockW(W,td,ts,bl);
-    if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:td,slot:ts}}
-    if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:td,slot:ts}}
+    syncBlockItemsPlanned(W,td,ts,bl);
     save(); render(); toast('Verschoben nach '+fmtDaySlot(td,ts));
   }else if(drop[0]==='w'&&data.startsWith('appt:')){
     const to=drop.slice(1).match(/(\d)s(\d)/);
@@ -3835,9 +4693,15 @@ document.addEventListener('drop',e=>{
     const to=drop.slice(1).match(/(\d)s(\d)/);
     if(!to)return;
     const tid=data.slice(5).split('|')[1], td=+to[1], ts=+to[2], W=wk();
-    if(blockOccW(W,td,ts)){toast('Zielblock belegt.'); return}
     const f=findTodo(tid); if(!f)return;
-    if(f.t.planned){delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot]; retireLocalBlockUid(f.t.planned.wk,f.t.planned.day,f.t.planned.slot)}
+    const dstBl=realBlockAt(W,td,ts);
+    if(dstBl&&hasBlockTodoItems(dstBl)){
+      combineItemIntoBlock(W,td,ts,dstBl,{kind:'todo',id:tid});
+      save(); render(); toast('☑️ „'+f.t.title+'“ zum Block-Bündel kombiniert ('+blockItems(dstBl).length+' Aufgaben).');
+      return;
+    }
+    if(blockOccW(W,td,ts)){toast('Zielblock belegt.'); return}
+    detachItemEverywhere('todo',tid,W,td,ts);
     f.t.planned={wk:W,day:td,slot:ts};
     setBlockW(W,td,ts,{id:uid(),kind:'projekt',projectId:f.p.id,todoId:tid,title:f.p.name,ampel:'gelb',note:f.t.firstStep||'',done:false});
     save(); render(); toast('„'+f.t.title+'“ geplant: '+fmtDaySlot(td,ts));
@@ -3845,9 +4709,15 @@ document.addEventListener('drop',e=>{
     const to=drop.slice(1).match(/(\d)s(\d)/);
     if(!to)return;
     const taskId=data.slice(5), td=+to[1], ts=+to[2], W=wk();
-    if(blockOccW(W,td,ts)){toast('Zielblock belegt.'); return}
     const t=S.tasks.find(x=>x.id===taskId); if(!t)return;
-    if(t.planned){delete blocksFor(t.planned.wk)[t.planned.day+'|'+t.planned.slot]; retireLocalBlockUid(t.planned.wk,t.planned.day,t.planned.slot)}
+    const dstBl=realBlockAt(W,td,ts);
+    if(dstBl&&hasBlockTodoItems(dstBl)){
+      combineItemIntoBlock(W,td,ts,dstBl,{kind:'task',id:taskId});
+      save(); render(); toast('☑️ „'+t.title+'“ zum Block-Bündel kombiniert ('+blockItems(dstBl).length+' Aufgaben).');
+      return;
+    }
+    if(blockOccW(W,td,ts)){toast('Zielblock belegt.'); return}
+    detachItemEverywhere('task',taskId,W,td,ts);
     t.planned={wk:W,day:td,slot:ts};
     setBlockW(W,td,ts,{id:uid(),kind:'task',taskId:t.id,typeId:null,title:t.title,ampel:'none',note:t.firstStep||'',done:!!t.done});
     save(); render(); toast('„'+t.title+'“ geplant: '+fmtDaySlot(td,ts));
