@@ -28,3 +28,9 @@
 - Freiwilliger Wissensfortschritt, ausblendbares Modul und direkt verknüpfte Termine; keine Wissenschips in der Wochenansicht.
 - Frei kombinierbare, additive Vorschläge für unterschiedliche Arbeitskontexte.
 - Privat gespeichertes Feedback mit RLS, eigener Einsicht/Löschung und Export; keine automatische externe Weitergabe.
+
+### Beta – schlanke Administration und Authentizität
+- Authentifiziertes Admin-Panel für private Feedback-Sortierung und manuell zu prüfende Agenten-Zusammenfassungen, redaktionelle Entwürfe/Veröffentlichung und kontobezogene Funktionsfreigaben.
+- Admin-Funktionen sehen keine fremden Planungsdaten; Infrastruktur-Zugriff und fehlende Ende-zu-Ende-Verschlüsselung werden dokumentiert.
+- Feedback prominent im Menü und Mobilkopf; optionale Ausgangspunkte als responsives Kachelraster.
+- Drei freiwillige Wissensbeiträge: Erkenne dich selbst, Steh zu dir selbst, Sei ganz du selbst.

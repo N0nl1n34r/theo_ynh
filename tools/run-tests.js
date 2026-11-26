@@ -60,8 +60,8 @@ for (let s = 7; s <= 19; s++) {
   execFileSync(process.execPath, [driver], { cwd: ROOT, stdio: 'inherit' });
 }
 
-console.log('\n=== 3. Beta-Suite (smoke20..smoke23: App, Sync, API, RLS) ===');
-for (let s = 20; s <= 23; s++) {
+console.log('\n=== 3. Beta-Suite (smoke20..smoke24: App, Sync, API, RLS, Admin) ===');
+for (let s = 20; s <= 24; s++) {
   const driver = path.join(ROOT, 'tests', `smoke${s}.js`);
   console.log(`\n--- Running smoke${s}.js ---`);
   execFileSync(process.execPath, [driver], { cwd: ROOT, stdio: 'inherit' });

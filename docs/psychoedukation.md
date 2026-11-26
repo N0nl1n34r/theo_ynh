@@ -1,6 +1,6 @@
 # Psychoedukation: Redaktion und Ausbau
 
-Die Inhalte liegen als gut lesbare Datensätze in `app/education.js` und werden mit der App ausgeliefert und offline zwischengespeichert. Änderungen benötigen zurzeit eine Veröffentlichung; es gibt noch kein browserbasiertes Redaktionssystem. App-Daten der Nutzer werden dadurch nicht verändert.
+Die mitgelieferten Inhalte liegen in `app/education.js` und werden offline zwischengespeichert. Das Admin-Panel bietet zusätzlich Entwürfe und explizite Veröffentlichung ohne App-Deployment; veröffentlichte Fassungen ergänzen bzw. überschreiben die mitgelieferten Inhalte nach stabiler ID und werden für Offline-Zugriff zwischengespeichert. App-Daten der Nutzer werden dadurch nicht verändert. Neue Code-Funktionen und mitgelieferte Inhalte benötigen weiterhin ein Deployment.
 
 ## Inhalte bearbeiten
 
@@ -25,4 +25,8 @@ Auf einer Themenkarte oder im Artikel öffnet „Zeit dafür einplanen“ einen 
 
 ## Medien und Redaktion
 
-Externe Videos, Podcasts, Audios und andere Inhalte lassen sich heute über `resources` als HTTPS-Link ergänzen, einschließlich Format, Sprache, Laufzeit, Untertiteln/Transkript und Hinweis auf den externen Anbieter. Links öffnen erst auf Nutzungsentscheidung; der Anbieter kann dabei Daten erhalten und ist für Verfügbarkeit zuständig. Die App bettet Medien derzeit **nicht** ein und lädt sie nicht offline vor. Selbst gehostete Medien, Einbettung, Transkripte und ein Redaktionssystem müssten separat entwickelt und datenschutzrechtlich sowie lizenzrechtlich geprüft werden. Für umfangreichere Redaktion Dateien ändern und deployen; es gibt keine Bearbeitung direkt in der App.
+Externe Videos, Podcasts, Audios und andere Inhalte lassen sich heute über `resources` als HTTPS-Link ergänzen, einschließlich Format, Sprache, Laufzeit, Untertiteln/Transkript und Hinweis auf den externen Anbieter. Links öffnen erst auf Nutzungsentscheidung; der Anbieter kann dabei Daten erhalten und ist für Verfügbarkeit zuständig. Die App bettet Medien derzeit **nicht** ein und lädt sie nicht offline vor. Selbst gehostete Medien, Einbettung, Transkripte und ein Redaktionssystem müssten separat entwickelt und datenschutzrechtlich sowie lizenzrechtlich geprüft werden. Im Admin-Panel können Titel, Absätze, Quellen und HTTPS-Medienlinks gepflegt, als Entwurf gespeichert und ausdrücklich veröffentlicht werden. Affiliate-Kennzeichnung wird für unveränderte Links beibehalten; neue Affiliate-Links vorerst über die Datei mit `affiliate:true` eintragen. Vor jeder Veröffentlichung die fachliche Prüfung durchführen.
+
+## Drei freiwillige Schritte
+
+Die Beiträge „Erkenne dich selbst“, „Steh zu dir selbst“ und „Sei ganz du selbst“ sind offene Selbstreflexion, keine medizinische Behandlung oder starre Reihenfolge. Offenlegung und Anpassung sind individuelle Entscheidungen; Sicherheit und Umfeld zählen. Sie werden über die Funktion `authenticity` freigegeben.

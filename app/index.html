@@ -436,6 +436,7 @@ body.auth-gated #topbar{display:none}
 }
 @media (min-width:600px) and (max-width:940px) and (orientation:landscape){.mobileDays[data-count="7"]{grid-template-columns:repeat(7,minmax(0,1fr))}}
 .swipeHint{display:none}@media (hover:none),(pointer:coarse){.swipeHint{display:block}}
+.presetGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}.presetGrid .card{min-width:0;display:flex;flex-direction:column}.presetGrid .card button{align-self:flex-start;margin-top:auto}
 .eduGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
 .eduCard{padding:16px}.eduCard p{margin:7px 0}.eduArticle{max-width:690px}.eduArticle p{line-height:1.65}.eduArticle .note{overflow-wrap:anywhere}
 .mcell{border:0;background:transparent;padding:0;flex-direction:column;line-height:1;min-width:0;width:100%}.yearCounts{font-size:9px;line-height:1.2;display:block}.mcell.yearStat{aspect-ratio:auto;min-height:45px}.yearEnergy{display:grid;grid-template-columns:repeat(2,1fr);gap:1px 3px;font-size:8px;line-height:1}.yearEnergy span{white-space:nowrap}.yearEnergy i{width:5px;height:5px;border-radius:50%;display:inline-block}.yearEnergy .rot{background:var(--rot)}.yearEnergy .orange{background:var(--orange)}.yearEnergy .gelb{background:var(--gelb)}.yearEnergy .gruen{background:var(--gruen)}
@@ -444,18 +445,19 @@ body.auth-gated #topbar{display:none}
 </head>
 <body>
 <div id="topbar">
-  <div style="display:flex;align-items:center;gap:8px;font-weight:700"><span style="font-size:18px">🐣</span> Theo</div>
+  <div style="display:flex;align-items:center;gap:8px;font-weight:700"><span style="font-size:18px">🐣</span> Theo <button class="btn mini" data-act="feedbackOpen" aria-label="Feedback und Fehler melden">💬 Feedback</button></div>
   <button class="burger" data-act="toggleMenu">☰</button>
 </div>
 <div id="wrap">
   <nav id="nav">
-    <div class="logo"><span class="leaf">🐣</span> Theo <button class="btn mini mobileMenuClose" data-act="toggleMenu" style="margin-left:auto" aria-label="Menü schließen">✕</button></div>
+    <div class="logo"><span class="leaf">🐣</span> Theo <button class="btn mini" data-act="feedbackOpen">💬 Feedback</button> <button class="btn mini mobileMenuClose" data-act="toggleMenu" style="margin-left:auto" aria-label="Menü schließen">✕</button></div>
     <button class="navbtn" data-act="nav" data-v="woche">🗓️ Woche</button>
     <button class="navbtn" data-act="nav" data-v="jahr">🍂 Jahr</button>
     <button class="navbtn" data-act="nav" data-v="bereiche">🧩 Bereiche</button>
     <button class="navbtn" data-act="nav" data-v="eingang">🧺 Eingangskiste</button>
     <button class="navbtn" data-act="nav" data-v="wissen">📚 Wissen &amp; Verstehen</button>
     <button class="navbtn" data-act="nav" data-v="konfig">⚙️ Konfiguration</button>
+    <button class="navbtn" data-act="adminOpen" id="admin-nav" hidden>🛠 Administration</button>
     <div class="navfoot" id="nav-foot">Beta · Frankfurt (EU)<br>Offline bereit</div>
   </nav>
   <main id="main"></main>
@@ -466,6 +468,7 @@ body.auth-gated #topbar{display:none}
 <script src="/app/supabase.min.js"></script>
 <script src="/app/education.js"></script>
 <script src="/app/presets.js"></script>
+<script src="/app/admin.js"></script>
 <script>
 'use strict';
 /* ================= Hilfsfunktionen ================= */
@@ -1735,6 +1738,7 @@ async function fetchAccountProfile(){
 function bindAuthSession(session){
   const previousOwner=AUTH.user&&AUTH.user.id;
   if(!session||!session.user||session.user.id!==previousOwner){SYNC.healthy=false; SYNC.last=null}
+  if((!session||!session.user||session.user.id!==previousOwner)&&globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.reset();
   AUTH.session=session||null;
   AUTH.user=(session&&session.user)||null;
   if(AUTH.user){
@@ -1760,7 +1764,7 @@ async function bootAuthAndSync(){
   if(storeOk){
     try{
       AUTH.offlineTrustedEmail=localStorage.getItem('theo-last-auth-email')||'';
-      if(!isOnlineNow()&&AUTH.offlineTrustedEmail){const id=localStorage.getItem('theo-last-auth-id'); const cached=loadUserState(id); if(cached)S=cached; else AUTH.offlineTrustedEmail=''}
+      if(!isOnlineNow()&&AUTH.offlineTrustedEmail){const id=localStorage.getItem('theo-last-auth-id'); const cached=loadUserState(id); if(cached){S=cached;if(globalThis.THEO_ADMIN){try{globalThis.THEO_ADMIN.access=JSON.parse(localStorage.getItem('theo-feature-access-'+id)||'null')}catch(e){}}} else AUTH.offlineTrustedEmail=''}
       const pc=localStorage.getItem('theo-profile-cache');
       if(pc)ui.profile=JSON.parse(pc);
     }catch(e){}
@@ -1815,6 +1819,7 @@ async function bootAuthAndSync(){
         render();
         if(session&&session.user&&session.user.id!==previousUser){
           fetchAccountProfile();
+          if(globalThis.THEO_ADMIN)setTimeout(()=>globalThis.THEO_ADMIN.init(),0);
           syncCycle(true);
           startSync();
         }
@@ -1825,6 +1830,7 @@ async function bootAuthAndSync(){
   AUTH.ready=true;
   render();
   if(AUTH.session){
+    if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.init();
     fetchAccountProfile();
     syncCycle(false);
     startSync();
@@ -1832,7 +1838,7 @@ async function bootAuthAndSync(){
 }
 
 if(typeof window!=='undefined'&&typeof window.addEventListener==='function'){
-  window.addEventListener('online',()=>{SYNC.online=true; if(AUTH.session)syncCycle(false); else bootAuthAndSync()});
+  window.addEventListener('online',()=>{SYNC.online=true; if(AUTH.session){syncCycle(false);if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.init()} else bootAuthAndSync()});
   window.addEventListener('offline',()=>{SYNC.online=false; SYNC.healthy=false; SYNC.msg='📴 Offline'; safeBgRender()});
 }
 
@@ -2026,10 +2032,10 @@ function renderModules(){
   return h+'</div>';
 }
 function safeExternalUrl(url){return /^https:\/\//i.test(String(url||''))?String(url):''}
-function educationItems(){return Array.isArray(globalThis.THEO_EDUCATION)?globalThis.THEO_EDUCATION:[]}
+function educationItems(){return globalThis.THEO_ADMIN?globalThis.THEO_ADMIN.items():(Array.isArray(globalThis.THEO_EDUCATION)?globalThis.THEO_EDUCATION:[])}
 function renderEducation(){
   const items=educationItems(), article=items.find(x=>x.id===ui.educationId);
-  let h='<div class="vhead"><div><h1>📚 Wissen &amp; Verstehen</h1><div class="sub">Kleine Impulse, in deinem Tempo. Ohne Pflichtprogramm.</div></div></div>';
+  let h='<div class="vhead"><div><h1>📚 Wissen &amp; Verstehen</h1><div class="sub">Erkenne dich selbst. Steh zu dir selbst. Sei ganz du selbst. In deinem Tempo – ohne Pflichtprogramm.</div></div></div>';
   const done=S.settings.educationDone||[], count=items.filter(x=>done.includes(x.id)).length;
   h+='<div class="note"><b>Dein freiwilliger Fortschritt: '+count+' / '+items.length+'</b> Themen markiert. Du musst nichts lesen oder abschließen. <progress value="'+count+'" max="'+Math.max(1,items.length)+'" aria-label="Freiwillig markierte Themen"></progress></div><div class="sheetBtns"><button class="btn mini" data-act="hideEducation">Modul ausblenden</button></div>';
   if(!article){
@@ -2061,6 +2067,7 @@ function render(){
     nv.style.display=gated?'none':'';
   }
   updateNavFooter();
+  const adminNav=document.getElementById('admin-nav'); if(adminNav)adminNav.hidden=!(globalThis.THEO_ADMIN&&globalThis.THEO_ADMIN.isAdmin);
   if(gated){
     $('#main').innerHTML=renderAuthGate();
     return;
@@ -2082,6 +2089,7 @@ function render(){
   else if(v==='module')h+=renderModules();
   else if(v==='wissen')h+=renderEducation();
   else if(v==='konfig')h+=renderConfig();
+  else if(v==='admin')h+=globalThis.THEO_ADMIN?globalThis.THEO_ADMIN.render():'Kein Zugriff.';
   else if(v==='konto')h+=renderAccount();
   $('#main').innerHTML=h;
 }
@@ -2580,7 +2588,7 @@ function renderConfig(){
   h+='<div class="fh" id="cfg-theme">🎨 Farbschema</div><div class="sub">Wähle eine Farbwelt. Schemafarben für Bereiche und Phasen passen sich an; selbst gewählte Farben und Energiefarben bleiben erhalten.</div><div class="chips">'+THEMES.map(t=>'<button class="chip'+(S.settings.theme===t[0]?' on':'')+'" data-act="setTheme" data-theme="'+t[0]+'" aria-pressed="'+(S.settings.theme===t[0]?'true':'false')+'">'+esc(t[1])+'</button>').join('')+'</div>';
   h+='<div class="fh" id="cfg-modules">✨ Module</div><div class="sub">Markiere Themen, die dich interessieren. Geplante Module bleiben als Ideen sichtbar; die Markierung aktiviert keine noch nicht verfügbaren Funktionen.</div><div class="cfgList">'+MODULES.map(m=>'<label class="cfgRow"><input type="checkbox" data-field="moduleChoice" data-id="'+m.id+'"'+((S.settings.modules||[]).includes(m.id)?' checked':'')+'><span class="grow">'+m.icon+' '+esc(m.name)+' <span class="sub">'+(m.available?'verfügbar':'in Planung')+'</span></span>'+(m.available?'<button type="button" class="btn mini" data-act="nav" data-v="'+m.id+'">Öffnen</button>':'')+'</label>').join('')+'</div>';
   h+='<div class="sheetBtns"><button class="btn mini" data-act="toggleEducationVisibility">'+(S.settings.educationHidden?'📚 Wissen wieder einblenden':'📚 Wissen ausblenden')+'</button><span class="sub">Fortschritt und Termine bleiben erhalten.</span></div>';
-  h+='<div class="fh">Optionale Ausgangspunkte</div><p class="sub">Frei kombinierbar, keine Berufs- oder Diagnosezuordnung. Hinzufügen ergänzt deine Konfiguration und überspringt gleichnamige Einträge. Alles bleibt bearbeitbar.</p><div class="cfgList">'+(globalThis.THEO_PRESETS||[]).map(p=>'<div class="card"><b>'+esc(p.name)+'</b><p class="sub">'+esc(p.description)+'</p><p class="sub">Bereiche: '+esc(p.areas.join(', '))+'<br>Typen: '+esc(p.types.map(t=>t[0]).join(', '))+'</p><button class="btn mini" data-act="applyPreset" data-id="'+esc(p.id)+'">Diese Vorschläge hinzufügen</button></div>').join('')+'</div>';
+  h+='<div class="fh">Optionale Ausgangspunkte</div><p class="sub">Frei kombinierbar, keine Berufs- oder Diagnosezuordnung. Hinzufügen ergänzt deine Konfiguration und überspringt gleichnamige Einträge. Alles bleibt bearbeitbar.</p><div class="presetGrid">'+(globalThis.THEO_PRESETS||[]).map(p=>'<div class="card"><b>'+esc(p.name)+'</b><p class="sub">'+esc(p.description)+'</p><p class="sub">Bereiche: '+esc(p.areas.join(', '))+'<br>Typen: '+esc(p.types.map(t=>t[0]).join(', '))+'</p><button class="btn mini" data-act="applyPreset" data-id="'+esc(p.id)+'">Diese Vorschläge hinzufügen</button></div>').join('')+'</div>';
   h+='<div class="fh">Feedback &amp; Fehler</div><p class="sub">Freiwillig, privat und mit deinem Konto verknüpft. Bitte keine Gesundheitsdaten oder Geheimnisse senden.</p><button class="btn" data-act="feedbackOpen">💬 Feedback geben &amp; verwalten</button>';
   h+='<div class="fh" id="cfg-areas">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
   S.areas.forEach((a,idx)=>{
@@ -3234,6 +3242,16 @@ const ACT={
   toggleEducationVisibility(){S.settings.educationHidden=!S.settings.educationHidden; save(); render()},
   applyPreset(a){const p=(globalThis.THEO_PRESETS||[]).find(x=>x.id===a.id); if(!p)return; let added=0; p.areas.forEach(name=>{if(!S.areas.some(x=>x.name.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){const i=S.areas.length%PHC.length; S.areas.push({id:uid(),name,emoji:'🌱',color:themePalette()[i],colorIndex:i}); added++}}); p.types.forEach(([name,emoji,asAppt])=>{if(!S.types.some(x=>x.name.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){S.types.push(normalizeType({id:uid(),name,emoji,asAppt,ampel:'none',defSpan:1,openEdit:true})); added++}}); save();render();toast(added?added+' Vorschläge ergänzt.':'Gleichnamige Vorschläge sind bereits vorhanden.')},
   feedbackOpen(){sheetFeedback()},
+  adminOpen(){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.open()},
+  adminTab(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.tabTo(a.tab)},
+  adminSaveReview(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.saveReview(a.id)},
+  adminCopySummaries(){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.copy()},
+  adminEditArticle(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.edit(a.id)},
+  adminNewArticle(){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.newArticle()},
+  adminCancelArticle(){if(globalThis.THEO_ADMIN){globalThis.THEO_ADMIN.editing=null;render()}},
+  adminSaveArticle(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.saveArticle(a.publish==='1')},
+  adminSaveUser(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.saveUser(a.id)},
+  adminSaveFlag(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.saveFlag(a.id)},
   async feedbackSend(a,t){
     const msg=document.getElementById('feedback-message'), cat=document.getElementById('feedback-category'), err=document.getElementById('feedback-error');
     if(!msg||!cat||!err)return;
@@ -4458,6 +4476,7 @@ const ACT={
     if(sb&&sb.auth){try{await sb.auth.signOut()}catch(e){}}
     AUTH.session=null;
     AUTH.user=null;
+    if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.reset();
     SYNC.healthy=false; SYNC.last=null;
     AUTH.offlineTrustedEmail='';
     ui.profile=null;
