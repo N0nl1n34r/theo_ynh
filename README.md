@@ -176,3 +176,5 @@ Browser/PWA  ──HTTPS──▶  nginx (YunoHost, Zertifikat, SSO-Gate)
 ```
 
 Psychoedukation: Startbeiträge liegen in `app/education.js`. Die redaktionelle Pflege, Quellen und Affiliate-Kennzeichnung sind in `docs/psychoedukation.md` beschrieben. Die Texte ersetzen keine Diagnose oder Therapie.
+
+Die Wissensredaktion und der Umgang mit Medien sind in [docs/psychoedukation.md](docs/psychoedukation.md) beschrieben. Private Rückmeldungen, Datenschutz und die kontrollierte manuelle Übergabe an Coding-Agenten stehen in [docs/feedback.md](docs/feedback.md).

@@ -162,8 +162,9 @@ function bootAppInstance(opts = {}) {
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/education.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/presets.js'), 'utf8'), sandbox);
   vm.runInContext(
-    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle,yearDayCounts};',
+    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle,yearDayCounts,capsulePayloadFromState,applyLiveItem,normalizeState};',
     sandbox
   );
   return { ex: sandbox.__EX, els, store, handlers };
@@ -353,6 +354,22 @@ function bootAppInstance(opts = {}) {
   gAuth.ex.ACT.openEducation({id:'reize'});
   const eduHtml = gAuth.els['q:#main'].innerHTML;
   ok(eduHtml.includes('Wenn Reize zu viel werden') && eduHtml.includes('Quellen und Einordnung') && eduHtml.includes('data-v="woche"'), 'Wissensartikel hat Quellen und Rückweg in die Wochenansicht');
+  gAuth.ex.ACT.educationDone({id:'reize'});
+  ok(state.settings.educationDone.includes('reize') && gAuth.els['q:#main'].innerHTML.includes('Markierung zurücknehmen'), 'Wissen freiwillig markieren und anzeigen');
+  const cap = gAuth.ex.capsulePayloadFromState();
+  ok(cap.settings.educationDone.includes('reize') && gAuth.ex.normalizeState(JSON.parse(JSON.stringify(state))).settings.educationDone.includes('reize'), 'Fortschritt bleibt in Offline-State und Capsule erhalten');
+  gAuth.ex.ACT.hideEducation();
+  ok(state.settings.educationHidden && gAuth.ex.ui.route.view === 'module', 'Wissen ausblendbar');
+  gAuth.ex.ACT.toggleEducationVisibility();
+  ok(!state.settings.educationHidden && state.settings.educationDone.includes('reize'), 'Wissen reaktivierbar ohne Fortschrittsverlust');
+  gAuth.ex.ACT.educationDone({id:'reize'});
+  ok(!state.settings.educationDone.includes('reize'), 'Wissensmarkierung umkehrbar');
+  const oldAreas=state.areas.length, oldTypes=state.types.length;
+  gAuth.ex.ACT.applyPreset({id:'phd'}); const nAreas=state.areas.length,nTypes=state.types.length;
+  gAuth.ex.ACT.applyPreset({id:'phd'});
+  ok(nAreas>oldAreas && nTypes>oldTypes && nAreas===state.areas.length && nTypes===state.types.length, 'Vorlagen ergänzen additiv und sind wiederholbar ohne Duplikate');
+  gAuth.ex.ACT.nav({v:'woche'});
+  ok(!gAuth.els['q:#main'].innerHTML.includes('data-act="openEducation"'), 'Keine Wissenschips in der Wochenansicht');
   gAuth.ex.ACT.nav({v:'konfig'});
   const configNav = gAuth.els['q:#main'].innerHTML;
   ok(configNav.indexOf('data-to="cfg-theme"') < configNav.indexOf('data-to="cfg-modules"') && configNav.indexOf('data-to="cfg-modules"') < configNav.indexOf('data-to="cfg-areas"') && configNav.indexOf('data-to="cfg-areas"') < configNav.indexOf('data-to="cfg-types"'), 'Konfigurations-Chips entsprechen der Reihenfolge der Abschnitte');

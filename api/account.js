@@ -173,6 +173,14 @@ module.exports = async function handler(req, res) {
       return sendJson(res, 500, { ok: false, error: 'Datenexport konnte nicht gelesen werden.' });
     }
 
+    const { data: feedback, error: feedbackErr } = await userClient
+      .from('app_feedback')
+      .select('id, category, message, page, created_at')
+      .order('created_at', { ascending: true });
+    if (feedbackErr) {
+      return sendJson(res, 500, { ok: false, error: 'Feedback für den Datenexport konnte nicht gelesen werden.' });
+    }
+
     const exportBundle = {
       schema: 'theo-beta-export-v1',
       exported_at: new Date().toISOString(),
@@ -183,7 +191,8 @@ module.exports = async function handler(req, res) {
         segment: profile ? profile.segment : null
       },
       items_count: (items || []).filter((i) => !i.deleted).length,
-      items: items || []
+      items: items || [],
+      feedback: feedback || []
     };
 
     res.setHeader('Content-Disposition', `attachment; filename="theo-datenexport-${new Date().toISOString().slice(0, 10)}.json"`);

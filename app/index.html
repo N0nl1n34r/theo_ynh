@@ -32,6 +32,7 @@ h3{font-size:16.5px; margin:0 0 2px}
 #nav{background:#F2EEE5; border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:4px}
 .logo{display:flex; align-items:center; gap:9px; font-weight:700; font-size:16px; padding:4px 10px 16px}
 .logo .leaf{font-size:20px}
+.navbtn[hidden]{display:none!important}
 .navbtn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px; border:none; background:transparent; border-radius:12px; cursor:pointer; font-size:14.5px; position:relative}
 .navbtn:hover{background:#EAE5D9}
 .navbtn.on{background:#FFF; box-shadow:0 1px 3px rgba(80,70,40,.08); font-weight:600}
@@ -464,6 +465,7 @@ body.auth-gated #topbar{display:none}
 
 <script src="/app/supabase.min.js"></script>
 <script src="/app/education.js"></script>
+<script src="/app/presets.js"></script>
 <script>
 'use strict';
 /* ================= Hilfsfunktionen ================= */
@@ -625,7 +627,7 @@ function normalizeState(x){
   if(!x.settings.aids)x.settings.aids={mit:true,focus:true,year:true};
   if(!x.settings.slotTimes)x.settings.slotTimes={0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}};
   if(!x.settings.liveSync)x.settings.liveSync={on:true,interval:60};
-  x.settings={aids:x.settings.aids,slotTimes:x.settings.slotTimes,liveSync:x.settings.liveSync,theme:THEMES.some(t=>t[0]===x.settings.theme)?x.settings.theme:'natur',modules:Array.isArray(x.settings.modules)?x.settings.modules.filter(id=>MODULES.some(m=>m.id===id)):[]};
+  x.settings={aids:x.settings.aids,slotTimes:x.settings.slotTimes,liveSync:x.settings.liveSync,theme:THEMES.some(t=>t[0]===x.settings.theme)?x.settings.theme:'natur',modules:Array.isArray(x.settings.modules)?x.settings.modules.filter(id=>MODULES.some(m=>m.id===id)):[],educationDone:Array.isArray(x.settings.educationDone)?x.settings.educationDone.filter(id=>typeof id==='string'):[],educationHidden:x.settings.educationHidden===true};
   if(!x.motto)x.motto={};
   if(!x.synced)x.synced={};
   if(!x.tomb)x.tomb={};
@@ -1259,6 +1261,8 @@ function capsulePayloadFromState(){
       liveSync:S.settings.liveSync||{on:true,interval:60},
       theme:S.settings.theme||'natur',
       modules:S.settings.modules||[],
+      educationDone:S.settings.educationDone||[],
+      educationHidden:!!S.settings.educationHidden,
       intro:!!S.meta.intro
     }
   };
@@ -1394,6 +1398,8 @@ function applyLiveItem(u,kind,payload){
       if(payload.settings.liveSync)S.settings.liveSync=payload.settings.liveSync;
       if(THEMES.some(t=>t[0]===payload.settings.theme))S.settings.theme=payload.settings.theme;
       if(Array.isArray(payload.settings.modules))S.settings.modules=payload.settings.modules.filter(id=>MODULES.some(m=>m.id===id));
+      if(Array.isArray(payload.settings.educationDone))S.settings.educationDone=payload.settings.educationDone.filter(id=>typeof id==='string');
+      if(typeof payload.settings.educationHidden==='boolean')S.settings.educationHidden=payload.settings.educationHidden;
       if(typeof payload.settings.intro==='boolean')S.meta.intro=payload.settings.intro;
     }
     return;
@@ -2016,7 +2022,7 @@ function renderModules(){
   const choices=S.settings.modules||[];
   let h='<div class="vhead"><div><h1>✨ Deine Module</h1><div class="sub">Dein Überblick – du kannst jederzeit anders beginnen. Manche Ideen sind noch nicht umgesetzt.</div></div></div><div class="moduleGrid">';
   const ordered=MODULES.slice().sort((a,b)=>(choices.includes(b.id)?1:0)-(choices.includes(a.id)?1:0));
-  ordered.forEach(m=>{h+='<div class="moduleCard"><strong>'+m.icon+' '+m.name+(choices.includes(m.id)?' · Für dich':'')+'</strong><div class="sub">'+esc(m.desc)+'</div>'+(m.available?'<button class="btn mini" style="margin-top:12px" data-act="nav" data-v="'+m.id+'">Öffnen</button>':'<div class="sub" style="margin-top:10px">In Planung – noch nicht verfügbar</div>')+'</div>'});
+  ordered.filter(m=>m.id!=='wissen'||!S.settings.educationHidden).forEach(m=>{h+='<div class="moduleCard"><strong>'+m.icon+' '+m.name+(choices.includes(m.id)?' · Für dich':'')+'</strong><div class="sub">'+esc(m.desc)+'</div>'+(m.available?'<button class="btn mini" style="margin-top:12px" data-act="nav" data-v="'+m.id+'">Öffnen</button>':'<div class="sub" style="margin-top:10px">In Planung – noch nicht verfügbar</div>')+'</div>'});
   return h+'</div>';
 }
 function safeExternalUrl(url){return /^https:\/\//i.test(String(url||''))?String(url):''}
@@ -2024,13 +2030,16 @@ function educationItems(){return Array.isArray(globalThis.THEO_EDUCATION)?global
 function renderEducation(){
   const items=educationItems(), article=items.find(x=>x.id===ui.educationId);
   let h='<div class="vhead"><div><h1>📚 Wissen &amp; Verstehen</h1><div class="sub">Kleine Impulse, in deinem Tempo. Ohne Pflichtprogramm.</div></div></div>';
+  const done=S.settings.educationDone||[], count=items.filter(x=>done.includes(x.id)).length;
+  h+='<div class="note"><b>Dein freiwilliger Fortschritt: '+count+' / '+items.length+'</b> Themen markiert. Du musst nichts lesen oder abschließen. <progress value="'+count+'" max="'+Math.max(1,items.length)+'" aria-label="Freiwillig markierte Themen"></progress></div><div class="sheetBtns"><button class="btn mini" data-act="hideEducation">Modul ausblenden</button></div>';
   if(!article){
     h+='<p>Erst verstehen, was dir begegnet. Dann ausprobieren, was zu dir passt. Du kannst überall anfangen.</p><div class="eduGrid">';
-    items.forEach(x=>{h+='<div class="card eduCard"><div class="sub">'+esc(x.category)+' · ca. '+esc(x.minutes)+' Min. Lesen</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary)+'</p><button class="btn mini" data-act="openEducation" data-id="'+esc(x.id)+'">Lesen →</button></div>'});
+    items.forEach(x=>{h+='<div class="card eduCard"><div class="sub">'+esc(x.category)+' · ca. '+esc(x.minutes)+' Min. Lesen</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary)+'</p><div class="sheetBtns"><button class="btn mini" data-act="openEducation" data-id="'+esc(x.id)+'">Lesen →</button><button class="btn mini" data-act="educationPlan" data-id="'+esc(x.id)+'">📅 Zeit dafür einplanen</button></div>'+(done.includes(x.id)?'<span class="sub">✓ Freiwillig als erledigt markiert</span>':'')+'</div>'});
     if(!items.length)h+='<div class="sub">Die Wissensinhalte konnten nicht geladen werden.</div>';
     h+='</div>';
   }else{
     h+='<article class="eduArticle"><button class="btn mini" data-act="educationIndex">← Alle Themen</button><div class="sub" style="margin-top:12px">'+esc(article.category)+' · ca. '+esc(article.minutes)+' Min. Lesen</div><h2>'+esc(article.title)+'</h2><div class="note"><b>Kurz gesagt:</b> '+esc(article.takeaway)+'</div>';
+    h+='<div class="sheetBtns"><button class="btn mini" data-act="educationPlan" data-id="'+esc(article.id)+'">📅 Zeit dafür einplanen</button><button class="btn mini" data-act="educationDone" data-id="'+esc(article.id)+'" aria-pressed="'+(done.includes(article.id)?'true':'false')+'">'+(done.includes(article.id)?'✓ Markierung zurücknehmen':'✓ Freiwillig als erledigt markieren')+'</button></div>';
     (article.paragraphs||[]).forEach(p=>{h+='<p>'+esc(p)+'</p>'});
     if(article.practice)h+='<div class="note"><b>Wenn du magst:</b> '+esc(article.practice)+'</div>';
     if((article.actions||[]).length)h+='<div class="sheetBtns">'+article.actions.filter(a=>['woche','jahr','eingang','bereiche'].includes(a.view)).map(a=>'<button class="btn mini" data-act="'+(a.view==='woche'?'educationWeek':'nav')+'" data-v="'+esc(a.view)+'">'+esc(a.label)+' →</button>').join('')+'</div>';
@@ -2056,7 +2065,7 @@ function render(){
     $('#main').innerHTML=renderAuthGate();
     return;
   }
-  document.querySelectorAll('#nav .navbtn').forEach(b=>{b.classList.toggle('on',b.dataset.v===ui.route.view)});
+  document.querySelectorAll('#nav .navbtn').forEach(b=>{b.classList.toggle('on',b.dataset.v===ui.route.view); if(b.dataset.v==='wissen')b.hidden=!!S.settings.educationHidden});
   const inboxDot=S.inbox.length>0;
   const inb=document.querySelectorAll('#nav .navbtn')[3];
   if(inb){const old=inb.querySelector('.navdot'); if(old)old.remove(); if(inboxDot){const d=document.createElement('span'); d.className='navdot'; inb.appendChild(d)}}
@@ -2103,7 +2112,6 @@ function renderWeek(){
   let h='<div class="vhead weekHead"><div><h1>Woche</h1><div class="sub">'+fmtDate(days[0])+' – '+fmtDate(days[6])+' · KW '+isoWeek(days[0])+'</div></div>'+
     '<div class="hbtns"><input type="month" class="inp slim" data-field="weekJump" value="'+jumpVal+'" title="Monat wählen — springt in die erste Woche dieses Monats (z. B. Juni 2026)" style="width:150px"><button class="btn mini" data-act="weekPrev">‹ zurück</button><button class="btn mini" data-act="weekThis">Heute</button><button class="btn mini" data-act="weekNext">weiter ›</button></div></div>';
   h+=orientBar();
-  h+='<div class="chips"><button class="chip" data-act="openEducation" data-id="energie">📚 Energie &amp; Übergänge verstehen</button><button class="chip" data-act="openEducation" data-id="reize">📚 Reize &amp; Entlastung</button></div>';
   if(ui.suggestion)h+=suggHtml();
   if(!S.meta.intro)h+=renderOnboardingCard();
   h+='<div class="wgrid"><div class="dragTrashCell"><div class="dragTrash" id="drag-trash" data-drop="trash" title="Hierhin ziehen, um direkt ohne Fenster zu löschen">🗑<span>Löschen</span></div></div>'+days.map(d=>{
@@ -2571,6 +2579,9 @@ function renderConfig(){
 
   h+='<div class="fh" id="cfg-theme">🎨 Farbschema</div><div class="sub">Wähle eine Farbwelt. Schemafarben für Bereiche und Phasen passen sich an; selbst gewählte Farben und Energiefarben bleiben erhalten.</div><div class="chips">'+THEMES.map(t=>'<button class="chip'+(S.settings.theme===t[0]?' on':'')+'" data-act="setTheme" data-theme="'+t[0]+'" aria-pressed="'+(S.settings.theme===t[0]?'true':'false')+'">'+esc(t[1])+'</button>').join('')+'</div>';
   h+='<div class="fh" id="cfg-modules">✨ Module</div><div class="sub">Markiere Themen, die dich interessieren. Geplante Module bleiben als Ideen sichtbar; die Markierung aktiviert keine noch nicht verfügbaren Funktionen.</div><div class="cfgList">'+MODULES.map(m=>'<label class="cfgRow"><input type="checkbox" data-field="moduleChoice" data-id="'+m.id+'"'+((S.settings.modules||[]).includes(m.id)?' checked':'')+'><span class="grow">'+m.icon+' '+esc(m.name)+' <span class="sub">'+(m.available?'verfügbar':'in Planung')+'</span></span>'+(m.available?'<button type="button" class="btn mini" data-act="nav" data-v="'+m.id+'">Öffnen</button>':'')+'</label>').join('')+'</div>';
+  h+='<div class="sheetBtns"><button class="btn mini" data-act="toggleEducationVisibility">'+(S.settings.educationHidden?'📚 Wissen wieder einblenden':'📚 Wissen ausblenden')+'</button><span class="sub">Fortschritt und Termine bleiben erhalten.</span></div>';
+  h+='<div class="fh">Optionale Ausgangspunkte</div><p class="sub">Frei kombinierbar, keine Berufs- oder Diagnosezuordnung. Hinzufügen ergänzt deine Konfiguration und überspringt gleichnamige Einträge. Alles bleibt bearbeitbar.</p><div class="cfgList">'+(globalThis.THEO_PRESETS||[]).map(p=>'<div class="card"><b>'+esc(p.name)+'</b><p class="sub">'+esc(p.description)+'</p><p class="sub">Bereiche: '+esc(p.areas.join(', '))+'<br>Typen: '+esc(p.types.map(t=>t[0]).join(', '))+'</p><button class="btn mini" data-act="applyPreset" data-id="'+esc(p.id)+'">Diese Vorschläge hinzufügen</button></div>').join('')+'</div>';
+  h+='<div class="fh">Feedback &amp; Fehler</div><p class="sub">Freiwillig, privat und mit deinem Konto verknüpft. Bitte keine Gesundheitsdaten oder Geheimnisse senden.</p><button class="btn" data-act="feedbackOpen">💬 Feedback geben &amp; verwalten</button>';
   h+='<div class="fh" id="cfg-areas">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
   S.areas.forEach((a,idx)=>{
     h+='<div class="cfgRow" data-drop="reorder:area:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:area:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
@@ -2908,6 +2919,7 @@ function sheetAppt(id){
   const canAddBlk=!blockOccW(apW,ap.day,ap.slot)&&(ap.span||1)===1;
   const multiNote=ap.multiTotal>1?' · ↔ Mehrtägig ('+fmtDate(parseISO(ap.multiStart||apDate))+' – '+fmtDate(parseISO(ap.multiEnd||apDate))+', Tag '+ap.multiIdx+'/'+ap.multiTotal+')':'';
   let h='<div class="shead"><h3>Termin</h3><div class="sub">'+esc(fmtDate(parseISO(apDate)))+' · '+esc(ap.time||'')+(ap.span>1?' · über '+ap.span+' Blöcke':'')+esc(multiNote)+(ar?' · '+esc(ar.name):'')+'</div></div>';
+  if(ap.educationId){const article=educationItems().find(x=>x.id===ap.educationId); h+='<div class="note">📚 '+(article?'<button class="btn mini" data-act="openEducation" data-id="'+esc(article.id)+'">Wissensinhalt öffnen: '+esc(article.title)+'</button>':'Dieser Wissensinhalt ist derzeit nicht verfügbar.')+'</div>'}
   h+='<label class="f">Titel</label><input class="inp" id="a-title" value="'+esc(ap.title||'')+'">';
   h+='<div class="fh">Ampel — wird beim Speichern übernommen</div>'+ampRowSel(ap.ampel||'none','appt');
   const apc=(!/^(ab|bis)\s/i.test(ap.time||''))?parseClock(ap.time):null;
@@ -3022,15 +3034,21 @@ function sheetPhase(id,preStart,preEnd){
   openSheet(h);
 }
 
-function sheetNewAppt(){
+function sheetNewAppt(educationId){
+  const article=educationItems().find(x=>x.id===educationId);
   let h='<div class="shead"><h3>Termin eintragen</h3><div class="sub">Für jeden beliebigen Tag oder Zeitraum — auch mehrtägig oder Monate im Voraus. Er landet automatisch im passenden Block der jeweiligen Woche.</div></div>';
-  h+='<div class="sheetBtns" style="margin:0 0 8px"><button class="btn mini" data-act="openSeminar" data-day="0" data-slot="0">📆 Stattdessen mehrtägigen Zeitraum anlegen…</button></div>';
-  h+='<label class="f">Titel</label><input class="inp" id="na-title" placeholder="z. B. Workshop, Zahnarzt, Konferenz, Urlaub">';
+  if(!article)h+='<div class="sheetBtns" style="margin:0 0 8px"><button class="btn mini" data-act="openSeminar" data-day="0" data-slot="0">📆 Stattdessen mehrtägigen Zeitraum anlegen…</button></div>';
+  if(article)h+='<div class="note">📚 Verknüpft mit: '+esc(article.title)+' · ca. '+esc(article.minutes)+' Minuten. Datum und Uhrzeit sind frei wählbar.</div><input type="hidden" id="na-education" value="'+esc(article.id)+'">';
+  h+='<label class="f">Titel</label><input class="inp" id="na-title" value="'+esc(article?'Wissen: '+article.title:'')+'" placeholder="z. B. Workshop, Zahnarzt, Konferenz, Urlaub">';
   h+='<div class="row2"><input class="inp slim" type="date" id="na-date" value="'+todayISO()+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="na-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
   h+='<div class="row2">'+timePickHtml('','id="na-t0" style="flex:1;min-width:115px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="na-t1" style="flex:1;min-width:115px"','— Ende —')+'<select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select></div>';
   h+='<div class="row2"><select class="inp slim" id="na-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="na-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
   h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="newApptSave">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
+}
+
+function sheetFeedback(){
+  openSheet('<div class="shead"><h3>Feedback &amp; Fehler melden</h3><div class="sub">Freiwillig und privat gespeichert, mit deinem Konto verknüpft. Das Theo-Betreuungsteam kann die Nachricht lesen. Keine automatische Veröffentlichung und kein automatischer Agentenauftrag. Bitte keine Gesundheitsdaten, Passwörter oder Geheimnisse senden. Online und Anmeldung erforderlich; offline wird nichts übertragen oder vorgemerkt. <a href="/datenschutz" target="_blank" rel="noopener noreferrer">Datenschutz</a></div></div><label class="f" for="feedback-category">Art</label><select class="inp" id="feedback-category"><option value="feedback">Feedback</option><option value="bug">Fehler</option><option value="idea">Idee</option></select><label class="f" for="feedback-message">Nachricht (10–3000 Zeichen)</label><textarea class="inp" id="feedback-message" maxlength="3000" rows="5"></textarea><div class="sub" id="feedback-error" role="status"></div><div class="sheetBtns"><button class="btn primary" data-act="feedbackSend">Privat senden</button><button class="btn" data-act="feedbackList">Meine Rückmeldungen anzeigen</button><button class="btn ghost" data-act="closeModal">Schließen</button></div><div id="feedback-list"></div>');
 }
 
 function sheetTodo(a){
@@ -3210,6 +3228,29 @@ const ACT={
   openEducation(a){ui.educationId=a.id; ui.route={view:'wissen'}; ui.menuOpen=false; closeModal(); render(); try{window.scrollTo({top:0})}catch(e){}},
   educationWeek(){ui.route={view:'woche'};render();try{window.scrollTo({top:0})}catch(e){}},
   educationIndex(){ui.educationId=null; render()},
+  educationPlan(a){if(educationItems().some(x=>x.id===a.id))sheetNewAppt(a.id)},
+  educationDone(a){if(!educationItems().some(x=>x.id===a.id))return; const done=S.settings.educationDone||[]; S.settings.educationDone=done.includes(a.id)?done.filter(x=>x!==a.id):done.concat(a.id); save(); render()},
+  hideEducation(){S.settings.educationHidden=true; ui.route={view:'module'}; save(); render(); toast('Wissen ausgeblendet. In der Konfiguration jederzeit wieder einblenden.')},
+  toggleEducationVisibility(){S.settings.educationHidden=!S.settings.educationHidden; save(); render()},
+  applyPreset(a){const p=(globalThis.THEO_PRESETS||[]).find(x=>x.id===a.id); if(!p)return; let added=0; p.areas.forEach(name=>{if(!S.areas.some(x=>x.name.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){const i=S.areas.length%PHC.length; S.areas.push({id:uid(),name,emoji:'🌱',color:themePalette()[i],colorIndex:i}); added++}}); p.types.forEach(([name,emoji,asAppt])=>{if(!S.types.some(x=>x.name.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){S.types.push(normalizeType({id:uid(),name,emoji,asAppt,ampel:'none',defSpan:1,openEdit:true})); added++}}); save();render();toast(added?added+' Vorschläge ergänzt.':'Gleichnamige Vorschläge sind bereits vorhanden.')},
+  feedbackOpen(){sheetFeedback()},
+  async feedbackSend(a,t){
+    const msg=document.getElementById('feedback-message'), cat=document.getElementById('feedback-category'), err=document.getElementById('feedback-error');
+    if(!msg||!cat||!err)return;
+    const text=msg.value.trim(); if(text.length<10||text.length>3000){err.textContent='Bitte 10 bis 3000 Zeichen eingeben.';return}
+    if(ui.demoMode||!AUTH.session||!AUTH.user||!isOnlineNow()){err.textContent='Feedback benötigt eine Anmeldung und eine Internetverbindung. Dein Text bleibt hier stehen.';return}
+    const sb=getDataClient(AUTH.session); if(!sb){err.textContent='Verbindung nicht verfügbar; dein Text bleibt hier stehen.';return}
+    t.disabled=true; err.textContent='Wird gesendet …';
+    try{const result=await sb.from('app_feedback').insert({user_id:AUTH.user.id,category:cat.value,message:text,page:ui.route.view}); if(result.error)throw result.error; msg.value=''; err.textContent='Privat gespeichert. Danke!';}catch(e){err.textContent='Speichern fehlgeschlagen. Bitte erneut versuchen; dein Text bleibt stehen.'}finally{t.disabled=false}
+  },
+  async feedbackList(){
+    const out=document.getElementById('feedback-list'); if(!out)return;
+    if(ui.demoMode||!AUTH.session||!AUTH.user||!isOnlineNow()){out.textContent='Zum Anzeigen anmelden und online gehen.';return}
+    const sb=getDataClient(AUTH.session); if(!sb){out.textContent='Verbindung nicht verfügbar.';return}
+    out.textContent='Wird geladen …';
+    try{const r=await sb.from('app_feedback').select('id,category,message,page,created_at').order('created_at',{ascending:false}); if(r.error)throw r.error; if(!document.getElementById('feedback-list'))return; out.innerHTML=(r.data||[]).map(x=>'<div class="card"><b>'+esc(x.category)+'</b> · '+esc(new Date(x.created_at).toLocaleDateString('de-DE'))+'<p style="white-space:pre-wrap">'+esc(x.message)+'</p><button class="btn mini danger" data-act="feedbackDelete" data-id="'+esc(x.id)+'">Löschen</button></div>').join('')||'Noch kein Feedback gespeichert.'}catch(e){out.textContent='Feedback konnte nicht geladen werden.'}
+  },
+  async feedbackDelete(a,t){if(!AUTH.session||!AUTH.user||!isOnlineNow()||!confirm('Diese Rückmeldung dauerhaft löschen?'))return; const sb=getDataClient(AUTH.session); if(!sb)return; t.disabled=true; try{const r=await sb.from('app_feedback').delete().eq('id',a.id).eq('user_id',AUTH.user.id); if(r.error)throw r.error; ACT.feedbackList()}catch(e){t.disabled=false;toast('Löschen fehlgeschlagen.')}},
   togglePassword(a,t){const input=document.getElementById(a.id); if(!input)return; const show=input.type==='password'; input.type=show?'text':'password'; t.setAttribute('aria-pressed',String(show)); t.setAttribute('aria-label',show?'Passwort verbergen':'Passwort anzeigen')},
   mobileCount(a){ui.mobileCount=+a.count; render()},
   mobileShift(a){const date=addDays(ui.anchor,(ui.mobileDay||0)+(+a.step)); ui.anchor=mondayOf(date); ui.mobileDay=dayIdx(date); ui.jumpMonth=null; render()},
@@ -3624,6 +3665,8 @@ const ACT={
     const amp=document.getElementById('na-ampel').value||null;
     const ty=document.getElementById('na-type').value||null;
     const sp=Math.max(1,Math.min(3,parseInt(document.getElementById('na-span').value,10)||1));
+    const eid=(document.getElementById('na-education')||{}).value;
+    const educationId=educationItems().some(x=>x.id===eid)?eid:null;
     if(dEnd&&dEnd>dIn){
       const tot=Math.min(90,Math.round((parseISO(dEnd)-parseISO(dIn))/86400000)+1);
       const mid=uid();
@@ -3631,7 +3674,7 @@ const ACT={
         const dc=iso(addDays(parseISO(dIn),i)), cw=iso(mondayOf(parseISO(dc))), cd=dayIdx(parseISO(dc));
         const tStr=i===0?(t0?'ab '+t0:'ganztägig'):(i===tot-1?(t1?'bis '+t1:'ganztägig'):'ganztägig');
         const sl=i===0?(t0?mapSlotForTime(t0,null):0):(i===tot-1&&t1?mapSlotForTime(null,t1):0);
-        placeApptInSlot(cw,cd,Math.max(0,sl),{id:uid(),day:cd,slot:Math.max(0,sl),title:title,time:tStr,ampel:amp,src:'Manuell',areaId:null,span:1,typeId:ty,multiId:mid,multiStart:dIn,multiEnd:dEnd,multiIdx:i+1,multiTotal:tot});
+        placeApptInSlot(cw,cd,Math.max(0,sl),{id:uid(),day:cd,slot:Math.max(0,sl),title:title,time:tStr,ampel:amp,src:'Manuell',areaId:null,span:1,typeId:ty,multiId:mid,multiStart:dIn,multiEnd:dEnd,multiIdx:i+1,multiTotal:tot,educationId:educationId});
       }
       save(); closeModal(); render();
       toast('Mehrtägiger Termin ('+tot+' Tage) eingetragen.'); return;
@@ -3640,7 +3683,7 @@ const ACT={
     let s0=t0?mapSlotForTime(t0,t1||null):-1;
     if(s0<0){const f=findFreeSlot(w,dd,sp); s0=f>=0?f:0}
     if(sp>3-s0)s0=Math.max(0,3-sp);
-    const apN={id:uid(),day:dd,slot:s0,title:title,time:time,ampel:amp,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:ty};
+    const apN={id:uid(),day:dd,slot:s0,title:title,time:time,ampel:amp,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:ty,educationId:educationId};
     if(t0){apN.t0=t0; if(t1)apN.t1=t1}
     placeApptInSlot(w,dd,s0,apN);
     save(); closeModal(); render();

@@ -25,6 +25,7 @@ const appFiles = [
   'index.html',
   'manifest.webmanifest',
   'education.js',
+  'presets.js',
   'sw.js',
   'theo-icon.png'
 ];

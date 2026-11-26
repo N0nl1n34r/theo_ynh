@@ -30,6 +30,7 @@ const db = {
   users: [],
   profiles: [],
   items: [],
+  app_feedback: [],
   rateHits: {}
 };
 const sentMails = [];
@@ -156,6 +157,7 @@ const mockServiceSb = {
         db.users = db.users.filter((u) => u.id !== userId);
         db.profiles = db.profiles.filter((p) => p.user_id !== userId);
         db.items = db.items.filter((i) => i.user_id !== userId);
+        db.app_feedback = db.app_feedback.filter((i) => i.user_id !== userId);
         return { data: {}, error: null };
       }
     }
@@ -388,12 +390,14 @@ function callApi(handler, { method = 'GET', url = '/api/test', headers = {}, bod
     deleted: false
   });
 
+  db.app_feedback.push({user_id:db.users[0].id,id:'feedback1',category:'bug',message:'Testmeldung ohne Privatdaten',page:'konfig',created_at:new Date().toISOString()});
   const rExport = await callApi(accountHandler, {
     method: 'POST',
     url: '/api/account',
     headers: { authorization: 'Bearer ' + userToken },
     body: { action: 'export' }
   });
+  ok(rExport.json.feedback && rExport.json.feedback.length === 1, 'Datenexport enthält privates Feedback');
   ok(rExport.status === 200 && rExport.json.schema === 'theo-beta-export-v1' && rExport.json.items.length === 1,
     'Self-Service-Datenexport liefert vollständigen JSON-Dump aller eigenen items');
 
