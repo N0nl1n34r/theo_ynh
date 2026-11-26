@@ -6,7 +6,7 @@ id = "theo"
 name = "Theo"
 description.en = "Calm personal planning — week grid, projects, phases and two-way CalDAV sync"
 description.de = "Ruhige Planung — Wochenraster, Projekte, Phasen und CalDAV-Sync in beide Richtungen"
-version = "0.13~ynh6"
+version = "0.13~ynh7"
 maintainers = ["denis"]
 
 [upstream]
