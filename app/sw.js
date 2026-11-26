@@ -1,4 +1,4 @@
-const CACHE_NAME = 'theo-beta-shell-v1';
+const CACHE_NAME = 'theo-beta-shell-v2';
 const SHELL_ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,7 @@ const SHELL_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS).catch(() => {}))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS))
   );
   self.skipWaiting();
 });
@@ -46,12 +46,12 @@ self.addEventListener('fetch', (event) => {
       .then((resp) => {
         if (resp && resp.ok) {
           const clone = resp.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)));
         }
         return resp;
       })
       .catch(() =>
-        caches.match(event.request).then((hit) => hit || caches.match('./') || caches.match('./index.html'))
+        caches.match(event.request).then((hit) => hit || (event.request.mode === 'navigate' ? caches.match('./index.html') : undefined))
       )
   );
 });

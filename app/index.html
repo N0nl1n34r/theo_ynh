@@ -39,6 +39,8 @@ h3{font-size:16.5px; margin:0 0 2px}
 .navfoot{margin-top:auto; padding:10px 12px; font-size:11.5px; color:var(--sub); line-height:1.5}
 #main{padding:26px 30px 70px; max-width:1210px; width:100%}
 #topbar{display:none}
+.mobileMenuClose{display:none}
+@media(max-width:940px){.mobileMenuClose{display:block}}
 
 .vhead{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; flex-wrap:wrap}
 .hbtns{display:flex; gap:6px}
@@ -322,24 +324,43 @@ code{background:#F1EDE3;border-radius:5px;padding:1px 5px;font-size:11.5px}
 /* ---------- Responsive ---------- */
 @media(max-width:940px){
   #wrap{grid-template-columns:1fr}
-  #nav{position:fixed; top:0; left:0; right:0; z-index:40; transform:translateY(-108%); transition:transform .25s ease; height:auto; border-right:none; border-bottom:1px solid var(--line); box-shadow:0 10px 26px rgba(40,35,20,.12); padding:14px 16px 12px}
+  #nav{position:fixed; top:0; left:0; right:0; z-index:40; transform:translateY(-108%); transition:transform .25s ease; height:auto; border-right:none; border-bottom:1px solid var(--line); box-shadow:0 10px 26px rgba(40,35,20,.12); padding:14px 16px 12px; max-height:100dvh; overflow-y:auto}
   #nav.open{transform:none}
+  #nav:not(.open){visibility:hidden;pointer-events:none}
+  #nav.open .navfoot{display:block}
   .logo{padding:2px 10px 10px}
   .navfoot{display:none}
   #topbar{display:flex; position:fixed; top:0; left:0; right:0; height:54px; align-items:center; justify-content:space-between; padding:0 14px; background:rgba(246,243,237,.94); backdrop-filter:blur(8px); z-index:35; border-bottom:1px solid var(--line)}
   #topbar .burger{border:1px solid var(--line); background:#FFF; border-radius:11px; padding:7px 12px; cursor:pointer; font-size:15px}
-  #main{padding:70px 16px 60px; max-width:640px}
+  #main{padding:70px 16px 60px; max-width:100%; min-width:0}
+  .hbtns{flex-wrap:wrap}
+  input,select,textarea{font-size:16px!important}
   .wgrid{display:none}
   .wmobile{display:block}
-  .sheet{max-height:82vh; border-radius:18px 18px 8px 8px}
+  .sheet{max-height:85dvh; border-radius:18px 18px 8px 8px; overscroll-behavior:contain; -webkit-overflow-scrolling:touch}
   #overlay{align-items:flex-end}
   .kb{min-width:560px}
 }
 
+body.modal-open{overflow:hidden;overscroll-behavior:none}
+.passwordWrap{display:flex;align-items:center;gap:6px}
+.passwordWrap .inp{min-width:0}
+.passwordWrap button{flex:none}
+.navAccount{display:block;width:100%;text-align:left;background:transparent;border:0;color:inherit;cursor:pointer;padding:4px 0}
+.mobileControls{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.mobileDays{display:grid;grid-template-columns:repeat(var(--days),minmax(0,1fr));gap:6px;touch-action:pan-y;overscroll-behavior-x:contain}
+.mobileDays .mdayView{min-width:0}
+.mobileDays .slot{min-height:80px;margin-bottom:8px}
+.mobileDays .card{overflow-wrap:anywhere}
+.mobileDays .mslotLabel{font-size:11px}
+.mobileDays .dh{padding:5px 2px;overflow-wrap:anywhere}
+@media(max-width:600px) and (orientation:portrait){.mobileDays[data-count="7"]{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;touch-action:auto}.mobileDays[data-count="7"] .mdayView{flex:0 0 42%;scroll-snap-align:start}}
 /* Login occupies the whole grid, not the hidden navigation column. */
 #wrap.auth-gated{display:block}
 #wrap.auth-gated #main{width:100%;max-width:none;padding:24px 16px 60px}
 body.auth-gated #topbar{display:none}
+.mobileMenuClose{display:none}
+@media(max-width:940px){.mobileMenuClose{display:block}}
 .authWrap{width:min(100%,470px)}
 .authTabs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .authTab{min-width:0;overflow-wrap:anywhere}
@@ -401,7 +422,7 @@ body.auth-gated #topbar{display:none}
 </div>
 <div id="wrap">
   <nav id="nav">
-    <div class="logo"><span class="leaf">🐣</span> Theo</div>
+    <div class="logo"><span class="leaf">🐣</span> Theo <button class="btn mini mobileMenuClose" data-act="toggleMenu" style="margin-left:auto" aria-label="Menü schließen">✕</button></div>
     <button class="navbtn" data-act="nav" data-v="woche">🗓️ Woche</button>
     <button class="navbtn" data-act="nav" data-v="jahr">🍂 Jahr</button>
     <button class="navbtn" data-act="nav" data-v="bereiche">🧩 Bereiche</button>
@@ -1683,7 +1704,7 @@ function bindAuthSession(session){
     const wasDemo=ui.demoMode;
     ui.demoMode=false;
     if(storeOk&&AUTH.user.email){
-      try{localStorage.setItem('theo-last-auth-email',AUTH.user.email)}catch(e){}
+      try{localStorage.setItem('theo-last-auth-email',AUTH.user.email); localStorage.setItem('theo-last-auth-id',AUTH.user.id)}catch(e){}
       AUTH.offlineTrustedEmail=AUTH.user.email;
     }
     if(wasDemo||!S||!S.meta||S.meta.ownerId!==AUTH.user.id){
@@ -1702,6 +1723,7 @@ async function bootAuthAndSync(){
   if(storeOk){
     try{
       AUTH.offlineTrustedEmail=localStorage.getItem('theo-last-auth-email')||'';
+      if(!isOnlineNow()&&AUTH.offlineTrustedEmail){const id=localStorage.getItem('theo-last-auth-id'); const cached=loadUserState(id); if(cached)S=cached; else AUTH.offlineTrustedEmail=''}
       const pc=localStorage.getItem('theo-profile-cache');
       if(pc)ui.profile=JSON.parse(pc);
     }catch(e){}
@@ -1745,7 +1767,7 @@ async function bootAuthAndSync(){
   }
   AUTH.cfg=cfg;
 
-  const sb=getSupabaseClient();
+  const sb=isOnlineNow()?getSupabaseClient():null;
   if(sb&&sb.auth){
     try{
       const {data}=await sb.auth.getSession();
@@ -1773,7 +1795,7 @@ async function bootAuthAndSync(){
 }
 
 if(typeof window!=='undefined'&&typeof window.addEventListener==='function'){
-  window.addEventListener('online',()=>{SYNC.online=true; syncCycle(false)});
+  window.addEventListener('online',()=>{SYNC.online=true; if(AUTH.session)syncCycle(false); else bootAuthAndSync()});
   window.addEventListener('offline',()=>{SYNC.online=false; SYNC.msg='📴 Offline'; safeBgRender()});
 }
 
@@ -1882,11 +1904,10 @@ function updateNavFooter(){
   const nf=document.getElementById('nav-foot');
   if(!nf)return;
   if(ui.demoMode){
-    nf.innerHTML='👀 <b>Lokale Vorschau</b><br><button class="btn mini" style="margin-top:6px;width:100%" data-act="exitDemo">Mit Einladung anmelden</button>';
+    nf.innerHTML='<button class="navAccount" data-act="nav" data-v="konto">👀 Lokale Vorschau · Konto &amp; Daten ›</button><button class="btn mini" style="margin-top:6px;width:100%" data-act="exitDemo">Mit Einladung anmelden</button>';
   }else if(AUTH.user||(!isOnlineNow()&&AUTH.offlineTrustedEmail)){
     const em=esc((AUTH.user&&AUTH.user.email)||AUTH.offlineTrustedEmail||'Angemeldet');
-    nf.innerHTML='<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+em+'">🟢 '+em+'</div>'+
-      '<div>'+(isOnlineNow()?'Frankfurt (EU) · Sync aktiv':'📴 Offline gespeichert')+'</div>';
+    nf.innerHTML='<button class="navAccount" data-act="nav" data-v="konto" title="Konto öffnen"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🟢 '+em+'</span><span>'+(isOnlineNow()?'Konto &amp; Synchronisation':'📴 Offline · Konto')+' ›</span></button>';
   }else{
     nf.innerHTML='Theo Beta · Frankfurt (EU)<br><a href="/" style="color:inherit">Zur Startseite</a>';
   }
@@ -1935,7 +1956,7 @@ function renderAuthGate(){
     }
 
     h+='<label class="f">E-Mail-Adresse</label><input class="inp" type="email" id="auth-email" autocomplete="email" placeholder="du@beispiel.de" value="'+esc(ui.authEmail)+'" data-enter="'+(ui.authMode==='login'?'authPassword':'authSubmit')+'">';
-    if(ui.authMode==='login')h+='<label class="f" for="auth-password">Passwort</label><input class="inp" type="password" id="auth-password" autocomplete="current-password" placeholder="Passwort eingeben" data-enter="authPassword">';
+    if(ui.authMode==='login')h+='<label class="f" for="auth-password">Passwort</label><div class="passwordWrap"><input class="inp" type="password" id="auth-password" autocomplete="current-password" placeholder="Passwort eingeben" data-enter="authPassword"><button type="button" class="btn mini" data-act="togglePassword" data-id="auth-password" aria-label="Passwort anzeigen" aria-pressed="false">👁</button></div>';
     if(ui.authErr)h+='<div class="authNotice warn" role="alert">'+esc(ui.authErr)+'</div>';
 
     h+='<div class="sheetBtns" style="margin-top:16px">'+
@@ -1996,6 +2017,7 @@ function render(){
   else if(v==='eingang')h+=renderInbox();
   else if(v==='module')h+=renderModules();
   else if(v==='konfig')h+=renderConfig();
+  else if(v==='konto')h+=renderAccount();
   $('#main').innerHTML=h;
 }
 
@@ -2036,12 +2058,20 @@ function renderWeek(){
     for(let d=0;d<7;d++)h+=slotCell(d,s,cur,tI,false);
   }
   h+='</div>';
-  const md=Math.min(ui.mobileDay??tI,6);
-  const mMit=mitOf(iso(days[md]));
-  h+='<div class="wmobile"><div class="mobTrashWrap"><div class="dragTrash" data-drop="trash" title="Hierhin ziehen, um direkt zu löschen">🗑<span>Zum Löschen hierher ziehen</span></div></div><div class="daychips">'+days.map((d,i)=>'<button class="chip'+(i===md?' on':'')+'" data-act="setDay" data-day="'+i+'">'+fmtDate(d)+(iso(d)===todayISO()?' · heute':'')+'</button>').join('')+'</div>';
-  h+='<div class="orient" style="margin:2px 0 10px"><span class="chip" data-act="editMit" data-date="'+iso(days[md])+'">🎯 MIT ('+fmtDate(days[md])+'): '+(mMit?'<b class="'+(mMit.done?'strike':'')+'">'+esc(mMit.text)+'</b>':'<i class="dim">offen</i>')+' <button class="mini2" data-act="mitDone" data-date="'+iso(days[md])+'" title="erledigt umschalten">'+(mMit&&mMit.done?'↺':'✓')+'</button></span></div>';
-  for(let s=0;s<3;s++){h+='<div class="mslotLabel">'+SLOTS[s].ico+' '+SLOTS[s].label+'</div>'+slotCell(md,s,cur,tI,true)}
-  h+='</div>';
+  const md=Math.min(ui.mobileDay??tI,6), count=[1,3,7].includes(ui.mobileCount)?ui.mobileCount:1;
+  const mobileStart=addDays(ui.anchor,md);
+  h+='<div class="wmobile"><div class="mobileControls"><button class="btn mini" data-act="mobileShift" data-step="-1" aria-label="Vorheriger Tag">‹</button><b>'+esc(fmtDate(mobileStart))+'</b><button class="btn mini" data-act="mobileShift" data-step="1" aria-label="Nächster Tag">›</button><span class="sub">Ansicht:</span>'+[1,3,7].map(n=>'<button class="chip'+(count===n?' on':'')+'" data-act="mobileCount" data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+' '+(n===1?'Tag':'Tage')+'</button>').join('')+'</div><div class="sub">Zum nächsten oder vorherigen Tag wischen.'+(count===7?' Im Hochformat horizontal scrollen.':'')+'</div><div class="mobileDays" style="--days:'+count+'" data-count="'+count+'">';
+  const originalAnchor=ui.anchor;
+  for(let i=0;i<count;i++){
+    const date=addDays(mobileStart,i), day=dayIdx(date), week=iso(mondayOf(date));
+    ui.anchor=mondayOf(date);
+    const m=mitOf(iso(date));
+    h+='<div class="mdayView" data-mobile-week="'+week+'" data-mobile-day="'+day+'"><div class="dh'+(iso(date)===todayISO()?' today':'')+'" data-act="editMit" data-date="'+iso(date)+'">'+fmtDate(date)+(m?' 🎯':'')+'</div>';
+    for(let slot=0;slot<3;slot++)h+='<div class="mslotLabel">'+SLOTS[slot].ico+' '+SLOTS[slot].label+'</div>'+slotCell(day,slot,isCurrentWeek(),tI,true);
+    h+='</div>';
+  }
+  ui.anchor=originalAnchor;
+  h+='</div></div>';
   h+=renderUpcoming();
   h+=renderAgenda();
   h+='<div class="legend">Ampel — Energiequalität: <span class="dot rot"></span> sehr intensiv <span class="dot orange"></span> intensiv <span class="dot gelb"></span> Tunnelrisiko <span class="dot gruen"></span> Erholung &nbsp;·&nbsp; linke Farbfläche = Lebensbereich</div>';
@@ -2456,23 +2486,11 @@ function renderInbox(){
 
 
 function renderConfig(){
-  const prof=ui.profile||{price_locked:29,subscription_status:'beta_free'};
-  const lockedEur=Number(prof.price_locked||29);
-  const subSt=prof.subscription_status||'beta_free';
-  const paidUntilStr=prof.paid_until?new Date(prof.paid_until).toLocaleDateString('de-DE'):'';
-  const statusLabel=subSt==='active'
-    ?('Aktiv'+(paidUntilStr?' · bezahlt bis '+paidUntilStr:''))
-    :(subSt==='cancel_at_period_end'
-      ?('Gekündigt zum '+(paidUntilStr||'Laufzeitende'))
-      :(subSt==='canceled'?'Beendet':'Beta-Pilotphase (aktuell kostenfrei)'));
-
-  let h='<div class="vhead"><div><h1>Konfiguration &amp; Konto</h1><div class="sub">Alles optional — das System funktioniert auch, wenn du an den Vorlagen nie etwas änderst.</div></div></div>';
+  let h='<div class="vhead"><div><h1>Theo-Konfiguration</h1><div class="sub">Alles optional — das System funktioniert auch, wenn du an den Vorlagen nie etwas änderst.</div></div></div>';
   h+='<div class="cfgNav">'+
     '<button class="chip" data-act="cfgScroll" data-to="cfg-types">🧩 Blocktypen &amp; Vorlagen</button>'+
     '<button class="chip" data-act="cfgScroll" data-to="cfg-areas">🗂 Lebensbereiche</button>'+
     '<button class="chip" data-act="cfgScroll" data-to="cfg-slots">🌅 Blockzeiten</button>'+
-    '<button class="chip" data-act="cfgScroll" data-to="cfg-account">🔐 Konto &amp; Abo</button>'+
-    '<button class="chip" data-act="cfgScroll" data-to="cfg-privacy">📦 Datenexport &amp; Löschen</button>'+
   '</div>';
 
   h+='<div class="fh" id="cfg-theme">🎨 Farbschema</div><div class="sub">Wähle eine Farbwelt. Schemafarben für Bereiche und Phasen passen sich an; selbst gewählte Farben und Energiefarben bleiben erhalten.</div><div class="chips">'+THEMES.map(t=>'<button class="chip'+(S.settings.theme===t[0]?' on':'')+'" data-act="setTheme" data-theme="'+t[0]+'" aria-pressed="'+(S.settings.theme===t[0]?'true':'false')+'">'+esc(t[1])+'</button>').join('')+'</div>';
@@ -2527,6 +2545,21 @@ function renderConfig(){
   h+='<div class="cfgRow"><span class="grow">Einführungs-Karte („Erste 5 ruhige Minuten“) in der Wochenansicht</span><button class="btn mini" data-act="showIntroAgain">Wieder einblenden</button></div>';
   h+='</div>';
 
+  return h;
+}
+
+function renderAccount(){
+  const prof=ui.profile||{price_locked:29,subscription_status:'beta_free'};
+  const lockedEur=Number(prof.price_locked||29);
+  const subSt=prof.subscription_status||'beta_free';
+  const paidUntilStr=prof.paid_until?new Date(prof.paid_until).toLocaleDateString('de-DE'):'';
+  const statusLabel=subSt==='active'
+    ?('Aktiv'+(paidUntilStr?' · bezahlt bis '+paidUntilStr:''))
+    :(subSt==='cancel_at_period_end'
+      ?('Gekündigt zum '+(paidUntilStr||'Laufzeitende'))
+      :(subSt==='canceled'?'Beendet':'Beta-Pilotphase (aktuell kostenfrei)'));
+
+  let h='<div class="vhead"><div><h1>Konto &amp; Daten</h1><div class="sub">Anmeldung, Abo, Synchronisation und deine Daten.</div></div></div><div class="cfgNav"><button class="chip" data-act="cfgScroll" data-to="cfg-account">🔐 Konto &amp; Abo</button><button class="chip" data-act="cfgScroll" data-to="cfg-privacy">📦 Datenexport &amp; Löschen</button></div>';
   const ls=S.settings.liveSync||{};
   h+='<div class="fh" id="cfg-account">🔐 Konto, Synchronisation &amp; Bestandsschutz</div>';
   h+='<div class="statusline" id="sync-statusline">🛰️ '+esc(syncStatusText())+(S.meta.dirty?' · <b>lokale Änderungen werden übertragen</b>':'')+'</div>';
@@ -2551,7 +2584,7 @@ function renderConfig(){
   h+='<div class="sub" style="margin-bottom:8px">Deine Daten liegen per Row Level Security getrennt in Frankfurt am Main (EU). Spätere Preiserhöhungen für Neukund:innen ändern deinen hinterlegten Bestandsschutz-Preis nie.</div>';
 
   h+='<div class="fh" id="cfg-privacy">📦 Datenexport &amp; Konto selbstständig löschen</div>';
-  h+='<div class="statusline">'+(storeOk?'✔ Offline-Zwischenspeicher im Browser aktiv — du kannst auch ohne Netz weiterplanen.':'⚠ Browser blockiert lokalen Speicher — Änderungen gelten nur für diese Sitzung.')+'</div>';
+  h+='<div class="statusline">'+(storeOk?'✔ Offline-Zwischenspeicher im Browser aktiv. Nach Anmeldung und einmaligem Laden kannst du auf diesem Gerät offline weiterplanen. Änderungen werden nach erneuter Verbindung und gültiger Anmeldung synchronisiert. Browserdaten nicht löschen; Konflikte werden nach Änderungszeit aufgelöst.':'⚠ Browser blockiert lokalen Speicher — Änderungen gelten nur für diese Sitzung.')+'</div>';
   h+='<div class="sheetBtns">'+
     '<button class="btn primary" data-act="exportAccountJson">📦 Gesamten Datenbestand herunterladen (JSON)</button>'+
     '<button class="btn" data-act="exportJson">JSON-Vorschau öffnen</button>'+
@@ -2562,8 +2595,8 @@ function renderConfig(){
   return h;
 }
 
-function openSheet(h){$('#overlay').innerHTML='<div class="sheet">'+h+'</div>'; $('#overlay').classList.add('on')}
-function closeModal(){$('#overlay').classList.remove('on'); $('#overlay').innerHTML=''; ui.ampCtx=null; ui.ampSel=null; ui.ampSelK=null}
+function openSheet(h){$('#overlay').innerHTML='<div class="sheet" role="dialog" aria-modal="true">'+h+'</div>'; $('#overlay').classList.add('on'); document.body.classList.add('modal-open')}
+function closeModal(){document.body.classList.remove('modal-open'); $('#overlay').classList.remove('on'); $('#overlay').innerHTML=''; ui.ampCtx=null; ui.ampSel=null; ui.ampSelK=null}
 function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2800)}
 
 function sheetTypeAppt(d,s,tid,span,preTitle){
@@ -3096,6 +3129,9 @@ const ACT={
     if(a.v==='woche'){ui.anchor=mondayOf(new Date()); ui.mobileDay=dayIdx(new Date()); ui.jumpMonth=null}
     ui.route={view:a.v}; ui.menuOpen=false; render();
   },
+  togglePassword(a,t){const input=document.getElementById(a.id); if(!input)return; const show=input.type==='password'; input.type=show?'text':'password'; t.setAttribute('aria-pressed',String(show)); t.setAttribute('aria-label',show?'Passwort verbergen':'Passwort anzeigen')},
+  mobileCount(a){ui.mobileCount=+a.count; render()},
+  mobileShift(a){const date=addDays(ui.anchor,(ui.mobileDay||0)+(+a.step)); ui.anchor=mondayOf(date); ui.mobileDay=dayIdx(date); ui.jumpMonth=null; render()},
   toggleMenu(){ui.menuOpen=!ui.menuOpen; $('#nav').classList.toggle('open',ui.menuOpen)},
   backdrop(a,t,e){if(e.target===t)closeModal()},
   closeModal(){closeModal()},
@@ -4191,7 +4227,7 @@ const ACT={
     render();
   },
   openSetPassword(){
-    openSheet('<div class="shead"><h3>Passwort setzen oder ändern</h3><div class="sub">Wähle ein eigenes Passwort mit mindestens 12 Zeichen. Der Magic Link bleibt eine alternative Anmeldung, sobald der Mailversand verfügbar ist.</div></div><label class="f" for="new-password">Neues Passwort</label><input id="new-password" class="inp" type="password" autocomplete="new-password"><label class="f" for="confirm-password">Passwort wiederholen</label><input id="confirm-password" class="inp" type="password" autocomplete="new-password"><div class="sheetBtns"><button class="btn primary" data-act="savePassword">Passwort speichern</button><button class="btn" data-act="closeModal">Abbrechen</button></div><div id="password-error" class="sub" role="alert"></div>');
+    openSheet('<div class="shead"><h3>Passwort setzen oder ändern</h3><div class="sub">Wähle ein eigenes Passwort mit mindestens 12 Zeichen. Der Magic Link bleibt eine alternative Anmeldung, sobald der Mailversand verfügbar ist.</div></div><label class="f" for="new-password">Neues Passwort</label><div class="passwordWrap"><input id="new-password" class="inp" type="password" autocomplete="new-password"><button type="button" class="btn mini" data-act="togglePassword" data-id="new-password" aria-label="Passwort anzeigen" aria-pressed="false">👁</button></div><label class="f" for="confirm-password">Passwort wiederholen</label><div class="passwordWrap"><input id="confirm-password" class="inp" type="password" autocomplete="new-password"><button type="button" class="btn mini" data-act="togglePassword" data-id="confirm-password" aria-label="Passwort anzeigen" aria-pressed="false">👁</button></div><div class="sheetBtns"><button class="btn primary" data-act="savePassword">Passwort speichern</button><button class="btn" data-act="closeModal">Abbrechen</button></div><div id="password-error" class="sub" role="alert"></div>');
   },
   async savePassword(){
     const first=document.getElementById('new-password'),second=document.getElementById('confirm-password'),err=document.getElementById('password-error');
@@ -4301,6 +4337,7 @@ const ACT={
     if(storeOk){
       try{
         localStorage.removeItem('theo-last-auth-email');
+            localStorage.removeItem('theo-last-auth-id');
         localStorage.removeItem('theo-profile-cache');
         localStorage.removeItem('theo-profile-owner');
       }catch(e){}
@@ -4378,6 +4415,7 @@ const ACT={
             localStorage.removeItem('theo-state');
             if(AUTH.user)localStorage.removeItem('theo-state-user-'+AUTH.user.id);
             localStorage.removeItem('theo-last-auth-email');
+            localStorage.removeItem('theo-last-auth-id');
             localStorage.removeItem('theo-profile-cache');
             localStorage.removeItem('theo-profile-owner');
           }catch(e){}
@@ -4533,6 +4571,10 @@ function moveApptTo(apId,dstW,td,ts,quiet){
   return true;
 }
 
+/* Tageweise navigieren, vertikales Scrollen und die 7-Tage-Hochformat-Scroller nicht stören. */
+let mobileTouch=null;
+document.addEventListener('touchstart',e=>{const grid=closestEl(e.target,'.mobileDays'); if(grid&&!(grid.dataset.count==='7'&&matchMedia('(max-width:600px) and (orientation:portrait)').matches)&&e.touches.length===1)mobileTouch={x:e.touches[0].clientX,y:e.touches[0].clientY}; else mobileTouch=null},{passive:true});
+document.addEventListener('touchend',e=>{if(!mobileTouch||!e.changedTouches.length)return; const dx=e.changedTouches[0].clientX-mobileTouch.x,dy=e.changedTouches[0].clientY-mobileTouch.y; mobileTouch=null; if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5){dragEndTs=Date.now(); ACT.mobileShift({step:dx<0?1:-1})}},{passive:true});
 /* ================= Globale Events ================= */
 let dragPayload='', dragEndTs=0;
 document.addEventListener('click',e=>{
@@ -4545,6 +4587,8 @@ document.addEventListener('click',e=>{
   }
   if(!t)return;
   const a=t.dataset;
+  const mobileCell=closestEl(t,'.mdayView[data-mobile-week]');
+  if(mobileCell&&mobileCell.dataset.mobileWeek!==wk()){ui.anchor=parseISO(mobileCell.dataset.mobileWeek); ui.mobileDay=+mobileCell.dataset.mobileDay}
   if(ACT[a.act])ACT[a.act](a,t,e);
 });
 document.addEventListener('change',e=>{

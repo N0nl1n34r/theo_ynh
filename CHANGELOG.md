@@ -1,5 +1,10 @@
 # CHANGELOG — theo_ynh
 
+### Mobil, Konto und Offline
+- Mobile Wochenansicht mit 1/3/7 Tagen und tageweiser Navigation, auch über Wochenwechsel.
+- Konto und Daten von Theo-Einstellungen getrennt; Passwort-Anzeige, mobiler Menü- und Modal-Scroll-Fix.
+- Offline-Start lädt den gespeicherten Zustand des zuletzt angemeldeten Kontos; Voraussetzungen und Konfliktgrenzen dokumentiert.
+
 - **Unveröffentlicht** — Nachtmodus mit dunklen Oberflächen und angepassten Bedienelementen; neue Schemafarben für Lebensbereiche und Phasen folgen dem Farbschema, eigene und bestehende Farben bleiben erhalten. Farbauswahl und Sync um Schemafarb-Indizes erweitert. Passwortfeld mit Eingabehinweis versehen, Anmelde- und Verbindungsfehler besser unterschieden. Zwei zuvor falsch zugeordnete Testkonten live repariert und gegen Supabase Auth erfolgreich angemeldet.
 
 - **Unveröffentlicht** — Auth-Gate responsiv gestaltet, Passwortanmeldung und Passwortänderung für bestehende Konten ergänzt; Magic Link bleibt optionale, von funktionsfähigem Mailversand abhängige Alternative. Anmeldungsfreie Demo mit freiwilliger Modulauswahl, Modulübersicht und vier Farbschemata; Wartelistenformular vorerst ausgeblendet. Alltagsnähere Blocktypen und mehrtägige Zeiträume; aktive Phase aus der Terminliste entfernt. Lokaler Kontocache und asynchroner Sync beim Kontowechsel getrennt; Mock-Tests für Demo, Passwort, Einstellungen und Kontowechsel ergänzt. Echte Logins und Browser-End-to-End-Prüfung stehen noch aus.

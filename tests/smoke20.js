@@ -311,6 +311,19 @@ function bootAppInstance(opts = {}) {
   const yr = String(new Date().getFullYear());
   ok(gAuth.ex.S().motto[yr] === 'Ruhig Schritt für Schritt', 'Onboarding Jahresmotto speichert sauber');
 
+  // Mobile days cross a week boundary without changing the displayed anchor during rendering.
+  gAuth.ex.ui.anchor = new Date(2026, 10, 23, 12);
+  gAuth.ex.ui.mobileDay = 6;
+  gAuth.ex.ACT.mobileCount({ count: '3' });
+  const mobileHtml = gAuth.els['q:#main'].innerHTML;
+  ok(mobileHtml.includes('data-count="3"') && mobileHtml.includes('data-mobile-week="2026-11-23"') && mobileHtml.includes('data-mobile-week="2026-11-30"') && gAuth.ex.wk() === '2026-11-23',
+    'Drei-Tage-Ansicht zeigt Tage über den Wochenwechsel ohne den Wochenanker beim Rendern zu verändern');
+  gAuth.ex.ACT.mobileShift({ step: '1' });
+  ok(gAuth.ex.wk() === '2026-11-30' && gAuth.ex.ui.mobileDay === 0, 'Tagesnavigation überquert den Wochenwechsel');
+  gAuth.ex.ACT.mobileCount({ count: '7' });
+  ok(gAuth.els['q:#main'].innerHTML.includes('data-count="7"'), 'Sieben-Tage-Ansicht ist auswählbar');
+  ok(gateHtml1.includes('data-act="togglePassword"') && appHtml.includes('body.modal-open{overflow:hidden'), 'Passwort-Auge und Modal-Scroll-Sperre vorhanden');
+
   // Kanban, PERT/Estimate, Markdown-XSS-Schutz & 15-Min-Timepicker
   const todo = { id: 't1', title: 'Test', done: false, kanban: 'offen', est: { mode: 'pert', to: 1, tm: 2, tp: 5 } };
   gAuth.ex.S().projects.push({ id: 'p1', areaId: null, name: 'Testprojekt', emoji: '📋', note: '', views: { list: true, kanban: true }, todos: [todo] });
@@ -322,11 +335,14 @@ function bootAppInstance(opts = {}) {
   const tp = gAuth.ex.timePickHtml('09:15', 'data-test="1"', false);
   ok(tp.includes('value="09:15" selected') && !tp.includes('09:17'), '15-Minuten-Time-Picker (:00/:15/:30/:45) intakt');
 
-  // Konfigurationsansicht: Bestandsschutz, Export, Konto löschen, Abmelden
+  // Kontoansicht: Bestandsschutz, Export, Konto löschen, Abmelden
   gAuth.ex.ACT.nav({ v: 'konfig' });
+  const theoCfg = gAuth.els['q:#main'].innerHTML;
+  ok(!theoCfg.includes('exportAccountJson') && !theoCfg.includes('openAccountDelete'), 'Theo-Konfiguration enthält keine Kontoverwaltung');
+  gAuth.ex.ACT.nav({ v: 'konto' });
   const cfgHtml = gAuth.els['q:#main'].innerHTML;
   ok(cfgHtml.includes('Bestandsschutz: 29 €/Monat') && cfgHtml.includes('exportAccountJson') && cfgHtml.includes('openAccountDelete'),
-    'Konfiguration zeigt 29-€-Bestandsschutz, JSON-Gesamtexport und Self-Service-Konto-Löschung');
+    'Konto zeigt 29-€-Bestandsschutz, JSON-Gesamtexport und Self-Service-Konto-Löschung');
 
   await gAuth.ex.ACT.authLogout();
   ok(gAuth.ex.AUTH.session === null && gAuth.els['q:#main'].innerHTML.includes('Geschlossene Beta'),

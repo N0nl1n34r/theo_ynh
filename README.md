@@ -19,7 +19,7 @@ Die Beta ist für **Vercel (`fra1`)** und **Supabase (`eu-central-1`, Frankfurt)
 
 - Die Demo ist ohne Konto zugänglich. Die freiwillige Auswahl personalisiert den Einstieg und die Modulübersicht; sie ist nicht mit einer Warteliste verknüpft. Das frühere Wartelistenformular ist ausgeblendet. Mailanbindung und Warteliste kommen später.
 - Wochenübersicht, Eingangskiste und Lebensbereiche sind vorhanden; Werte, Psychoedukation, Reflexion samt späteren Auswertungen, Übergänge und Social Accountability sind zunächst als Ideen markiert, nicht als fertige Funktionen. Fünf Farbschemata einschließlich Nachtmodus sind auswählbar. Neue Schemafarben für Bereiche und Phasen folgen dem aktiven Schema; eigene und bereits vorhandene Farben ohne Herkunft bleiben unverändert.
-- Bestehende Konten können sich mit E-Mail und Passwort anmelden; nach einem erfolgreichen Login lässt sich das Passwort in der Konfiguration ändern. Die Registrierung mit Einladung und der optionale Magic Link benötigen einen funktionierenden Mailversand. Fiktive Adressen können keine E-Mails empfangen.
+- Bestehende Konten können sich mit E-Mail und Passwort anmelden; nach einem erfolgreichen Login lässt sich das Passwort unter Konto ändern. Die Registrierung mit Einladung und der optionale Magic Link benötigen einen funktionierenden Mailversand. Fiktive Adressen können keine E-Mails empfangen.
 - Lokale Kontodaten werden getrennt nach Benutzer-ID zwischengespeichert; diese Daten sind nicht verschlüsselt und können für andere Personen mit Zugriff auf dasselbe Browserprofil sichtbar sein. Beim Konto-Wechsel werden verspätete Antworten des vorherigen Kontos verworfen und Sync-Anfragen an die ursprüngliche Sitzung gebunden. Öffentliche Geräte nicht für echte Daten verwenden.
 - Die Test-Suite verwendet Auth-/Sync-Mocks; Browser-Anmeldungen, Kontowechsel im Browser und der Mailversand müssen vor einer Freigabe zusätzlich Ende zu Ende getestet werden. Die beiden bekannten Testkonten wurden separat direkt gegen den Live-Auth-Dienst geprüft. Rechtstexte bleiben Entwürfe, Stripe ist nicht freigeschaltet.
 
@@ -135,7 +135,8 @@ Danach ist Theo unter `https://<domain><pfad>/` erreichbar.
 
 1. `https://<domain><pfad>/` im Browser öffnen → ggf. mit YunoHost-Konto anmelden (einmalig).
 2. Android/Chrome: **„App installieren“** → Theo startet standalone mit eigenem Icon. iOS/Safari: „Zum Home-Bildschirm“.
-3. Offline-Start: der Service-Worker hält den letzten Stand bereit; Daten liegen im Gerätespeicher und synchronisieren, sobald Verbindung besteht.
+3. Offline auf Handy oder Desktop: Theo vorher auf dem **gleichen Gerät und im gleichen Browser** online öffnen, anmelden und vollständig synchronisieren; dabei wird die App für den Offline-Start zwischengespeichert. Optional zum Startbildschirm hinzufügen. Danach bleiben Änderungen im lokalen Browserspeicher und werden bei Verbindung und gültiger Anmeldung synchronisiert. Nach Abmeldung, beim Löschen von Browserdaten, im privaten Browsermodus oder bei vom System geräumtem Speicher ist der Offline-Zugriff nicht gewährleistet. Eine neue Anmeldung benötigt Internet. Bei gleichzeitiger Bearbeitung auf mehreren Geräten gilt pro Datensatz die letzte Änderungszeit; bei Konflikten können ältere Änderungen überschrieben werden. Bis zur erfolgreichen Synchronisation sind Änderungen nur auf diesem Gerät vorhanden.
+4. Mobil: In der Woche 1, 3 oder 7 Tage wählen und im Tagesraster seitlich wischen; im Hochformat lässt sich die 7-Tage-Ansicht horizontal scrollen. Konto, Abo und Datenexport stehen im Kontobereich unten im Menü, die Theo-Konfiguration enthält nur Theo-Einstellungen.
 
 ## Update der App (immer leicht)
 
