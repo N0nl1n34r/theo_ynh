@@ -29,6 +29,8 @@ Die Beta ist für **Vercel (`fra1`)** und **Supabase (`eu-central-1`, Frankfurt)
 
 ### 2. Vercel-Deployment (`fra1`)
 
+Das bestehende Vercel-Projekt mit dem GitHub-Repository verbinden; Änderungen am Beta-Branch erzeugen zunächst ein Preview-Deployment. Vor Tests prüfen, ob Vercel Deployment Protection den Zugriff einschränkt. `NEXT_PUBLIC_SITE_URL` und Supabase-Redirects müssen zur tatsächlich verwendeten Domain passen; sonst führen E-Mail-Links auf die falsche Umgebung.
+
 ```bash
 npm install
 npm run build          # baut .vercel-dist/ + vendored /app/supabase.min.js
