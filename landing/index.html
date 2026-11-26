@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Theo — Ruhige Alltagsplanung ohne Streaks &amp; ohne Schuldgefühl</title>
+  <meta name="description" content="Theo gliedert deine Woche in drei ruhige Tagesfenster, berücksichtigt deine Energie per Ampel und verzichtet komplett auf Streaks, Schuldmarker und Tracking.">
+  <meta name="theme-color" content="#FBF9F2">
+  <link rel="icon" href="/theo-icon.png" type="image/png">
+  <style>
+    :root {
+      --bg: #FBF9F2;
+      --paper: #FFFFFF;
+      --warm: #F4EFE4;
+      --line: #E6DFD1;
+      --ink: #2B2722;
+      --muted: #696156;
+      --accent: #53715A;
+      --accent-hover: #445F4A;
+      --accent-soft: #E7EFE8;
+      --amp-green: #7CA982;
+      --amp-yellow: #D8B44C;
+      --amp-orange: #E09B4C;
+      --amp-red: #D96A5B;
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(43, 39, 34, 0.05);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:hover { color: var(--accent-hover); }
+    .wrap { max-width: 1060px; margin: 0 auto; padding: 0 22px; }
+
+    /* Header */
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(251, 249, 242, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .top-in {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 66px;
+      flex-wrap: wrap;
+      padding: 8px 0;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
+    }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    .badge-beta {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-size: 0.94rem;
+    }
+    .nav-links a { text-decoration: none; color: var(--muted); font-weight: 500; }
+    .nav-links a:hover { color: var(--ink); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 18px;
+      border-radius: 11px;
+      border: 1px solid transparent;
+      font-size: 0.96rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+    .btn-primary { background: var(--accent); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--accent-hover); color: #FFFFFF; }
+    .btn-ghost { background: var(--paper); color: var(--ink); border-color: var(--line); }
+    .btn-ghost:hover { background: var(--warm); color: var(--ink); }
+
+    /* Status Banner */
+    .status-banner {
+      display: none;
+      margin: 18px auto 0;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      border: 1px solid #C6D8C9;
+      color: #263B2A;
+      font-weight: 500;
+    }
+    .status-banner.warn {
+      background: #FBF1E6;
+      border-color: #E7C9A9;
+      color: #5B3D1D;
+    }
+    .status-banner.on { display: block; }
+
+    /* Hero */
+    .hero { padding: 56px 0 44px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr;
+      gap: 36px;
+      align-items: start;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(1.95rem, 3.8vw, 2.85rem);
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      margin: 0 0 18px;
+      font-weight: 720;
+    }
+    .nordstern {
+      margin: 0 0 20px;
+      padding: 14px 18px;
+      border-left: 3px solid var(--accent);
+      background: var(--warm);
+      border-radius: 0 12px 12px 0;
+      color: #3D3730;
+      font-size: 1.04rem;
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 1.06rem;
+      margin: 0 0 22px;
+    }
+    .hero-note {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-top: 14px;
+    }
+
+    /* Waitlist Card */
+    .wl-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 26px 24px;
+      box-shadow: var(--shadow);
+    }
+    .wl-card h2 {
+      margin: 0 0 6px;
+      font-size: 1.24rem;
+      line-height: 1.3;
+    }
+    .wl-card .sub {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--ink);
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1px solid #D7CFC0;
+      border-radius: 10px;
+      background: #FCFBF8;
+      color: var(--ink);
+      font-size: 0.96rem;
+      font-family: inherit;
+    }
+    .field input:focus, .field select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+      background: #FFFFFF;
+    }
+    .hp-wrap {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .wl-msg {
+      display: none;
+      margin-top: 12px;
+      padding: 11px 13px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+    .wl-msg.ok { display: block; background: var(--accent-soft); color: #243A28; border: 1px solid #C4D8C7; }
+    .wl-msg.err { display: block; background: #FBECE9; color: #692820; border: 1px solid #E7B9B2; }
+    .wl-fine {
+      margin: 12px 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .invite-box {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.89rem;
+    }
+
+    /* Trust Row */
+    .trust-row {
+      margin: 14px 0 48px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .trust-pill {
+      background: var(--warm);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #3A342D;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    /* Sections */
+    section { padding: 48px 0; border-top: 1px solid var(--line); }
+    .sec-head { max-width: 700px; margin-bottom: 28px; }
+    .sec-head h2 {
+      font-size: clamp(1.5rem, 2.7vw, 2rem);
+      line-height: 1.25;
+      margin: 0 0 10px;
+      letter-spacing: -0.015em;
+    }
+    .sec-head p { margin: 0; color: var(--muted); font-size: 1.02rem; }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+    }
+    .card h3 { margin: 0 0 8px; font-size: 1.08rem; line-height: 1.35; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+    .tag {
+      display: inline-block;
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--warm);
+      color: #544D43;
+      margin-bottom: 10px;
+    }
+
+    /* Authentic UI Previews */
+    .shots {
+      margin-top: 26px;
+      display: grid;
+      grid-template-columns: 1.25fr 0.85fr;
+      gap: 18px;
+    }
+    .ui-frame {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .ui-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .ui-orient {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      font-size: 0.78rem;
+    }
+    .ui-chip {
+      background: var(--warm);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+    .mini-week {
+      display: grid;
+      grid-template-columns: 78px repeat(3, 1fr);
+      gap: 7px;
+      font-size: 0.78rem;
+    }
+    .mw-head { font-weight: 700; color: var(--muted); padding: 4px 6px; }
+    .mw-slotlbl { color: var(--muted); font-size: 0.73rem; padding: 6px 4px; line-height: 1.3; }
+    .mw-cell {
+      background: #FAF7F0;
+      border: 1px dashed #DFD8C8;
+      border-radius: 10px;
+      padding: 7px 8px;
+      min-height: 58px;
+    }
+    .mw-block {
+      background: #FFFFFF;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--amp-green);
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .mw-block.yellow { border-left-color: var(--amp-yellow); }
+    .mw-block.orange { border-left-color: var(--amp-orange); }
+    .mw-block.red { border-left-color: var(--amp-red); }
+    .mw-sub { display: block; font-weight: 400; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .mini-stack { display: flex; flex-direction: column; gap: 12px; }
+    .mini-box {
+      background: #FAF7F0;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 12px;
+      font-size: 0.82rem;
+    }
+    .mini-box b { display: block; margin-bottom: 4px; color: var(--ink); }
+
+    /* Psychoedukation Teaser */
+    .edu-box {
+      background: linear-gradient(135deg, #F5F0E5 0%, #ECEFE9 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px 26px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .edu-topics {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: #464039;
+      font-size: 0.94rem;
+    }
+
+    /* Pricing */
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      max-width: 780px;
+    }
+    .price-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 26px 24px;
+      position: relative;
+    }
+    .price-card.featured {
+      border: 2px solid var(--accent);
+      box-shadow: var(--shadow);
+    }
+    .price-num {
+      font-size: 2.2rem;
+      font-weight: 750;
+      line-height: 1.1;
+      margin: 8px 0 4px;
+    }
+    .price-num span { font-size: 0.98rem; font-weight: 500; color: var(--muted); }
+    .price-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      font-size: 0.93rem;
+      color: #413B34;
+    }
+    .price-list li { padding: 5px 0; }
+    .bestand-banner {
+      margin-top: 20px;
+      max-width: 780px;
+      background: var(--warm);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 16px 18px;
+      font-size: 0.93rem;
+      color: #3B352E;
+    }
+
+    /* Disclaimer & Footer */
+    .disclaimer {
+      margin-top: 22px;
+      padding: 14px 16px;
+      background: #F6F2E9;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 0.87rem;
+      color: var(--muted);
+    }
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 34px 0 48px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .foot-in {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+
+    @media (max-width: 860px) {
+      .hero-grid, .shots, .grid-3, .grid-2, .price-grid { grid-template-columns: 1fr; }
+      .trust-row { grid-template-columns: repeat(2, 1fr); }
+      .mini-week { grid-template-columns: 62px repeat(3, 1fr); font-size: 0.72rem; }
+    }
+    @media (max-width: 520px) {
+      .trust-row { grid-template-columns: 1fr; }
+      .hero { padding-top: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-in">
+      <a class="brand" href="/">
+        <img src="/theo-icon.png" alt="Theo Icon" width="32" height="32">
+        <span>Theo</span>
+        <span class="badge-beta">Geschlossene Beta</span>
+      </a>
+      <nav class="nav-links" aria-label="Hauptnavigation">
+        <a href="#fuer-wen">Für wen</a>
+        <a href="#was-theo-macht">Bausteine</a>
+        <a href="#haltung">Warum wir</a>
+        <a href="#preise">Preise</a>
+        <a class="btn btn-ghost" href="/app/">Zur Beta-App →</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="status-banner" class="status-banner" role="status" aria-live="polite"></div>
+
+    <!-- 1. HERO + WARTELISTE -->
+    <div class="hero" id="warteliste">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow">Ruhige Selbstorganisation für bewegte Köpfe</span>
+          <h1>Planung, die mit deiner echten Energie atmet — statt an dir zu ziehen.</h1>
+          <blockquote class="nordstern">
+            „Ich brauche kein weiteres System, das mir vorrechnet, was ich schon wieder nicht geschafft habe — sondern einen stillen Ort, an dem meine Woche überschaubar wird und liegengebliebene Dinge ohne Vorwurf warten dürfen.“
+          </blockquote>
+          <p class="lead">
+            Theo teilt den Tag in drei freundliche Zeitfenster statt in enge Minuten-Spalten, macht Energiebelastung per Ampel sichtbar und verzichtet vollständig auf Streaks, Punktestände und rote Überfällig-Marker.
+          </p>
+          <p class="hero-note">
+            Hinweis: Theo ist ein Werkzeug zur persönlichen Selbstorganisation im Alltag und ersetzt keine ärztliche oder psychotherapeutische Diagnose, Beratung oder Behandlung.
+          </p>
+        </div>
+
+        <aside class="wl-card" aria-labelledby="wl-heading">
+          <h2 id="wl-heading">Auf die Beta-Warteliste setzen</h2>
+          <p class="sub">Wir vergeben Einladungen schrittweise in kleinen Wellen. Mit deiner Eintragung sicherst du dir unverbindlich den Beta-Bestandsschutz (29 €/Monat).</p>
+          <form id="waitlist-form" novalidate>
+            <div class="field">
+              <label for="wl-email">Deine E-Mail-Adresse</label>
+              <input id="wl-email" name="email" type="email" autocomplete="email" required placeholder="du@beispiel.de">
+            </div>
+            <div class="field">
+              <label for="wl-segment">Wo stehst du gerade? <span style="font-weight:400;color:var(--muted)">(freiwillig, jederzeit löschbar)</span></label>
+              <select id="wl-segment" name="segment">
+                <option value="">Mag ich offenlassen</option>
+                <option value="frisch_diagnostiziert">Frisch eingeordnet / diagnostiziert — ich sortiere meinen Alltag neu</option>
+                <option value="verdacht_warteliste">Verdacht oder auf einer Warteliste — ich brauche jetzt schon Entlastung</option>
+                <option value="keine_diagnose">Ohne Diagnose — ich suche ruhige Struktur für Reiz- &amp; Energierhythmus</option>
+              </select>
+            </div>
+            <div class="hp-wrap" aria-hidden="true">
+              <label for="wl-website">Website leer lassen</label>
+              <input id="wl-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+            <button id="wl-submit" class="btn btn-primary" type="submit" style="width:100%">
+              Unverbindlich vormerken (Double Opt-in)
+            </button>
+            <div id="wl-msg" class="wl-msg" role="status" aria-live="polite"></div>
+            <p class="wl-fine">
+              Nach dem Absenden erhältst du eine einzelne Bestätigungs-E-Mail. Ohne Klick auf den Link speichern wir keine aktive Anmeldung. Austragen ist mit einem Klick jederzeit möglich. Mehr in der <a href="/datenschutz">Datenschutzerklärung</a>.
+            </p>
+          </form>
+          <div class="invite-box">
+            <span>Du hast schon einen Einladungscode?</span>
+            <a href="/app/?mode=register"><strong>Hier Konto freischalten →</strong></a>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- 7. TRUST-ROW -->
+    <div class="trust-row" aria-label="Vertrauens-Eckpunkte">
+      <div class="trust-pill">🇪🇺 Datenbank in Frankfurt (EU)</div>
+      <div class="trust-pill">🛡️ Null Tracker &amp; keine Cookie-Wand</div>
+      <div class="trust-pill">📦 Datenexport jederzeit (JSON)</div>
+      <div class="trust-pill">🌿 Keine Diagnose nötig</div>
+    </div>
+
+    <!-- 2. FÜR WEN (DREI PORTRÄTS) -->
+    <section id="fuer-wen">
+      <div class="sec-head">
+        <h2>Für wen Theo gebaut ist</h2>
+        <p>Viele klassische Planungstools setzen voraus, dass jeder Tag gleich viel Kraft hat. Theo geht vom Gegenteil aus — ganz gleich, an welchem Punkt du gerade stehst.</p>
+      </div>
+      <div class="grid-3">
+        <article class="card">
+          <span class="tag">Porträt 1 · Neu sortieren</span>
+          <h3>Frisch eingeordnet oder diagnostiziert</h3>
+          <p>Du verstehst gerade besser, warum starre Stundenpläne und endlose Listen bei dir immer wieder gekippt sind. Theo gibt dir ein äußeres Gerüst, das Übergänge, Pausen und echte Erholungsfenster als vollwertigen Teil der Woche mitdenkt.</p>
+        </article>
+        <article class="card">
+          <span class="tag">Porträt 2 · Mitten im Übergang</span>
+          <h3>Verdacht oder lange Warteliste</h3>
+          <p>Zwischen offenen Tabs im Kopf, Alltagsverpflichtungen und monatelangen Wartezeiten brauchst du heute schon Orientierung — ohne bürokratische Hürde und ohne dich erst erklären zu müssen.</p>
+        </article>
+        <article class="card">
+          <span class="tag">Porträt 3 · Bewusst ohne Etikett</span>
+          <h3>Keine formale Diagnose möglich oder gewünscht</h3>
+          <p>Du arbeitest konzentriert in Wellen, nimmst Reize intensiv wahr oder merkst nach dichten Terminen schnell Erschöpfung. Bei Theo gibt es keine Diagnosefelder — du gestaltest einfach deinen eigenen Wochenrhythmus.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 3. WAS THEO MACHT (VIER BAUSTEINE + ECHTE ALPHA-EINBLICKE) -->
+    <section id="was-theo-macht">
+      <div class="sec-head">
+        <h2>Was Theo im Alltag anders macht</h2>
+        <p>Vier klare Bausteine, die zusammenarbeiten — auf Laptop, Tablet und als installierbare App auf dem Smartphone (auch offline im Flugmodus).</p>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <h3>1 · Drei Tagesfenster statt Minuten-Korsett</h3>
+          <p>Jeder Tag besteht aus <strong>Vormittag</strong>, <strong>Mittag &amp; Nachmittag</strong> und <strong>Abend</strong>. Feste Termine und freie Arbeits- oder Erholungsblöcke dürfen im selben Abschnitt friedlich nebeneinander stehen, statt sich gegenseitig zu verdrängen.</p>
+        </article>
+        <article class="card">
+          <h3>2 · Energie-Ampel für ehrliche Wochenbalance</h3>
+          <p>Du markierst nach Gefühl: <strong>Grün</strong> nährt und regeneriert, <strong>Gelb</strong> und <strong>Orange</strong> kosten Fokus, <strong>Rot</strong> zieht viel Kraft. Auf einen Blick siehst du, wann eine Woche zu dicht wird — bevor sie kippt.</p>
+        </article>
+        <article class="card">
+          <h3>3 · Eingangskiste &amp; „Erster Schritt“</h3>
+          <p>Lose Gedanken landen sekundenschnell (auch mit Markdown-Listen) in der Eingangskiste. Wenn etwas reif ist, machst du daraus keinen riesigen Projektplan, sondern formulierst nur den kleinsten <strong>Ersten Schritt</strong> — oder bündelst drei Mini-Erledigungen in einem Block.</p>
+        </article>
+        <article class="card">
+          <h3>4 · Lebensphasen im Jahreskalender</h3>
+          <p>Intensivphasen, ruhige Wochen, Seminare oder Besuch trägst du als farbige Bögen ins Jahr ein. Auch in der Wochenansicht siehst du oben immer sofort, in welcher Phase du dich gerade bewegst.</p>
+        </article>
+      </div>
+
+      <!-- Authentische UI-Ausschnitte aus Theo -->
+      <div class="shots" aria-label="Einblicke in die Theo-Oberfläche">
+        <div class="ui-frame">
+          <div class="ui-bar">
+            <span><strong>Woche</strong> · 23.11. – 29.11.2026</span>
+            <span>● Synchronisiert · Offline bereit</span>
+          </div>
+          <div class="ui-orient">
+            <span class="ui-chip">🍂 Phase: <strong>Ruhiger Jahresausklang</strong></span>
+            <span class="ui-chip">🎯 Wichtig heute: <strong>Steuerbelege nur zusammensuchen</strong></span>
+          </div>
+          <div class="mini-week">
+            <div class="mw-head"></div>
+            <div class="mw-head">Mo 23.</div>
+            <div class="mw-head">Di 24.</div>
+            <div class="mw-head">Mi 25.</div>
+
+            <div class="mw-slotlbl">Vormittag<br>09–12</div>
+            <div class="mw-cell">
+              <div class="mw-block yellow">🧠 Fokusarbeit<span class="mw-sub">Textentwurf Kapitel 2</span></div>
+            </div>
+            <div class="mw-cell">
+              <div class="mw-block">☑️ 3 kleine To-dos<span class="mw-sub">Post · Rezept · Rückruf</span></div>
+            </div>
+            <div class="mw-cell">
+              <div class="mw-block orange">📅 10:15 Zahnarzt<span class="mw-sub">+ Luft danach</span></div>
+            </div>
+
+            <div class="mw-slotlbl">Mittag &amp;<br>Nachm.</div>
+            <div class="mw-cell">
+              <div class="mw-block">🌿 Regeneration<span class="mw-sub">Spaziergang ohne Handy</span></div>
+            </div>
+            <div class="mw-cell">
+              <div class="mw-block red">🏛 Behördengang<span class="mw-sub">Unterlagen Mappe blau</span></div>
+            </div>
+            <div class="mw-cell"></div>
+
+            <div class="mw-slotlbl">Abend<br>19–22</div>
+            <div class="mw-cell"></div>
+            <div class="mw-cell">
+              <div class="mw-block">🌿 Ruhiger Abend<span class="mw-sub">Nichts vornehmen</span></div>
+            </div>
+            <div class="mw-cell">
+              <div class="mw-block">🫂 Anna treffen<span class="mw-sub">Tee um 19:30</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ui-frame mini-stack">
+          <div class="ui-bar">
+            <span><strong>Eingangskiste &amp; Vorhaben</strong></span>
+            <span>Kein Überfällig-Rot</span>
+          </div>
+          <div class="mini-box">
+            <b>📥 Eingangskiste (Markdown)</b>
+            <div>• Geschenkidee für Mara notieren<br>• Frühjahrs-Seminar prüfen (3 Tage)<br><span style="color:var(--muted)">→ Später ruhig in Termin, Aufgabe oder Block verwandeln</span></div>
+          </div>
+          <div class="mini-box">
+            <b>🧭 Vorhaben: Wohnung entrümpeln</b>
+            <div>Erster Schritt: <em>Nur eine Schublade im Flur öffnen</em><br><span style="color:var(--muted)">Liste · 5-Spalten-Kanban · ruhiger Zeitstrahl</span></div>
+          </div>
+          <div class="mini-box">
+            <b>↩ Nicht geschafft? Kein Problem.</b>
+            <div>Offene Punkte aus einem Block legst du mit einem Klick zurück in deine Aufgabenliste — Erledigtes bleibt im Tag sichtbar.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. PSYCHOEDUKATION (KOMMT BALD — KEIN FAKE-BLOG) -->
+    <section id="wissen">
+      <div class="edu-box">
+        <div style="max-width:640px">
+          <span class="eyebrow">Begleitende Wissensreihe · Kommt bald</span>
+          <h2 style="margin:0 0 10px;font-size:1.55rem">Alltagswissen statt Durchhalteparolen</h2>
+          <p style="margin:0;color:#474139">
+            Parallel zur Beta entsteht eine ruhige, kostenfreie Lesereihe rund um realistische Selbstorganisation bei begrenzter oder schwankender Energie — ohne Schein-Artikel und ohne schnelle Klickköder:
+          </p>
+          <ul class="edu-topics">
+            <li>Warum klassische Zeitblöcke an Übergängen scheitern — und wie Puffer wirklich helfen</li>
+            <li>Energie-Haushalt über die Woche lesen statt jeden Tag gleich voll zu packen</li>
+            <li>Schuldfreies Umplanen nach dichten Tagen oder unerwarteten Unterbrechungen</li>
+          </ul>
+        </div>
+        <div style="align-self:center">
+          <a class="btn btn-ghost" href="#warteliste">Über Warteliste Bescheid bekommen ↑</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. WARUM WIR (HALTUNG) -->
+    <section id="haltung">
+      <div class="sec-head">
+        <h2>Warum wir Theo so bauen</h2>
+        <p>Software prägt, wie wir mit uns selbst sprechen. Deshalb lassen wir bewusst alles weg, was Druck erzeugt oder Daten verwertet.</p>
+      </div>
+      <div class="grid-3">
+        <article class="card">
+          <h3>Kein Streak-Zähler, nie</h3>
+          <p>Wenn du Theo fünf Tage nicht öffnest, begrüßt dich am sechsten Tag einfach die aktuelle Woche — ohne gebrochene Kette, ohne trauriges Maskottchen und ohne Nachhol-Berg.</p>
+        </article>
+        <article class="card">
+          <h3>Ehrliche EU-Infrastruktur</h3>
+          <p>Deine Planungsdaten liegen verschlüsselt und strikt getrennt (Row Level Security) in einer Datenbank in <strong>Frankfurt am Main</strong>. Wir binden keine Werbenetzwerke, keine US-Analyse-Pixel und keine fremden Schriftarten-CDNs ein.</p>
+        </article>
+        <article class="card">
+          <h3>Deine Daten gehören dir</h3>
+          <p>Du brauchst keinen eigenen Server zu betreiben — und bist trotzdem nie eingesperrt: Ein Klick lädt deinen gesamten Bestand als offenes JSON herunter, und dein Konto lässt sich jederzeit selbstständig löschen.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 6. PREISE (29 € / 290 € + BESTANDSSCHUTZ) -->
+    <section id="preise">
+      <div class="sec-head">
+        <h2>Klare Preise mit dauerhaftem Bestandsschutz</h2>
+        <p>Theo finanziert sich ausschließlich über die Menschen, die es nutzen — nicht über Datenhandel, Investoren-Wachstumsdruck oder künstlich gesperrte Grundfunktionen.</p>
+      </div>
+      <div class="price-grid">
+        <div class="price-card">
+          <span class="tag">Monatlich kündbar</span>
+          <h3>Theo Monatsabo</h3>
+          <div class="price-num">29 € <span>/ Monat (inkl. MwSt.)</span></div>
+          <ul class="price-list">
+            <li>✓ Alle Funktionen: Woche, Energie-Ampel, Phasen, Projekte &amp; Offline-App</li>
+            <li>✓ Automatische Synchronisation über Laptop, Tablet &amp; Smartphone</li>
+            <li>✓ Dauerhafter Preis-Bestandsschutz ab Registrierung</li>
+            <li>✓ Monatlich per Klick kündbar · 14 Tage Widerrufsrecht</li>
+          </ul>
+        </div>
+        <div class="price-card featured">
+          <span class="tag" style="background:var(--accent-soft);color:var(--accent)">2 Monate geschenkt</span>
+          <h3>Theo Jahresabo</h3>
+          <div class="price-num">290 € <span>/ Jahr (inkl. MwSt.)</span></div>
+          <ul class="price-list">
+            <li>✓ Entspricht rechnerisch 24,17 € pro Monat</li>
+            <li>✓ Voller Funktionsumfang inkl. Jahresphasen &amp; Datenexport</li>
+            <li>✓ Dauerhafter Preis-Bestandsschutz für alle Folgejahre</li>
+            <li>✓ Jederzeit zum Laufzeitende kündbar · 14 Tage Widerrufsrecht</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bestand-banner">
+        <strong>🔒 Versprechen zum Bestandsschutz:</strong> Wer sich in der Beta registriert, bekommt den Tarif von <strong>29 €/Monat bzw. 290 €/Jahr</strong> fest im eigenen Profil verankert. Spätere Preisanpassungen für Neukund:innen gelten niemals für bestehende Konten.<br>
+        <span style="display:inline-block;margin-top:6px;color:var(--muted)">
+          <strong>Sozialtarif &amp; Ermäßigung:</strong> Wenn 29 € gerade finanziell nicht machbar sind, schreib uns einfach eine kurze, formlose E-Mail (siehe Impressum) — wir finden unbürokratisch und ohne Nachweis-Prüfung eine faire Lösung.
+        </span>
+      </div>
+
+      <div class="disclaimer">
+        <strong>Wichtiger Hinweis zur Einordnung:</strong> Theo ist ein digitales Werkzeug zur persönlichen Alltags- und Wochenstrukturierung. Theo stellt keine Diagnosen, gibt keine medizinischen oder medikamentösen Empfehlungen und ersetzt keine ärztliche, psychiatrische oder psychotherapeutische Beratung oder Behandlung.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot-in">
+      <div>© 2026 Theo · Ruhige Alltagsplanung · Datenbankstandort Frankfurt am Main</div>
+      <nav class="foot-links" aria-label="Rechtliche Links">
+        <a href="/app/">Beta-Anmeldung</a>
+        <a href="/impressum">Impressum</a>
+        <a href="/datenschutz">Datenschutzerklärung</a>
+        <a href="/agb">AGB &amp; Widerruf</a>
+        <a href="/agb#kuendigung">Verträge hier kündigen</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var banner = document.getElementById('status-banner');
+      if (banner) {
+        var wl = params.get('waitlist');
+        var acc = params.get('account');
+        if (wl === 'confirmed') {
+          banner.textContent = '✓ Deine E-Mail-Adresse ist bestätigt. Du stehst fest auf der Theo-Warteliste — wir melden uns ruhig, sobald dein Einladungscode bereitsteht.';
+          banner.className = 'status-banner on';
+        } else if (wl === 'removed') {
+          banner.textContent = 'Deine E-Mail-Adresse wurde vollständig aus der Warteliste gelöscht.';
+          banner.className = 'status-banner on';
+        } else if (wl === 'expired' || wl === 'invalid') {
+          banner.textContent = 'Dieser Bestätigungslink wurde bereits genutzt oder ist abgelaufen. Trag dich bei Bedarf unten einfach noch einmal ein.';
+          banner.className = 'status-banner warn on';
+        } else if (acc === 'deleted') {
+          banner.textContent = 'Dein Theo-Konto und alle zugehörigen Planungsdaten wurden vollständig gelöscht.';
+          banner.className = 'status-banner on';
+        }
+      }
+
+      var form = document.getElementById('waitlist-form');
+      var emailEl = document.getElementById('wl-email');
+      var segEl = document.getElementById('wl-segment');
+      var hpEl = document.getElementById('wl-website');
+      var btn = document.getElementById('wl-submit');
+      var msg = document.getElementById('wl-msg');
+
+      if (!form) return;
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        msg.className = 'wl-msg';
+        msg.textContent = '';
+        var email = (emailEl.value || '').trim();
+        if (!email || email.indexOf('@') < 1) {
+          msg.className = 'wl-msg err';
+          msg.textContent = 'Bitte trag eine gültige E-Mail-Adresse ein.';
+          emailEl.focus();
+          return;
+        }
+        btn.disabled = true;
+        var origText = btn.textContent;
+        btn.textContent = 'Wird eingetragen…';
+
+        fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            segment: segEl ? segEl.value : '',
+            website: hpEl ? hpEl.value : ''
+          })
+        })
+          .then(function (r) { return r.json().then(function (d) { return { status: r.status, data: d }; }); })
+          .then(function (res) {
+            btn.disabled = false;
+            btn.textContent = origText;
+            if (res.status >= 200 && res.status < 300 && res.data && res.data.ok) {
+              msg.className = 'wl-msg ok';
+              msg.textContent = res.data.message || 'Bitte bestätige kurz den Link in deinem Postfach.';
+              form.reset();
+            } else {
+              msg.className = 'wl-msg err';
+              msg.textContent = (res.data && res.data.error) || 'Das hat gerade nicht geklappt. Bitte versuche es gleich noch einmal.';
+            }
+          })
+          .catch(function () {
+            btn.disabled = false;
+            btn.textContent = origText;
+            msg.className = 'wl-msg err';
+            msg.textContent = 'Netzwerkfehler — bitte prüfe kurz deine Verbindung.';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

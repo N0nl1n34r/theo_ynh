@@ -1,4 +1,75 @@
-# Theo als YunoHost-App 🐣
+# Theo 🐣
+
+Theo ist ein Werkzeug zur persönlichen Selbstorganisation im Alltag und ersetzt **keine** ärztliche oder psychotherapeutische Diagnose, Beratung oder Behandlung.
+
+Es gibt zwei Betriebsarten:
+
+| Variante | Wohin | Für wen |
+|---|---|---|
+| **Theo Beta** (Supabase + Vercel, Frankfurt `eu-central-1`) | [theo.example → Vercel `fra1`] | Geschlossene Beta, Einladungscode nötig, Magic-Link-Login, serverbasierter Sync |
+| **Theo als YunoHost-App** (Alpha, Nextcloud/CalDAV) | eigene YunoHost-Maschine | Selbsthosting mit eigener Nextcloud |
+
+---
+
+## Theo Beta — Deployment (closed Beta, < 10 Minuten)
+
+Die Beta läuft serverlos auf **Vercel (`fra1`)** mit **Supabase (`eu-central-1`, Frankfurt)** als Datenbank + Auth. Es werden **keine Tracker, keine US-Analytics und keine externen CDNs** geladen; alle Daten liegen in Frankfurt.
+
+### 1. Supabase-Projekt (Frankfurt)
+
+- Neues Projekt in Region **Frankfurt (`eu-central-1`)** anlegen.
+- Migrationen aus `supabase/migrations/` einspielen (Reihenfolge beachten):
+  - `20261126000100_theo_beta_init.sql` — Tabellen `profiles`, `items`, `waitlist`, `invite_codes`, `rate_limits`, Trigger, `upsert_user_items`-RPC, RLS (alle Tabellen `FORCE ROW LEVEL SECURITY`).
+  - `20261126000200_auth_lookup_rpc.sql` — RPC `find_auth_user_by_email` für die geschlossene Beta.
+- Auth-Härtung (Supabase-Dashboard → Authentication → Providers/URL Configuration):
+  - **Sign-ups deaktivieren** (`disable_signup = true`) — die Beta ist rein invite-basiert; Konten werden serverseitig über die Service-Role angelegt.
+  - **Site URL** = deine Vercel-Domain (z. B. `https://theo.example.vercel.app`).
+  - **Redirect allow list** = `https://<domain>/app/` (Magic-Link-Landing).
+  - Deutsche E-Mail-Texte hinterlegen (oder den eigenen SMTP/Brevo-Mailer nutzen — die App verschickt die Magic-Link-, Willkommens- und Lösch-E-Mails selbst auf Deutsch).
+
+### 2. Vercel-Deployment (`fra1`)
+
+```bash
+npm install
+npm run build          # baut .vercel-dist/ + vendored /app/supabase.min.js
+vercel deploy --prod --prebuilt   # Ziel-Region fra1 im Projekt einstellen
+```
+
+In Vercel unter **Settings → Environment Variables** (Production) setzen:
+
+| Variable | Inhalt |
+|---|---|
+| `SUPABASE_URL` | `https://<ref>.supabase.co` |
+| `SUPABASE_ANON_KEY` | anon/public Key (Client-seitig) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **nur server-seitig** — nie im Client/Repo |
+| `INVITE_REQUIRED` | `true` (geschlossene Beta) |
+| `NEXT_PUBLIC_SITE_URL` | `https://<domain>` |
+| `BREVO_API_KEY` / `SMTP_*` | optional: eigener Mailversand (sonst Supabase-Mailer-Fallback) |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `PUBLIC_PRICE_EUR` | optional, für M5-Zahlung (29 €/Monat · 290 €/Jahr, Bestandsschutz via `profiles.price_locked`) |
+
+> **Sicherheit:** `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` und SMTP-Geheimnisse **niemals** in `.env`, im Client-Bundle oder im Klartext-Chat ablegen. `api/config` liefert bewusst nur öffentliche Parameter.
+
+### 3. Nach dem Deployment prüfen
+
+```bash
+npm test               # Syntax + Alpha-Regression + Beta-Suites (smoke7..smoke23)
+curl -I https://<domain>/          # Landingpage
+curl -I https://<domain>/app/      # PWA
+curl -I https://<domain>/api/config
+curl -I https://<domain>/impressum
+```
+
+### Beta-Funktionen (M0–M5)
+
+- **M1** Öffentliche Landingpage mit Warteliste (Double Opt-in) und ehrlichen Datenschutz-/Impressum-/AGB-Entwürfen (`legal-review: needed`).
+- **M2** Einladungscode-gates Registration, passwortloser Magic-Link-Login, `profiles`-Zeile bei Erstlogin (`price_locked = 29`, `price_locked_at`, `invite_code`).
+- **M3** Single-File-PWA ohne CalDAV/Nextcloud, Supabase-`items`-Sync (Pro-Row-LWW, Tombstones, R13b Pull-first auf Neugeräten), 5-Minuten-Onboarding.
+- **M4** Self-Service JSON-Datenexport + Konto-Löschung (E-Mail-Bestätigung → löscht `auth.users` + kaskadiert).
+- **M5** Stripe-Checkout (29 €/Monat · 290 €/Jahr) mit Bestandsschutz über `profiles.price_locked`, HMAC-Webhook, § 312k-BGB-Zweischritt-Kündigung.
+
+---
+
+# Theo als YunoHost-App 🐣 (Alpha / Selbsthosting)
 
 Theo auf der eigenen YunoHost-Maschine installieren — YunoHost übernimmt dabei **HTTPS-Zertifikat, Domain, Zugangsschutz (SSO) und Dienst-Verwaltung**. Theo läuft als systemd-Dienst hinter nginx; das Handy installiert Theo als PWA über echtes HTTPS.
 

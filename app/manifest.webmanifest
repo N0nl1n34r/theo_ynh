@@ -1,0 +1,19 @@
+{
+  "name": "Theo — Ruhige Alltagsplanung",
+  "short_name": "Theo",
+  "description": "Ruhige Wochen-, Energie- und Phasenplanung — offline nutzbar und geräteübergreifend synchronisiert.",
+  "lang": "de",
+  "start_url": "/app/",
+  "scope": "/app",
+  "display": "standalone",
+  "background_color": "#FBF9F2",
+  "theme_color": "#FBF9F2",
+  "icons": [
+    {
+      "src": "/app/theo-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AGB, Widerrufsbelehrung &amp; Vertragskündigung — Theo</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/theo-icon.png" type="image/png">
+  <style>
+    body { margin:0; background:#FBF9F2; color:#2B2722; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.68; }
+    .wrap { max-width:820px; margin:0 auto; padding:36px 22px 64px; }
+    a { color:#53715A; }
+    .review-banner { background:#FBF1E6; border:1px solid #E5C49F; color:#5A3B19; padding:14px 16px; border-radius:12px; margin-bottom:24px; font-size:0.92rem; }
+    .card { background:#FFFFFF; border:1px solid #E6DFD1; border-radius:16px; padding:30px 26px; margin-bottom:24px; }
+    h1 { margin-top:0; font-size:1.8rem; }
+    h2 { font-size:1.18rem; margin-top:26px; border-top:1px solid #EFEAE0; padding-top:18px; }
+    h2:first-of-type { border-top:none; padding-top:0; }
+    .field { margin-bottom:14px; }
+    .field label { display:block; font-weight:600; font-size:0.9rem; margin-bottom:5px; }
+    .field input, .field select { width:100%; max-width:440px; padding:10px 12px; border:1px solid #D7CFC0; border-radius:10px; font-size:0.95rem; background:#FCFBF8; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; padding:11px 18px; border-radius:10px; border:1px solid transparent; font-weight:600; cursor:pointer; font-size:0.95rem; }
+    .btn-danger { background:#B64D3E; color:#FFFFFF; }
+    .btn-ghost { background:#F4EFE4; color:#2B2722; border-color:#E0D8C8; }
+    .cancel-msg { display:none; margin-top:14px; padding:12px 14px; border-radius:10px; font-size:0.92rem; }
+    .cancel-msg.ok { display:block; background:#E7EFE8; color:#243A28; border:1px solid #C4D8C7; }
+    .cancel-msg.err { display:block; background:#FBECE9; color:#692820; border:1px solid #E7B9B2; }
+    .placeholder { background:#F4EFE4; padding:2px 6px; border-radius:6px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:0.9em; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p><a href="/">← Zurück zur Startseite</a></p>
+    <div class="review-banner">
+      <strong>⚖️ Entwurf — Rechtliche Prüfung durch Auftraggeber ausstehend (<code>legal-review: needed</code>)</strong><br>
+      Entwurf der Allgemeinen Geschäftsbedingungen, der 14-tägigen Verbraucher-Widerrufsbelehrung sowie der zweistufigen Kündigungsschaltfläche gemäß § 312k BGB. Vor Aktivierung kostenpflichtiger Buchungen juristisch freigeben lassen.
+    </div>
+
+    <div class="card">
+      <h1>Allgemeine Geschäftsbedingungen (Entwurf)</h1>
+
+      <h2>§ 1 Geltungsbereich &amp; Anbieter</h2>
+      <p>
+        Diese Bedingungen gelten für die Nutzung der Web-Anwendung <strong>Theo</strong> zwischen <span class="placeholder">[ANBIETER LT. IMPRESSUM ERGÄNZEN]</span> und Verbraucher:innen im Sinne des § 13 BGB.
+      </p>
+
+      <h2>§ 2 Leistungsgegenstand &amp; Ausschluss von Heilversprechen</h2>
+      <p>
+        (1) Theo stellt eine browserbasierte Software (Progressive Web App) zur persönlichen Wochen-, Energie- und Aufgabenstrukturierung einschließlich geräteübergreifender Synchronisation bereit.<br>
+        (2) <strong>Kein Medizin- oder Therapieangebot:</strong> Theo ist ausdrücklich kein Medizinprodukt, stellt keine medizinischen oder psychologischen Diagnosen und ersetzt keine ärztliche, psychiatrische oder psychotherapeutische Beratung oder Behandlung.
+      </p>
+
+      <h2>§ 3 Geschlossene Beta, Preise &amp; Bestandsschutz</h2>
+      <p>
+        (1) Der Zugang zur geschlossenen Beta erfolgt per persönlichem Einladungscode.<br>
+        (2) Sobald ein kostenpflichtiges Abonnement gewählt wird, beträgt der reguläre Preis für Beta-Teilnehmende <strong>29,00 € brutto pro Monat</strong> im Monatsabonnement bzw. <strong>290,00 € brutto pro Jahr</strong> im Jahresabonnement.<br>
+        (3) <strong>Bestandsschutz:</strong> Der zum Zeitpunkt deiner Kontoeröffnung im Profil hinterlegte Grundpreis (<code>price_locked = 29</code>) bleibt für dein bestehendes Konto dauerhaft geschützt; künftige Preiserhöhungen für Neukund:innen erhöhen deinen laufenden Tarif nicht.
+      </p>
+
+      <h2>§ 4 Laufzeit &amp; Kündigung</h2>
+      <p>
+        Monatsabonnements sind jederzeit zum Ende des laufenden Abrechnungsmonats, Jahresabonnements jederzeit zum Ende des laufenden Abrechnungsjahres ohne Einhaltung einer Kündigungsfrist kündbar — direkt in der App unter <em>Konfig → Konto &amp; Abo</em> oder ohne Anmeldung über die untenstehende Kündigungsschaltfläche gemäß § 312k BGB.
+      </p>
+
+      <h2>§ 5 Datenexport &amp; Konto-Löschung</h2>
+      <p>
+        Du kannst deine gespeicherten Planungsdaten jederzeit vollständig im offenen JSON-Format exportieren sowie dein Konto selbstständig löschen.
+      </p>
+    </div>
+
+    <div class="card" id="widerruf">
+      <h1>Widerrufsbelehrung für Verbraucher:innen (14 Tage)</h1>
+      <p>
+        <strong>Widerrufsrecht:</strong> Du hast das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.
+      </p>
+      <p>
+        Um dein Widerrufsrecht auszuüben, musst du uns (<span class="placeholder">[NAME, ANSCHRIFT, E-MAIL LT. IMPRESSUM ERGÄNZEN]</span>) mittels einer eindeutigen Erklärung (z. B. per E-Mail oder direkt über das untenstehende Formular mit Auswahl „Widerruf innerhalb von 14 Tagen“) über deinen Entschluss, diesen Vertrag zu widerrufen, informieren.
+      </p>
+      <p>
+        <strong>Folgen des Widerrufs:</strong> Wenn du diesen Vertrag widerrufst, haben wir dir alle Zahlungen, die wir von dir erhalten haben, unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung über deinen Widerruf dieses Vertrags bei uns eingegangen ist. Für diese Rückzahlung verwenden wir dasselbe Zahlungsmittel, das du bei der ursprünglichen Transaktion eingesetzt hast, es sei denn, mit dir wurde ausdrücklich etwas anderes vereinbart.
+      </p>
+      <p style="font-size:0.9rem;color:#696156">
+        <strong>Muster-Widerrufsformular:</strong> An <span class="placeholder">[KONTAKT-EMAIL ERGÄNZEN]</span> — Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über die Nutzung von Theo. Bestellt am (*) / Name / E-Mail-Adresse des Kontos / Datum.
+      </p>
+    </div>
+
+    <!-- § 312k BGB Zweistufiger Kündigungsbutton -->
+    <div class="card" id="kuendigung">
+      <h1>Vertrag online kündigen oder widerrufen (§ 312k BGB)</h1>
+      <p>
+        Hier kannst du ein laufendes Theo-Abonnement jederzeit ohne vorherige Anmeldung in zwei einfachen Schritten ordentlich kündigen oder innerhalb von 14 Tagen widerrufen.
+      </p>
+
+      <div id="step-1">
+        <div class="field">
+          <label for="cancel-email">E-Mail-Adresse deines Theo-Kontos</label>
+          <input id="cancel-email" type="email" autocomplete="email" placeholder="du@beispiel.de">
+        </div>
+        <div class="field">
+          <label for="cancel-reason">Art der Erklärung</label>
+          <select id="cancel-reason">
+            <option value="ordinary">Ordentliche Kündigung zum Ende des aktuellen Abrechnungszeitraums</option>
+            <option value="withdrawal">Widerruf innerhalb der 14-tägigen Widerrufsfrist (sofortige Beendigung)</option>
+          </select>
+        </div>
+        <button id="btn-to-step2" type="button" class="btn btn-ghost">Weiter zur Bestätigungsstufe →</button>
+      </div>
+
+      <div id="step-2" style="display:none;margin-top:16px;padding:18px;background:#FAF6EE;border:1px solid #E6DFD1;border-radius:12px;">
+        <p style="margin-top:0">
+          <strong>Zusammenfassung prüfen:</strong><br>
+          Konto: <span id="sum-email" style="font-weight:600"></span><br>
+          Erklärung: <span id="sum-reason"></span>
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button id="btn-confirm-cancel" type="button" class="btn btn-danger">Jetzt kündigen</button>
+          <button id="btn-back-step1" type="button" class="btn btn-ghost">Angaben ändern</button>
+        </div>
+      </div>
+
+      <div id="cancel-msg" class="cancel-msg" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var emailEl = document.getElementById('cancel-email');
+      var reasonEl = document.getElementById('cancel-reason');
+      var step1 = document.getElementById('step-1');
+      var step2 = document.getElementById('step-2');
+      var sumEmail = document.getElementById('sum-email');
+      var sumReason = document.getElementById('sum-reason');
+      var msg = document.getElementById('cancel-msg');
+      var btnTo2 = document.getElementById('btn-to-step2');
+      var btnBack = document.getElementById('btn-back-step1');
+      var btnConfirm = document.getElementById('btn-confirm-cancel');
+
+      btnTo2.addEventListener('click', function () {
+        msg.className = 'cancel-msg';
+        var em = (emailEl.value || '').trim();
+        if (!em || em.indexOf('@') < 1) {
+          msg.className = 'cancel-msg err';
+          msg.textContent = 'Bitte gib zuerst die E-Mail-Adresse deines Theo-Kontos ein.';
+          emailEl.focus();
+          return;
+        }
+        sumEmail.textContent = em;
+        sumReason.textContent = reasonEl.options[reasonEl.selectedIndex].text;
+        step1.style.display = 'none';
+        step2.style.display = 'block';
+      });
+
+      btnBack.addEventListener('click', function () {
+        step2.style.display = 'none';
+        step1.style.display = 'block';
+      });
+
+      btnConfirm.addEventListener('click', function () {
+        btnConfirm.disabled = true;
+        fetch('/api/billing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            action: 'cancel',
+            email: (emailEl.value || '').trim(),
+            reason: reasonEl.value
+          })
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            btnConfirm.disabled = false;
+            step2.style.display = 'none';
+            if (d && d.ok) {
+              msg.className = 'cancel-msg ok';
+              msg.textContent = d.message + ' (Zeitstempel: ' + new Date(d.confirmedAt).toLocaleString('de-DE') + ')';
+            } else {
+              step1.style.display = 'block';
+              msg.className = 'cancel-msg err';
+              msg.textContent = (d && d.error) || 'Die Erklärung konnte gerade nicht übermittelt werden.';
+            }
+          })
+          .catch(function () {
+            btnConfirm.disabled = false;
+            step1.style.display = 'block';
+            msg.className = 'cancel-msg err';
+            msg.textContent = 'Netzwerkfehler — bitte versuche es gleich erneut.';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
