@@ -16,7 +16,7 @@ global.document={
   addEventListener(n,f){__h[n]=f}
 };
 global.localStorage={_m:{},getItem(k){return this._m[k]||null},setItem(k,v){this._m[k]=String(v)},removeItem(k){delete this._m[k]}};
-global.navigator={clipboard:{writeText:async()=>{}}};
+Object.defineProperty(global,'navigator',{value:{clipboard:{writeText:async()=>{}}},configurable:true,writable:true});
 
 let src=fs.readFileSync('/tmp/theo.js','utf8');
 src+='\nglobalThis.__T={S,ui,ACT,buildTodos,todoICS,processTodos,processCapsule,adoptCapsule,capsuleJson,capsuleICS,CAP_UID,icsEsc,icsUnesc,icsUid,seedFrom,kanOf,findTodo,SYNC,render,parseICSAll,parseICS};';

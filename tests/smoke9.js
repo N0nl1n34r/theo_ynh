@@ -16,7 +16,7 @@ global.document={
   addEventListener(n,f){__h[n]=f}
 };
 global.localStorage={_m:{},getItem(k){return this._m[k]||null},setItem(k,v){this._m[k]=String(v)},removeItem(k){delete this._m[k]}};
-global.navigator={clipboard:{writeText:async()=>{}}};
+Object.defineProperty(global,'navigator',{value:{clipboard:{writeText:async()=>{}}},configurable:true,writable:true});
 /* fetch stubpen: kein echtes Netz im Driver; nur full-1 antwortet (Writeback-Szenario) */
 let putBody=null;
 global.fetch=async(url,opt)=>{
