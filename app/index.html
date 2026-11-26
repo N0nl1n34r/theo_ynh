@@ -336,6 +336,23 @@ code{background:#F1EDE3;border-radius:5px;padding:1px 5px;font-size:11.5px}
   .kb{min-width:560px}
 }
 
+/* Login occupies the whole grid, not the hidden navigation column. */
+#wrap.auth-gated{display:block}
+#wrap.auth-gated #main{width:100%;max-width:none;padding:24px 16px 60px}
+body.auth-gated #topbar{display:none}
+.authWrap{width:min(100%,470px)}
+.authTabs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.authTab{min-width:0;overflow-wrap:anywhere}
+:root[data-theme="meer"]{--bg:#EDF4F5;--panel:#FFFFFF;--ink:#273D42;--sub:#526D73;--line:#CDDDE0;--soft:#DFECEE}
+:root[data-theme="lavendel"]{--bg:#F3F0F8;--panel:#FFFFFF;--ink:#393348;--sub:#70667D;--line:#DED5E8;--soft:#EBE5F1}
+:root[data-theme="wald"]{--bg:#EFF4EC;--panel:#FFFFFF;--ink:#2D4032;--sub:#5A705C;--line:#D2E0D0;--soft:#E2EDE0}
+:root[data-theme] #nav{background:var(--soft)}
+:root[data-theme] #topbar{background:var(--bg)}
+.moduleGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px;margin:16px 0}
+.moduleCard{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:15px;min-width:0}
+.moduleCard strong{display:block;margin-bottom:5px}
+.moduleChoice{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.moduleChoice input{margin-top:4px}
 /* ---------- Beta: Auth-Gate, Demo-Banner, Onboarding & Konto ---------- */
 .authWrap{max-width:470px;margin:38px auto 60px;background:#FFF;border:1px solid var(--line);border-radius:18px;padding:28px 26px;box-shadow:0 10px 28px rgba(60,50,30,.06)}
 .authTabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#F2EEE5;padding:4px;border-radius:12px;margin:14px 0 16px}
@@ -365,6 +382,7 @@ code{background:#F1EDE3;border-radius:5px;padding:1px 5px;font-size:11.5px}
     <button class="navbtn" data-act="nav" data-v="jahr">🍂 Jahr</button>
     <button class="navbtn" data-act="nav" data-v="bereiche">🧩 Bereiche</button>
     <button class="navbtn" data-act="nav" data-v="eingang">🧺 Eingangskiste</button>
+    <button class="navbtn" data-act="nav" data-v="module">✨ Module</button>
     <button class="navbtn" data-act="nav" data-v="konfig">⚙️ Konfiguration</button>
     <div class="navfoot" id="nav-foot">Beta · Frankfurt (EU)<br>Offline bereit</div>
   </nav>
@@ -398,6 +416,17 @@ const AMP={rot:{c:'#D96A5B',label:'Sehr intensiv'},orange:{c:'#E09B4C',label:'In
 const AMPKEYS=['rot','orange','gelb','gruen'];
 const PHC=['#CBB389','#9B93C4','#6FA8A0','#A3B98F','#C98D76','#8FAECB','#D9A0AB','#A8A29B'];
 const EMOJIS=['🌿','🫧','🤲','🫂','🛋️','🌅','🌊','🧭','🕯️','🧺','🚶','🌀','🎯','📅','🤝','💻','🛠️','🏡','🎨','📚','🍳','🚴','🧠','💬','🌱','📝','🚪','🍽️','😴','🛁','🎸','☕','🧘','🛌','🚿','🎧','🎹','🧩','🪴','🌾','🌙','⭐','🔥','💧','🏔️','🚲','🧶','✏️','📊','🗂️','📞','🛒','🏥','⚖️','🎓','🧾','🗓️','⏳','🌈','🐣','📮','🔗','🍵','🥾','🪑'];
+const MODULES=[
+  {id:'woche',name:'Wochenübersicht',icon:'🗓️',desc:'Eine ruhige Sicht auf Termine, Energie und Freiräume.',available:true},
+  {id:'werte',name:'Werte',icon:'🧭',desc:'Sammeln, was dir wichtig ist und Orientierung geben kann.'},
+  {id:'wissen',name:'Psychoedukation',icon:'📚',desc:'Verständliche Impulse zum eigenen Alltag, ohne Diagnose oder Therapie.'},
+  {id:'eingang',name:'Eingangskiste',icon:'🧺',desc:'Gedanken und Aufgaben erst einmal ablegen.',available:true},
+  {id:'bereiche',name:'Lebensbereiche',icon:'🧩',desc:'Vorhaben nach deinen eigenen Lebensbereichen ordnen.',available:true},
+  {id:'reflexion',name:'Reflexionstool',icon:'🌱',desc:'Rückblicke für Woche, Monat, Quartal oder Jahr; Auswertungen werden noch konzipiert.'},
+  {id:'uebergaenge',name:'Übergänge',icon:'🚪',desc:'Wechsel zwischen Tätigkeiten und Orten bewusst gestalten.'},
+  {id:'social',name:'Social Accountability',icon:'🤝',desc:'Unterstützung durch vertraute Menschen; Beratungsverzeichnis als mögliche spätere Idee.'}
+];
+const THEMES=[['natur','Sand'],['meer','Meer'],['lavendel','Lavendel'],['wald','Wald']];
 const INBKINDS={gedanke:['💭','Gedanke'],aufgabe:['✅','Aufgabe'],idee:['💡','Idee'],sonstiges:['📎','Sonstiges']};
 const AIDS={mit:'🎯 MIT für den Tag',focus:'🧭 Wochenfokus',year:'🍂 Jahresthema anzeigen'};
 const FBL={ok:'✔ hat funktioniert',bad:'✖ hat nicht funktioniert',none:'— nichts Besonderes'};
@@ -461,7 +490,7 @@ const ui={
   inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,
   menuOpen:false,agRange:'woche',pickerWeek:null,pickerTitle:'',expSlots:{},tplOpen:{},
   quickTypeOpen:false,repSlots:{},bundleSel:{},deferRender:false,
-  demoMode:false,authMode:'login',authStep:'form',authEmail:'',authInvite:'',authSeg:'',authBusy:false,authErr:'',authMsg:'',
+  demoMode:false,demoSurvey:false,demoChoices:[],authMode:'login',authStep:'form',authEmail:'',authInvite:'',authSeg:'',authBusy:false,authErr:'',authMsg:'',
   profile:null,delConfirmPhrase:'',delRemoveWl:false
 };
 
@@ -513,7 +542,7 @@ function normalizeState(x){
   if(!x.settings.aids)x.settings.aids={mit:true,focus:true,year:true};
   if(!x.settings.slotTimes)x.settings.slotTimes={0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}};
   if(!x.settings.liveSync)x.settings.liveSync={on:true,interval:60};
-  x.settings={aids:x.settings.aids,slotTimes:x.settings.slotTimes,liveSync:x.settings.liveSync};
+  x.settings={aids:x.settings.aids,slotTimes:x.settings.slotTimes,liveSync:x.settings.liveSync,theme:THEMES.some(t=>t[0]===x.settings.theme)?x.settings.theme:'natur',modules:Array.isArray(x.settings.modules)?x.settings.modules.filter(id=>MODULES.some(m=>m.id===id)):[]};
   if(!x.motto)x.motto={};
   if(!x.synced)x.synced={};
   if(!x.tomb)x.tomb={};
@@ -549,21 +578,28 @@ function normalizeState(x){
 function storageKey(){
   return ui.demoMode?'theo-demo-state':'theo-state';
 }
+function writeState(){
+  if(!storeOk)return;
+  try{
+    const value=JSON.stringify(S);
+    localStorage.setItem(storageKey(),value);
+    if(!ui.demoMode&&S&&S.meta&&S.meta.ownerId)localStorage.setItem('theo-state-user-'+S.meta.ownerId,value);
+  }catch(e){}
+}
+function loadUserState(id){
+  if(!storeOk||!id)return null;
+  try{const raw=localStorage.getItem('theo-state-user-'+id);const value=raw&&JSON.parse(raw);return value&&value.meta&&value.meta.v===4&&value.meta.ownerId===id?normalizeState(value):null}catch(e){return null}
+}
 function save(){
   if(S){
     S.meta.dirty=true;
     S.capsuleTs=Date.now();
     refreshDirtySignatures();
   }
-  if(storeOk){
-    try{localStorage.setItem(storageKey(),JSON.stringify(S))}catch(e){}
-  }
+  writeState();
   if(!ui.demoMode)schedulePush();
 }
-function saveQuiet(){
-  if(!storeOk)return;
-  try{localStorage.setItem(storageKey(),JSON.stringify(S))}catch(e){}
-}
+function saveQuiet(){writeState()}
 function load(){
   if(!storeOk)return null;
   try{const r=localStorage.getItem('theo-state'); return r?JSON.parse(r):null}catch(e){return null}
@@ -571,20 +607,20 @@ function load(){
 
 function seed(){
   const types=[
-    {id:'ty1',name:'Regeneration',emoji:'🌿',ampel:'gruen',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
-    {id:'ty2',name:'Runterkommen',emoji:'🕯️',ampel:'gruen',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
-    {id:'ty3',name:'Vorbereitung',emoji:'🧺',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
-    {id:'ty4',name:'Anfahrt & Übergang',emoji:'🚶',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
-    {id:'ty5',name:'Nachbereitung',emoji:'🫧',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
-    {id:'ty6',name:'1:1-Termin',emoji:'🤝',ampel:'rot',asAppt:true,defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
-    {id:'ty7',name:'Fokusarbeit',emoji:'🎯',ampel:'gelb',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]}
+    {id:'ty1',name:'Erholung',emoji:'🌿',ampel:'gruen',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
+    {id:'ty2',name:'Freizeit',emoji:'🕯️',ampel:'gruen',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
+    {id:'ty3',name:'Alltag & Haushalt',emoji:'🧺',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
+    {id:'ty4',name:'Unterwegs & Übergang',emoji:'🚶',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
+    {id:'ty5',name:'Für mich sorgen',emoji:'🫧',ampel:'none',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
+    {id:'ty6',name:'Menschen treffen',emoji:'🤝',ampel:'none',asAppt:true,defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]},
+    {id:'ty7',name:'Fokus & Aufgaben',emoji:'🎯',ampel:'gelb',defSpan:1,openEdit:true,defNote:'',defT0:'',defT1:'',subs:[]}
   ];
   return {
     meta:{v:4,intro:false,dirty:false,pulled:false,lastPullCursor:null,ownerId:null},
     settings:{
       aids:{mit:true,focus:true,year:true},
       slotTimes:{0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}},
-      liveSync:{on:true,interval:60}
+      liveSync:{on:true,interval:60},theme:'natur',modules:[]
     },
     areas:[],projects:[],types,
     tasks:[],inbox:[],blocks:{},appts:{},phases:[],
@@ -1110,6 +1146,19 @@ function getSupabaseClient(){
   return null;
 }
 
+// Pin each data request to the session which produced its payload. The main
+// auth client can change accounts while the underlying fetch is being prepared.
+function getDataClient(session){
+  if(!session||!session.access_token)return null;
+  if(globalThis.__THEO_SB_MOCK__)return typeof globalThis.__THEO_SB_MOCK__.forSession==='function'?globalThis.__THEO_SB_MOCK__.forSession(session):globalThis.__THEO_SB_MOCK__;
+  const cfg=AUTH.cfg, lib=globalThis.supabase;
+  if(!cfg||!cfg.supabaseUrl||!cfg.supabaseAnonKey||!lib||typeof lib.createClient!=='function')return null;
+  return lib.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{
+    global:{headers:{Authorization:'Bearer '+session.access_token}},
+    auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
+  });
+}
+
 function capsulePayloadFromState(){
   return {
     motto:S.motto||{},
@@ -1124,6 +1173,8 @@ function capsulePayloadFromState(){
       aids:S.settings.aids||{mit:true,focus:true,year:true},
       slotTimes:S.settings.slotTimes||{0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}},
       liveSync:S.settings.liveSync||{on:true,interval:60},
+      theme:S.settings.theme||'natur',
+      modules:S.settings.modules||[],
       intro:!!S.meta.intro
     }
   };
@@ -1257,6 +1308,8 @@ function applyLiveItem(u,kind,payload){
       if(payload.settings.aids)S.settings.aids=Object.assign({mit:true,focus:true,year:true},payload.settings.aids);
       if(payload.settings.slotTimes)S.settings.slotTimes=payload.settings.slotTimes;
       if(payload.settings.liveSync)S.settings.liveSync=payload.settings.liveSync;
+      if(THEMES.some(t=>t[0]===payload.settings.theme))S.settings.theme=payload.settings.theme;
+      if(Array.isArray(payload.settings.modules))S.settings.modules=payload.settings.modules.filter(id=>MODULES.some(m=>m.id===id));
       if(typeof payload.settings.intro==='boolean')S.meta.intro=payload.settings.intro;
     }
     return;
@@ -1361,8 +1414,9 @@ function applyDeletedItem(u,kind){
 
 async function pushAll(){
   if(ui.demoMode)return {ok:0,fail:0,skipped:true};
-  const sb=getSupabaseClient();
-  if(!sb||!AUTH.session||!isOnlineNow())return {ok:0,fail:0,offline:true};
+  const sb=getDataClient(AUTH.session);
+  if(!sb||!AUTH.session||!AUTH.user||!isOnlineNow())return {ok:0,fail:0,offline:true};
+  const stateAtStart=S, userAtStart=AUTH.user.id;
   refreshDirtySignatures();
   const live=collectCurrentItemsMap();
   const batch=[];
@@ -1395,6 +1449,7 @@ async function pushAll(){
     return {ok:0,fail:0};
   }
   const {data,error}=await sb.rpc('upsert_user_items',{p_items:batch});
+  if(S!==stateAtStart||!AUTH.user||AUTH.user.id!==userAtStart)return {ok:0,fail:0,canceled:true};
   if(error)return {ok:0,fail:batch.length,error:error.message||'Schreibfehler'};
 
   const returnedByUid={};
@@ -1417,8 +1472,9 @@ async function pushAll(){
 
 async function pullAll(forceFull){
   if(ui.demoMode)return {ok:true,applied:0};
-  const sb=getSupabaseClient();
-  if(!sb||!AUTH.session||!isOnlineNow())return {ok:false,offline:true,applied:0};
+  const sb=getDataClient(AUTH.session);
+  if(!sb||!AUTH.session||!AUTH.user||!isOnlineNow())return {ok:false,offline:true,applied:0};
+  const stateAtStart=S, userAtStart=AUTH.user.id;
   const wasUnpulled=!S.meta.pulled;
   let query=sb.from('items').select('uid,kind,payload,updated_at,synced_at,deleted');
   if(!wasUnpulled&&!forceFull&&S.meta.lastPullCursor){
@@ -1428,6 +1484,7 @@ async function pullAll(forceFull){
     }
   }
   const {data,error}=await query;
+  if(S!==stateAtStart||!AUTH.user||AUTH.user.id!==userAtStart)return {ok:false,canceled:true,applied:0};
   if(error)return {ok:false,error:error.message||'Lesefehler',applied:0};
 
   const rows=Array.isArray(data)?data.slice():[];
@@ -1503,6 +1560,8 @@ async function syncCycle(forceFull){
   }
   const sb=getSupabaseClient();
   if(!sb||!AUTH.session)return;
+  const stateAtStart=S, userAtStart=AUTH.user&&AUTH.user.id;
+  const stale=()=>S!==stateAtStart||!AUTH.user||AUTH.user.id!==userAtStart||ui.demoMode;
   SYNC.running=true;
   SYNC.promise=(async()=>{
     try{
@@ -1510,6 +1569,7 @@ async function syncCycle(forceFull){
       let parts=[];
       if(S.meta.pulled&&S.meta.dirty){
         const pr=await pushAll();
+        if(stale())return;
         if(pr.fail)parts.push('✖ Schreiben fehlgeschlagen');
         else if(pr.ok)parts.push('geschrieben '+pr.ok);
       }
@@ -1518,6 +1578,7 @@ async function syncCycle(forceFull){
         return;
       }
       const pl=await pullAll(!!forceFull);
+      if(stale())return;
       if(!pl.ok){
         SYNC.msg='Abruf pausiert: '+(pl.error||'offline');
         return;
@@ -1526,6 +1587,7 @@ async function syncCycle(forceFull){
       const hasPending=Object.keys(S.itemMeta||{}).some(k=>S.itemMeta[k]&&S.itemMeta[k].dirty);
       if(hasPending){
         const pr2=await pushAll();
+        if(stale())return;
         if(pr2.ok)parts.push('geschrieben '+pr2.ok);
       }
       SYNC.last=new Date();
@@ -1536,6 +1598,7 @@ async function syncCycle(forceFull){
     }finally{
       SYNC.running=false;
       SYNC.promise=null;
+      if(stale()&&AUTH.session&&!ui.demoMode)setTimeout(()=>syncCycle(true),0);
     }
   })();
   return SYNC.promise;
@@ -1559,7 +1622,8 @@ function startSync(){
 }
 
 async function fetchAccountProfile(){
-  if(!AUTH.session||!AUTH.session.access_token||!isOnlineNow())return;
+  if(!AUTH.session||!AUTH.session.access_token||!AUTH.user||!isOnlineNow())return;
+  const userId=AUTH.user.id;
   try{
     const r=await fetch('/api/account',{
       method:'GET',
@@ -1567,9 +1631,9 @@ async function fetchAccountProfile(){
     });
     if(r.ok){
       const d=await r.json();
-      if(d&&d.profile){
+      if(d&&d.profile&&AUTH.user&&AUTH.user.id===userId){
         ui.profile=d.profile;
-        if(storeOk){try{localStorage.setItem('theo-profile-cache',JSON.stringify(d.profile))}catch(e){}}
+        if(storeOk){try{localStorage.setItem('theo-profile-cache',JSON.stringify(d.profile));localStorage.setItem('theo-profile-owner',userId)}catch(e){}}
         safeBgRender();
       }
     }
@@ -1580,14 +1644,17 @@ function bindAuthSession(session){
   AUTH.session=session||null;
   AUTH.user=(session&&session.user)||null;
   if(AUTH.user){
+    const wasDemo=ui.demoMode;
     ui.demoMode=false;
     if(storeOk&&AUTH.user.email){
       try{localStorage.setItem('theo-last-auth-email',AUTH.user.email)}catch(e){}
       AUTH.offlineTrustedEmail=AUTH.user.email;
     }
-    if(S&&S.meta&&S.meta.ownerId&&S.meta.ownerId!==AUTH.user.id){
-      S=seed();
+    if(wasDemo||!S||!S.meta||S.meta.ownerId!==AUTH.user.id){
+      const legacy=load();
+      S=loadUserState(AUTH.user.id)||(legacy&&legacy.meta&&legacy.meta.v===4&&legacy.meta.ownerId===AUTH.user.id?normalizeState(legacy):seed());
     }
+    if(storeOk){try{if(localStorage.getItem('theo-profile-owner')!==AUTH.user.id)ui.profile=null}catch(e){ui.profile=null}}
     if(S){
       S.meta.ownerId=AUTH.user.id;
       saveQuiet();
@@ -1609,6 +1676,7 @@ async function bootAuthAndSync(){
       const sp=new URLSearchParams(location.search||'');
       const hp=new URLSearchParams((location.hash||'').replace(/^#/,''));
       if(sp.get('mode')==='register')ui.authMode='register';
+      if(sp.get('mode')==='demo')ui.demoSurvey=true;
       const errCode=sp.get('error_code')||hp.get('error_code')||'';
       const errDesc=sp.get('error_description')||hp.get('error_description')||'';
       if(errCode==='otp_expired'||/expired|invalid/i.test(errDesc)){
@@ -1647,10 +1715,10 @@ async function bootAuthAndSync(){
       const {data}=await sb.auth.getSession();
       if(data&&data.session)bindAuthSession(data.session);
       sb.auth.onAuthStateChange((_ev,session)=>{
-        const hadUser=!!AUTH.user;
+        const previousUser=AUTH.user&&AUTH.user.id;
         bindAuthSession(session);
         render();
-        if(session&&!hadUser){
+        if(session&&session.user&&session.user.id!==previousUser){
           fetchAccountProfile();
           syncCycle(true);
           startSync();
@@ -1792,6 +1860,7 @@ function renderAuthGate(){
   if(!AUTH.ready){
     return '<div class="authWrap"><div class="shead"><h3>🐣 Theo wird geöffnet…</h3><div class="sub">Deine Sitzung wird kurz geprüft.</div></div></div>';
   }
+  if(ui.demoSurvey)return renderDemoSurvey();
   const inviteReq=!AUTH.cfg||AUTH.cfg.inviteRequired!==false;
   let h='<div class="authWrap">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:18px">🐣 Theo <span style="font-size:12px;font-weight:600;background:#EEF4EC;color:#3F5E46;padding:2px 8px;border-radius:999px">Geschlossene Beta</span></div><a href="/" class="sub" style="text-decoration:none">← Startseite</a></div>';
@@ -1814,9 +1883,9 @@ function renderAuthGate(){
       '</div>';
 
     if(ui.authMode==='login'){
-      h+='<div class="sub" style="margin-bottom:10px">Gib deine E-Mail-Adresse ein — wir schicken dir einen einmaligen Anmelde-Link (Magic Link) ohne Passwort.</div>';
+      h+='<div class="sub" style="margin-bottom:10px">Melde dich mit E-Mail und Passwort an. Alternativ kannst du einen Magic Link anfordern, sobald der Mailversand eingerichtet ist.</div>';
     }else{
-      h+='<div class="sub" style="margin-bottom:10px">'+(inviteReq?'Gib deinen Einladungscode und deine E-Mail-Adresse ein.':'Erstelle dein persönliches Theo-Konto.')+' Dein Preis-Bestandsschutz (<b>29 €/Monat</b> bzw. <b>290 €/Jahr</b>) wird dabei sofort fest hinterlegt.</div>';
+      h+='<div class="sub" style="margin-bottom:10px">'+(inviteReq?'Gib deinen Einladungscode und deine E-Mail-Adresse ein.':'Erstelle dein persönliches Theo-Konto.')+' Die Registrierung per E-Mail-Link benötigt einen eingerichteten und geprüften Mailversand. Dein vorgesehener Preis-Bestandsschutz (<b>29 €/Monat</b> bzw. <b>290 €/Jahr</b>) wird dabei hinterlegt.</div>';
       if(inviteReq){
         h+='<label class="f">Einladungscode</label><input class="inp" id="auth-invite" autocomplete="off" placeholder="z. B. THEO-BETA-2026" value="'+esc(ui.authInvite)+'">';
       }
@@ -1829,26 +1898,43 @@ function renderAuthGate(){
         '</select>';
     }
 
-    h+='<label class="f">E-Mail-Adresse</label><input class="inp" type="email" id="auth-email" autocomplete="email" placeholder="du@beispiel.de" value="'+esc(ui.authEmail)+'" data-enter="authSubmit">';
-    if(ui.authErr)h+='<div class="authNotice warn">'+esc(ui.authErr)+'</div>';
+    h+='<label class="f">E-Mail-Adresse</label><input class="inp" type="email" id="auth-email" autocomplete="email" placeholder="du@beispiel.de" value="'+esc(ui.authEmail)+'" data-enter="'+(ui.authMode==='login'?'authPassword':'authSubmit')+'">';
+    if(ui.authMode==='login')h+='<label class="f" for="auth-password">Passwort</label><input class="inp" type="password" id="auth-password" autocomplete="current-password" data-enter="authPassword">';
+    if(ui.authErr)h+='<div class="authNotice warn" role="alert">'+esc(ui.authErr)+'</div>';
 
     h+='<div class="sheetBtns" style="margin-top:16px">'+
-      '<button class="btn primary" style="width:100%" data-default-submit="1" data-act="authSubmit"'+(ui.authBusy?' disabled':'')+'>'+(ui.authBusy?'Wird gesendet…':(ui.authMode==='register'?'Einladung einlösen & Link senden':'Anmelde-Link per E-Mail senden'))+'</button>'+
+      (ui.authMode==='login'?'<button class="btn primary" style="width:100%" data-act="authPassword"'+(ui.authBusy?' disabled':'')+'>Mit Passwort anmelden</button>':'')+
+      '<button class="btn'+(ui.authMode==='register'?' primary':'')+'" style="width:100%" data-default-submit="1" data-act="authSubmit"'+(ui.authBusy?' disabled':'')+'>'+(ui.authBusy?'Wird gesendet…':(ui.authMode==='register'?'Einladung einlösen & Link senden':'Anmelde-Link per E-Mail senden'))+'</button>'+
       '</div>';
   }
 
   h+='<div class="authFoot">'+
-    '<button class="btn mini" data-act="enterDemo">👀 Ohne Anmeldung testen (Beispiel-Woche)</button>'+
-    '<span>Noch keinen Code? <a href="/#warteliste">Zur Warteliste</a></span>'+
+    '<button class="btn" data-act="startDemoSurvey">👀 Theo ohne Anmeldung kennenlernen</button>'+
+    '<span>Die Warteliste kommt später.</span>'+
     '</div>';
   h+='<div class="sub" style="margin-top:12px;font-size:11.5px">Hinweis: Theo ist ein Selbstorganisationstool und ersetzt keine Diagnose oder Therapie. <a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a> · <a href="/agb">AGB</a></div>';
   h+='</div>';
   return h;
 }
 
+function renderDemoSurvey(){
+  let h='<div class="authWrap"><div class="shead"><h3>Schön, dass du da bist 🌱</h3><div class="sub">Was könnte dich gerade unterstützen? Wähle aus, was dich interessiert – oder überspringe die Frage. Deine Auswahl bleibt nur in dieser Demo.</div></div><div class="moduleGrid">';
+  MODULES.forEach(m=>{h+='<label class="moduleChoice"><input type="checkbox" data-field="demoChoice" data-id="'+m.id+'"'+(ui.demoChoices.includes(m.id)?' checked':'')+'><span><b>'+m.icon+' '+m.name+'</b><br><span class="sub">'+esc(m.desc)+(m.available?'':' · In Planung')+'</span></span></label>'});
+  return h+'</div><div class="sheetBtns"><button class="btn primary" data-act="enterDemo">Theo kennenlernen</button><button class="btn" data-act="skipDemoSurvey">Überspringen</button><button class="btn ghost" data-act="cancelDemoSurvey">Zur Anmeldung</button></div></div>';
+}
+function renderModules(){
+  const choices=S.settings.modules||[];
+  let h='<div class="vhead"><div><h1>✨ Deine Module</h1><div class="sub">Dein Überblick – du kannst jederzeit anders beginnen. Manche Ideen sind noch nicht umgesetzt.</div></div></div><div class="moduleGrid">';
+  const ordered=MODULES.slice().sort((a,b)=>(choices.includes(b.id)?1:0)-(choices.includes(a.id)?1:0));
+  ordered.forEach(m=>{h+='<div class="moduleCard"><strong>'+m.icon+' '+m.name+(choices.includes(m.id)?' · Für dich':'')+'</strong><div class="sub">'+esc(m.desc)+'</div>'+(m.available?'<button class="btn mini" style="margin-top:12px" data-act="nav" data-v="'+m.id+'">Öffnen</button>':'<div class="sub" style="margin-top:10px">In Planung – noch nicht verfügbar</div>')+'</div>'});
+  return h+'</div>';
+}
 function render(){
   const nv=$('#nav');
   const gated=shouldShowAuthGate();
+  const wrap=$('#wrap'); if(wrap&&wrap.classList)wrap.classList.toggle('auth-gated',gated);
+  if(document.body&&document.body.classList)document.body.classList.toggle('auth-gated',gated);
+  if(document.documentElement&&S&&S.settings)document.documentElement.setAttribute('data-theme',S.settings.theme||'natur');
   if(nv){
     nv.classList.toggle('open',ui.menuOpen);
     nv.style.display=gated?'none':'';
@@ -1865,13 +1951,14 @@ function render(){
   const v=ui.route.view;
   let h='';
   if(ui.demoMode){
-    h+='<div class="demoBar"><span>👀 <b>Lokaler Vorschau-Modus:</b> Du kannst alles frei ausprobieren — Änderungen bleiben nur in dieser Vorschau.</span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn mini primary" data-act="exitDemo">Mit Einladung anmelden</button><a class="btn mini" href="/#warteliste" style="text-decoration:none">Warteliste</a></span></div>';
+    h+='<div class="demoBar"><span>👀 <b>Lokaler Vorschau-Modus:</b> Du kannst alles frei ausprobieren — Änderungen bleiben nur in dieser Vorschau.</span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn mini primary" data-act="exitDemo">Zur Anmeldung</button><button class="btn mini" data-act="nav" data-v="module">Module entdecken</button></span></div>';
   }
   if(v==='woche')h+=renderWeek();
   else if(v==='jahr')h+=renderYear();
   else if(v==='bereiche')h+=renderAreas();
   else if(v==='projekt')h+=renderProject(ui.route.id);
   else if(v==='eingang')h+=renderInbox();
+  else if(v==='module')h+=renderModules();
   else if(v==='konfig')h+=renderConfig();
   $('#main').innerHTML=h;
 }
@@ -2033,8 +2120,6 @@ function renderAgenda(){
   items.forEach(it=>{for(const r in counts)if(inRange(it,r))counts[r]++});
   const inR=it=>inRange(it,ui.agRange);
   let h='<div class="card upcard"><div class="fh2" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>📅 Termine</span><span class="pc">alle Kalendereinträge im Blick</span></div>';
-  const phsT=activePhases(todayISO());
-  if(phsT.length)h+='<div class="sub" style="margin:0 0 8px">🍂 Aktive Phase'+(phsT.length>1?'n (überlappend)':'')+': <b>'+esc(phsT.map(x=>x.title).join(' | '))+'</b></div>';
   h+='<div class="chips">'+[['heute','Heute'],['woche','Woche'],['monat','Monat'],['spaeter','Später']].map(r=>'<button class="chip'+(ui.agRange===r[0]?' on':'')+'" data-act="agRange" data-r="'+r[0]+'">'+r[1]+' ('+counts[r[0]]+')</button>').join('')+'</div>';
   const vis=items.filter(inR);
   if(!vis.length)h+='<div class="sub">Keine Termine in diesem Zeitraum — ruhig hier.</div>';
@@ -2050,7 +2135,7 @@ function renderAgenda(){
       h+='<div class="agRow" data-act="jumpApptWeek" data-w="'+it.w+'" data-day="'+it.day+'" title="Zur Woche dieses Termins springen"><span class="agD"'+(isMulti?' style="width:auto;min-width:88px"':'')+'>'+esc(dLbl)+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+meta+'</span><button class="xbtn" data-act="openAppt" data-id="'+it.ap.id+'" title="Termin bearbeiten">✎</button></div>';
     }
   });
-  h+='<div class="sheetBtns"><button class="btn" data-act="newAppt">＋ Termin (auch später)</button><button class="btn" data-act="openSeminar" data-day="0" data-slot="0">🎓 Mehrtägiges Seminar</button></div></div>';
+  h+='<div class="sheetBtns"><button class="btn" data-act="newAppt">＋ Termin (auch später)</button><button class="btn" data-act="openSeminar" data-day="0" data-slot="0">📆 Mehrtägiger Zeitraum</button></div></div>';
   return h;
 }
 
@@ -2354,6 +2439,7 @@ function renderConfig(){
     '<button class="chip" data-act="cfgScroll" data-to="cfg-privacy">📦 Datenexport &amp; Löschen</button>'+
   '</div>';
 
+  h+='<div class="fh" id="cfg-theme">🎨 Farbschema</div><div class="sub">Wähle eine ruhige Farbwelt; deine Energiefarben bleiben davon unabhängig.</div><div class="chips">'+THEMES.map(t=>'<button class="chip'+(S.settings.theme===t[0]?' on':'')+'" data-act="setTheme" data-theme="'+t[0]+'" aria-pressed="'+(S.settings.theme===t[0]?'true':'false')+'">'+esc(t[1])+'</button>').join('')+'</div>';
   h+='<div class="fh" id="cfg-areas">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
   S.areas.forEach((a,idx)=>{
     h+='<div class="cfgRow" data-drop="reorder:area:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:area:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
@@ -2414,6 +2500,7 @@ function renderConfig(){
     '</div>'+
     '<label class="checkrow" style="padding:0 10px"><input type="checkbox" data-field="liveOn"'+(ls.on?' checked':'')+'><span>Automatische Hintergrund-Synchronisation zwischen deinen Geräten</span></label>'+
     '<div class="cfgRow"><span class="lbl">Abgleich-Intervall</span><select class="inp slim" data-field="liveInterval">'+[[30,'30 Sekunden'],[60,'60 Sekunden'],[300,'5 Minuten']].map(o=>'<option value="'+o[0]+'"'+((ls.interval||60)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select><button class="btn mini" data-act="syncNow">Jetzt synchronisieren</button></div>'+
+    (!ui.demoMode&&AUTH.user?'<div class="cfgRow"><span class="grow">Passwort für die Anmeldung</span><button class="btn mini" data-act="openSetPassword">Passwort setzen / ändern</button></div>':'')+
     '<div class="cfgRow" style="flex-wrap:wrap;gap:10px">'+
       '<span class="lbl">Tarif &amp; Schutz</span>'+
       '<span class="pricePill">🔒 Bestandsschutz: '+lockedEur+' €/Monat · '+(lockedEur*10)+' €/Jahr</span>'+
@@ -2489,7 +2576,7 @@ function sheetSlot(d,s,w){
         '</div>';
     }).join('')+'</div>';
   }
-  h+='<div class="sheetBtns" style="margin-top:8px">'+(hasReal?'':'<button class="btn mini" data-act="openBundleNew" data-day="'+d+'" data-slot="'+s+'">☑️ To-do-Bündel (mehrere kleine Aufgaben)</button>')+'<button class="btn mini" data-act="openSeminar" data-day="'+d+'" data-slot="'+s+'">🎓 Mehrtägiges Seminar / Workshop…</button></div>';
+  h+='<div class="sheetBtns" style="margin-top:8px">'+(hasReal?'':'<button class="btn mini" data-act="openBundleNew" data-day="'+d+'" data-slot="'+s+'">☑️ To-do-Bündel (mehrere kleine Aufgaben)</button>')+'<button class="btn mini" data-act="openSeminar" data-day="'+d+'" data-slot="'+s+'">📆 Mehrtägiger Zeitraum…</button></div>';
   if(!hasReal){
     h+='<label class="f">Dauer (überschreibt bei Bedarf die Vorlage)</label><select class="inp slim" id="f-span"><option value="0">Standard der Vorlage (1 Block)</option><option value="1">1 Block</option><option value="2">2 Blöcke (z. B. Vormittag + Mittag)</option><option value="3">3 Blöcke — ganzer Tag (z. B. Workshop)</option></select>';
     h+='<div class="fh">Projekt</div>';
@@ -2513,8 +2600,8 @@ function sheetSlot(d,s,w){
 function sheetSeminar(d,s){
   const startIso=iso(addDays(ui.anchor,+d||0));
   const endIso=iso(addDays(parseISO(startIso),1));
-  let h='<div class="shead"><h3>🎓 Mehrtägiges Seminar / Workshop</h3><div class="sub">Trägt ein mehrtägiges Seminar, Retreat oder eine Konferenz in einem Schritt über alle Tage hinweg ein — gebündelt in der Termin-Übersicht und im Kalender.</div></div>';
-  h+='<label class="f">Titel</label><input class="inp" id="sem-title" placeholder="z. B. Fachseminar, Klausurtagung, Fortbildung">';
+  let h='<div class="shead"><h3>📆 Mehrtägiger Zeitraum</h3><div class="sub">Trage zum Beispiel Besuch, eine Reise, freie Tage oder einen Kurs in einem Schritt über mehrere Tage ein.</div></div>';
+  h+='<label class="f">Titel</label><input class="inp" id="sem-title" placeholder="z. B. Besuch, Reise, freie Tage">';
   h+='<label class="f">Zeitraum &amp; Schnellwahl</label><div class="row2"><input class="inp slim" type="date" id="sem-start" value="'+startIso+'" style="flex:1;min-width:135px"><span class="pc">bis</span><input class="inp slim" type="date" id="sem-end" value="'+endIso+'" style="flex:1;min-width:135px"></div>';
   h+='<div class="subChips" style="margin-top:6px"><span class="pc" style="align-self:center">Schnellwahl:</span>'+
     '<button type="button" class="subChip" data-act="semQuickDays" data-mode="days" data-n="2">2 Tage</button>'+
@@ -2527,9 +2614,9 @@ function sheetSeminar(d,s){
     '<option value="two">Vormittag + Mittag (2 Blöcke täglich)</option>'+
     '<option value="one">Nur 1 Block täglich ('+esc(SLOTS[+s||0].label)+')</option></select>';
   h+='<label class="f">Tägliche Uhrzeit im 15-Min-Raster (optional — leer = ganztägig)</label><div class="row2">'+timePickHtml('','id="sem-t0" style="flex:1;min-width:120px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="sem-t1" style="flex:1;min-width:120px"','— Ende —')+'</div>';
-  h+='<div class="row2" style="margin-top:8px"><select class="inp slim" id="sem-ampel" style="flex:1;min-width:150px"><option value="orange" selected>🟠 intensiv (Standard)</option><option value="rot">🔴 sehr intensiv</option><option value="gelb">🟡 Tunnelrisiko</option><option value="gruen">🟢 Erholung / Retreat</option><option value="">Ampel: keine</option></select>'+
+  h+='<div class="row2" style="margin-top:8px"><select class="inp slim" id="sem-ampel" style="flex:1;min-width:150px"><option value="orange" selected>🟠 intensiv (Standard)</option><option value="rot">🔴 sehr intensiv</option><option value="gelb">🟡 Tunnelrisiko</option><option value="gruen">🟢 Erholung</option><option value="">Ampel: keine</option></select>'+
     '<select class="inp slim" id="sem-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
-  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="seminarSave" data-slot="'+(+s||0)+'">Seminar eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-default-submit="1" data-act="seminarSave" data-slot="'+(+s||0)+'">Zeitraum eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
   const el=document.getElementById('sem-title'); if(el)el.focus();
 }
@@ -2790,7 +2877,7 @@ function sheetPhase(id,preStart,preEnd){
 
 function sheetNewAppt(){
   let h='<div class="shead"><h3>Termin eintragen</h3><div class="sub">Für jeden beliebigen Tag oder Zeitraum — auch mehrtägig oder Monate im Voraus. Er landet automatisch im passenden Block der jeweiligen Woche.</div></div>';
-  h+='<div class="sheetBtns" style="margin:0 0 8px"><button class="btn mini" data-act="openSeminar" data-day="0" data-slot="0">🎓 Stattdessen mehrtägiges Seminar / Workshop anlegen…</button></div>';
+  h+='<div class="sheetBtns" style="margin:0 0 8px"><button class="btn mini" data-act="openSeminar" data-day="0" data-slot="0">📆 Stattdessen mehrtägigen Zeitraum anlegen…</button></div>';
   h+='<label class="f">Titel</label><input class="inp" id="na-title" placeholder="z. B. Workshop, Zahnarzt, Konferenz, Urlaub">';
   h+='<div class="row2"><input class="inp slim" type="date" id="na-date" value="'+todayISO()+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="na-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
   h+='<div class="row2">'+timePickHtml('','id="na-t0" style="flex:1;min-width:115px"','— Start —')+'<span class="pc">–</span>'+timePickHtml('','id="na-t1" style="flex:1;min-width:115px"','— Ende —')+'<select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select></div>';
@@ -3210,7 +3297,7 @@ const ACT={
     const title=((document.getElementById('sem-title')||{}).value||'').trim();
     const dIn=((document.getElementById('sem-start')||{}).value||'').trim();
     const dEnd=((document.getElementById('sem-end')||{}).value||'').trim()||dIn;
-    if(!title){toast('Bitte einen Titel für das Seminar eingeben.'); return}
+    if(!title){toast('Bitte einen Titel für den Zeitraum eingeben.'); return}
     if(!dIn||dEnd<dIn){toast('Bitte einen gültigen Zeitraum wählen (Ende ≥ Start).'); return}
     const scope=((document.getElementById('sem-scope')||{}).value)||'all';
     const t0=((document.getElementById('sem-t0')||{}).value)||'';
@@ -3235,7 +3322,7 @@ const ACT={
     }
     save(); closeModal(); render();
     if(amp==='rot'&&lastW===wk())setTimeout(()=>offerRegen(lastD,lastS),50);
-    toast('🎓 Seminar „'+title+'“ ('+tot+(tot===1?' Tag':' Tage')+') eingetragen.');
+    toast('📆 Zeitraum „'+title+'“ ('+tot+(tot===1?' Tag':' Tage')+') eingetragen.');
   },
   openBundleNew(a){ui.bundleSel={}; sheetBundleNew(+a.day,+a.slot,a.w||wk())},
   bundleToggleSel(a,t){if(a.k)ui.bundleSel[a.k]=!!(t&&t.checked)},
@@ -4066,6 +4153,39 @@ const ACT={
     ui.authMsg='';
     render();
   },
+  openSetPassword(){
+    openSheet('<div class="shead"><h3>Passwort setzen oder ändern</h3><div class="sub">Wähle ein eigenes Passwort mit mindestens 12 Zeichen. Der Magic Link bleibt eine alternative Anmeldung, sobald der Mailversand verfügbar ist.</div></div><label class="f" for="new-password">Neues Passwort</label><input id="new-password" class="inp" type="password" autocomplete="new-password"><label class="f" for="confirm-password">Passwort wiederholen</label><input id="confirm-password" class="inp" type="password" autocomplete="new-password"><div class="sheetBtns"><button class="btn primary" data-act="savePassword">Passwort speichern</button><button class="btn" data-act="closeModal">Abbrechen</button></div><div id="password-error" class="sub" role="alert"></div>');
+  },
+  async savePassword(){
+    const first=document.getElementById('new-password'),second=document.getElementById('confirm-password'),err=document.getElementById('password-error');
+    let pass=first?first.value:''; const confirm=second?second.value:'';
+    if(pass.length<12||pass!==confirm){if(err)err.textContent='Bitte gib zweimal dasselbe Passwort mit mindestens 12 Zeichen ein.';return}
+    if(first)first.value='';if(second)second.value='';
+    const sb=getSupabaseClient();
+    if(!AUTH.session||!sb||!sb.auth||typeof sb.auth.updateUser!=='function'){if(err)err.textContent='Bitte melde dich zuerst an.';return}
+    try{const result=await sb.auth.updateUser({password:pass});pass='';if(result.error){if(err)err.textContent='Das Passwort konnte nicht gespeichert werden.';return}closeModal();toast('Passwort gespeichert.');}
+    catch(e){pass='';if(err)err.textContent='Das Passwort konnte nicht gespeichert werden. Bitte prüfe deine Verbindung.'}
+  },
+  async authPassword(){
+    if(ui.authBusy)return;
+    const em=document.getElementById('auth-email'), pw=document.getElementById('auth-password');
+    const email=em?em.value.trim():''; let password=pw?pw.value:'';
+    if(pw)pw.value=''; ui.authEmail=email;
+    if(!email||!password){ui.authErr='Bitte gib E-Mail-Adresse und Passwort ein.';render();return}
+    const sb=getSupabaseClient();
+    if(!sb||!sb.auth||typeof sb.auth.signInWithPassword!=='function'){ui.authErr='Die Anmeldung ist gerade nicht verfügbar.';render();return}
+    ui.authBusy=true;ui.authErr='';render();
+    try{
+      const result=await sb.auth.signInWithPassword({email,password}); password='';
+      if(result.error||!result.data||!result.data.session){ui.authErr='E-Mail oder Passwort stimmen nicht oder das Konto ist noch nicht bestätigt.'}
+      else if(!AUTH.session){bindAuthSession(result.data.session);fetchAccountProfile();syncCycle(true);startSync()}
+    }catch(e){password='';ui.authErr='Anmeldung fehlgeschlagen. Bitte prüfe deine Verbindung.'}
+    ui.authBusy=false;render();
+  },
+  startDemoSurvey(){ui.demoSurvey=true;ui.demoChoices=[];render()},
+  cancelDemoSurvey(){ui.demoSurvey=false;render()},
+  skipDemoSurvey(){ui.demoChoices=[];ACT.enterDemo()},
+  setTheme(a){if(THEMES.some(t=>t[0]===a.theme)){S.settings.theme=a.theme;save();render()}},
   async authSubmit(){
     if(ui.authBusy)return;
     const emEl=document.getElementById('auth-email');
@@ -4114,9 +4234,12 @@ const ACT={
     }
   },
   enterDemo(){
+    ui.demoSurvey=false;
     ui.demoMode=true;
     S=buildDemoState();
-    ui.route={view:'woche'};
+    S.settings.modules=ui.demoChoices.slice();
+    const first=ui.demoChoices.find(id=>['woche','eingang','bereiche'].includes(id));
+    ui.route={view:first||'woche'};
     render();
     toast('Lokale Beispiel-Woche geöffnet — probiere alles in Ruhe aus.');
   },
@@ -4137,6 +4260,7 @@ const ACT={
       try{
         localStorage.removeItem('theo-last-auth-email');
         localStorage.removeItem('theo-profile-cache');
+        localStorage.removeItem('theo-profile-owner');
       }catch(e){}
     }
     ui.authStep='form';
@@ -4210,8 +4334,10 @@ const ACT={
         if(storeOk){
           try{
             localStorage.removeItem('theo-state');
+            if(AUTH.user)localStorage.removeItem('theo-state-user-'+AUTH.user.id);
             localStorage.removeItem('theo-last-auth-email');
             localStorage.removeItem('theo-profile-cache');
+            localStorage.removeItem('theo-profile-owner');
           }catch(e){}
         }
         await ACT.authLogout();
@@ -4419,6 +4545,7 @@ document.addEventListener('change',e=>{
   else if(f==='typeAsAppt'){const x=S.types.find(y=>y.id===el.dataset.id); if(x){x.asAppt=!!el.checked; save(); render(); toast(x.asAppt?'Vorlage verhält sich jetzt wie ein Termin (Optik, Agenda & Koexistenz).':'Vorlage zählt wieder als normaler Arbeitsblock.')}}
   else if(f==='projName'){const x=projOf(el.dataset.id); if(x){x.name=el.value; save()}}
   else if(f==='aid'){S.settings.aids[el.dataset.id]=el.checked; save(); render()}
+  else if(f==='demoChoice'&&MODULES.some(m=>m.id===el.dataset.id)){ui.demoChoices=ui.demoChoices.filter(id=>id!==el.dataset.id);if(el.checked)ui.demoChoices.push(el.dataset.id)}
 });
 document.addEventListener('input',e=>{
   const el=e.target;

@@ -22,6 +22,7 @@ function ok(cond, msg) {
 function createInMemorySupabaseCloud() {
   const tables = { items: [] }; // { user_id, uid, kind, payload, updated_at, synced_at, deleted }
   const rpcLog = [];
+  let nextPullGate = null;
   let srvClock = Date.now();
   const nextServerNow = () => {
     const n = Date.now();
@@ -31,6 +32,7 @@ function createInMemorySupabaseCloud() {
 
   function makeClientForSession(getSessionFn) {
     return {
+      forSession(session) { return makeClientForSession(() => session); },
       auth: {
         getSession: async () => ({ data: { session: getSessionFn() } }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
@@ -53,7 +55,9 @@ function createInMemorySupabaseCloud() {
               const rows = tables.items
                 .filter((r) => r.user_id === uid && (!minSyncedAt || Date.parse(r.synced_at) >= Date.parse(minSyncedAt)))
                 .map((r) => JSON.parse(JSON.stringify(r)));
-              return Promise.resolve({ data: rows, error: null }).then(resolve, reject);
+              const gate = nextPullGate;
+              nextPullGate = null;
+              return (gate ? gate.then(() => ({ data: rows, error: null })) : Promise.resolve({ data: rows, error: null })).then(resolve, reject);
             } catch (err) {
               return Promise.reject(err).then(resolve, reject);
             }
@@ -101,7 +105,7 @@ function createInMemorySupabaseCloud() {
     };
   }
 
-  return { tables, rpcLog, makeClientForSession };
+  return { tables, rpcLog, makeClientForSession, holdNextPull() { let release; nextPullGate = new Promise(r => { release = r; }); return release; } };
 }
 
 function spawnDevice(cloud, initialSession, initialStore = {}) {
@@ -171,6 +175,8 @@ function spawnDevice(cloud, initialSession, initialStore = {}) {
   const W = devA.d.wk();
   const yr = String(new Date().getFullYear());
   devA.d.S.motto[yr] = 'Gelassen durch das Jahr';
+  devA.d.S.settings.theme = 'lavendel';
+  devA.d.S.settings.modules = ['woche', 'reflexion'];
   devA.d.S.areas.push({ id: 'ar1', name: 'Gesundheit', emoji: '🌿', color: '#7CA982' });
   devA.d.S.projects.push({
     id: 'pr1', areaId: 'ar1', name: 'Rücken stärken', emoji: '🧘', note: '', views: { list: true, kanban: true },
@@ -186,6 +192,8 @@ function spawnDevice(cloud, initialSession, initialStore = {}) {
   await devA.d.syncCycle(false);
   await devB.d.syncCycle(false);
 
+  ok(devB.d.S.settings.theme === 'lavendel' && devB.d.S.settings.modules.includes('reflexion'),
+    'T1: Farbschema und Modulauswahl synchronisieren mit der Kapsel');
   ok(devB.d.S.motto[yr] === 'Gelassen durch das Jahr', 'T1a: Kapsel (Jahresmotto & Bereiche) auf Gerät B angekommen');
   ok(devB.d.S.projects.length === 1 && devB.d.S.projects[0].todos[0].title === 'Matte ausrollen',
     'T1b: Projekt + Projekt-To-do inkl. Erster Schritt auf Gerät B angekommen');
@@ -273,6 +281,30 @@ function spawnDevice(cloud, initialSession, initialStore = {}) {
   devA.setSession({ access_token: 'jwt-user-2', user: { id: 'user-b-uuid', email: 'b@example.de' } });
   ok(devA.d.S.meta.ownerId === 'user-b-uuid' && Object.keys(devA.d.blocksFor(W)).length === 0 && devA.d.S.projects.length === 0,
     'T6: Konto-Wechsel im selben Browser verwirft fremden lokalen Cache (ownerId-Schutz)');
+
+  devA.d.S.tasks.push({ id: 'b-only', title: 'Nur Konto B', firstStep: '', done: false });
+  devA.d.save();
+  await devA.d.syncCycle(false);
+  devA.setSession(sessUserA);
+  ok(!devA.d.S.tasks.some(t => t.id === 'b-only') && devA.d.S.meta.ownerId === sessUserA.user.id,
+    'T6b: Zurück zu A stellt dessen lokalen Stand wieder her, ohne Daten von B');
+  devA.setSession({ access_token: 'jwt-user-2', user: { id: 'user-b-uuid', email: 'b@example.de' } });
+  ok(devA.d.S.tasks.some(t => t.id === 'b-only'), 'T6c: Konto B behält seinen eigenen lokalen Stand');
+
+  // A delayed response for A must never be applied after switching to B.
+  const race = spawnDevice(cloud, sessUserA);
+  await new Promise(r => setTimeout(r, 30));
+  const releasePull = cloud.holdNextPull();
+  const oldPull = race.d.pullAll(true);
+  await new Promise(r => setTimeout(r, 5));
+  race.setSession({ access_token: 'jwt-user-2', user: { id: 'user-b-uuid', email: 'b@example.de' } });
+  releasePull();
+  const staleResult = await oldPull;
+  ok(staleResult.canceled && race.d.S.meta.ownerId === 'user-b-uuid' && !race.d.S.motto[yr],
+    'T7: Verspäteter Pull von A wird beim Kontowechsel verworfen');
+  await race.d.syncCycle(true);
+  ok(race.d.S.tasks.some(t => t.id === 'b-only') && !race.d.S.motto[yr],
+    'T7b: Anschließender Pull lädt ausschließlich die Daten von B');
 
   if (fails > 0) {
     console.error('SMOKE 21 FAILED (' + fails + ')');

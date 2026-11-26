@@ -160,7 +160,7 @@ function bootAppInstance(opts = {}) {
     mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml};',
     sandbox
   );
-  return { ex: sandbox.__EX, els, store };
+  return { ex: sandbox.__EX, els, store, handlers };
 }
 
 (async () => {
@@ -193,6 +193,46 @@ function bootAppInstance(opts = {}) {
   await new Promise((r) => setTimeout(r, 20));
   ok(gExp.els['q:#main'].innerHTML.includes('abgelaufen oder wurde schon einmal verwendet'),
     'Abgelaufener Magic-Link (otp_expired) zeigt klaren deutschen Hinweis zum Neu-Anfordern');
+
+  // Responsive login layout and optional discovery survey, with no remote persistence.
+  ok(appHtml.includes('#wrap.auth-gated{display:block}') && gateHtml1.includes('auth-password') && gateHtml1.includes('authPassword'),
+    'Auth-Gate füllt das verfügbare Raster und bietet Passwort-Login');
+  const gSurvey = bootAppInstance({ protocol: 'https:', search: '?mode=demo' });
+  await new Promise((r) => setTimeout(r, 25));
+  ok(gSurvey.els['q:#main'].innerHTML.includes('Was könnte dich gerade unterstützen?') && gSurvey.els['q:#main'].innerHTML.includes('Überspringen'),
+    'Demo startet mit freiwilliger, überspringbarer Modul-Auswahl');
+  gSurvey.handlers.change({ target: { dataset: { field: 'demoChoice', id: 'eingang' }, checked: true } });
+  gSurvey.handlers.change({ target: { dataset: { field: 'demoChoice', id: 'reflexion' }, checked: true } });
+  gSurvey.ex.ACT.enterDemo();
+  ok(gSurvey.ex.ui.demoMode && gSurvey.ex.ui.route.view === 'eingang' && gSurvey.ex.S().settings.modules.includes('reflexion'),
+    'Auswahl personalisiert Demo-Einstieg ohne Login');
+  gSurvey.ex.ACT.nav({ v: 'module' });
+  const modulesHtml = gSurvey.els['q:#main'].innerHTML;
+  ok(modulesHtml.includes('Reflexionstool · Für dich') && modulesHtml.includes('In Planung') && modulesHtml.includes('Social Accountability'),
+    'Modulübersicht unterscheidet ausgewählte und noch geplante Module');
+  gSurvey.ex.ACT.setTheme({ theme: 'meer' });
+  ok(gSurvey.ex.S().settings.theme === 'meer' && JSON.parse(gSurvey.store['theo-demo-state']).settings.theme === 'meer',
+    'Farbschema wird in der Demo gespeichert');
+
+  const signed = { access_token: 'test-token', user: { id: 'test-account-a', email: 'a@example.com' } };
+  const authClient = {
+    auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({}),
+      signInWithPassword: async ({ email, password }) => email === 'a@example.com' && password === 'local-test-only'
+        ? { data: { session: signed }, error: null } : { data: {}, error: { message: 'invalid' } },
+      signOut: async () => ({}) },
+    from: () => ({ select: () => Promise.resolve({ data: [], error: null }) }),
+    rpc: async () => ({ data: [], error: null })
+  };
+  const gPassword = bootAppInstance({ sbMock: authClient });
+  await new Promise((r) => setTimeout(r, 25));
+  gPassword.els['auth-email'] = { value: 'a@example.com' };
+  gPassword.els['auth-password'] = { value: 'wrong-password' };
+  await gPassword.ex.ACT.authPassword();
+  ok(!gPassword.ex.AUTH.session && gPassword.els['q:#main'].innerHTML.includes('stimmen nicht'), 'Falsches Passwort wird abgewiesen');
+  gPassword.els['auth-password'] = { value: 'local-test-only' };
+  await gPassword.ex.ACT.authPassword();
+  ok(gPassword.ex.AUTH.user.id === 'test-account-a' && gPassword.els['auth-password'].value === '' && !JSON.stringify(gPassword.store).includes('local-test-only'),
+    'Passwort-Login öffnet das eigene Konto, ohne das Passwort lokal zu speichern');
 
   // Vorschau-Modus ohne Login ("Ohne Anmeldung testen")
   g1.ex.ACT.enterDemo();

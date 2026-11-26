@@ -6,7 +6,7 @@ Es gibt zwei Betriebsarten:
 
 | Variante | Wohin | Für wen |
 |---|---|---|
-| **Theo Beta** (Supabase + Vercel, Frankfurt `eu-central-1`) | [theo.example → Vercel `fra1`] | Geschlossene Beta, Einladungscode nötig, Magic-Link-Login, serverbasierter Sync |
+| **Theo Beta** (Supabase + Vercel, Frankfurt `eu-central-1`) | [theo.example → Vercel `fra1`] | Öffentlicher Prototyp mit lokaler Demo; Konten in geschlossener Beta, Passwort- oder optional Magic-Link-Login und serverbasierter Sync |
 | **Theo als YunoHost-App** (Alpha, Nextcloud/CalDAV) | eigene YunoHost-Maschine | Selbsthosting mit eigener Nextcloud |
 
 ---
@@ -14,6 +14,14 @@ Es gibt zwei Betriebsarten:
 ## Theo Beta — Deployment (closed Beta)
 
 Die Beta ist für **Vercel (`fra1`)** und **Supabase (`eu-central-1`, Frankfurt)** vorbereitet. Das Live-Deployment und die tatsächlichen Netzwerkverbindungen müssen vor der Freigabe geprüft werden. Für den produktiven Betrieb sind außerdem Mailversand und die rechtlichen Angaben einzurichten und zu prüfen.
+
+### Aktueller Prototyp und offene Punkte
+
+- Die Demo ist ohne Konto zugänglich. Die freiwillige Auswahl personalisiert den Einstieg und die Modulübersicht; sie ist nicht mit einer Warteliste verknüpft. Das frühere Wartelistenformular ist ausgeblendet. Mailanbindung und Warteliste kommen später.
+- Wochenübersicht, Eingangskiste und Lebensbereiche sind vorhanden; Werte, Psychoedukation, Reflexion samt späteren Auswertungen, Übergänge und Social Accountability sind zunächst als Ideen markiert, nicht als fertige Funktionen. Vier Farbschemata sind auswählbar.
+- Bestehende Konten können sich mit E-Mail und Passwort anmelden; nach einem erfolgreichen Login lässt sich das Passwort in der Konfiguration ändern. Die Registrierung mit Einladung und der optionale Magic Link benötigen einen funktionierenden Mailversand. Fiktive Adressen können keine E-Mails empfangen.
+- Lokale Kontodaten werden getrennt nach Benutzer-ID zwischengespeichert; diese Daten sind nicht verschlüsselt und können für andere Personen mit Zugriff auf dasselbe Browserprofil sichtbar sein. Beim Konto-Wechsel werden verspätete Antworten des vorherigen Kontos verworfen und Sync-Anfragen an die ursprüngliche Sitzung gebunden. Öffentliche Geräte nicht für echte Daten verwenden.
+- Die Test-Suite verwendet Auth-/Sync-Mocks; erfolgreiche Live-Anmeldungen, Kontowechsel im Browser und der Mailversand müssen vor einer Freigabe zusätzlich Ende zu Ende getestet werden. Rechtstexte bleiben Entwürfe, Stripe ist nicht freigeschaltet.
 
 ### 1. Supabase-Projekt (Frankfurt)
 
@@ -66,8 +74,8 @@ curl -I https://<domain>/impressum
 
 ### Beta-Funktionen (M0–M5)
 
-- **M1** Öffentliche Landingpage mit Warteliste (Double Opt-in) und ehrlichen Datenschutz-/Impressum-/AGB-Entwürfen (`legal-review: needed`).
-- **M2** Einladungscode-gates Registration, passwortloser Magic-Link-Login, `profiles`-Zeile bei Erstlogin (`price_locked = 29`, `price_locked_at`, `invite_code`).
+- **M1** Öffentliche Landingpage; Warteliste (Double Opt-in) für später vorbereitet und derzeit ausgeblendet und ehrlichen Datenschutz-/Impressum-/AGB-Entwürfen (`legal-review: needed`).
+- **M2** Einladungscode-gates Registration, Passwort-Login für bestehende Konten und optionaler Magic-Link-Login (Mailversand offen), `profiles`-Zeile bei Erstlogin (`price_locked = 29`, `price_locked_at`, `invite_code`).
 - **M3** Single-File-PWA ohne CalDAV/Nextcloud, Supabase-`items`-Sync (Pro-Row-LWW, Tombstones, R13b Pull-first auf Neugeräten), 5-Minuten-Onboarding.
 - **M4** Self-Service JSON-Datenexport + Konto-Löschung (E-Mail-Bestätigung → löscht `auth.users` + kaskadiert).
 - **M5** Stripe-Checkout (29 €/Monat · 290 €/Jahr) mit Bestandsschutz über `profiles.price_locked`, HMAC-Webhook, § 312k-BGB-Zweischritt-Kündigung.
