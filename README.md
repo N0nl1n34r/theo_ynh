@@ -11,9 +11,9 @@ Es gibt zwei Betriebsarten:
 
 ---
 
-## Theo Beta — Deployment (closed Beta, < 10 Minuten)
+## Theo Beta — Deployment (closed Beta)
 
-Die Beta läuft serverlos auf **Vercel (`fra1`)** mit **Supabase (`eu-central-1`, Frankfurt)** als Datenbank + Auth. Es werden **keine Tracker, keine US-Analytics und keine externen CDNs** geladen; alle Daten liegen in Frankfurt.
+Die Beta ist für **Vercel (`fra1`)** und **Supabase (`eu-central-1`, Frankfurt)** vorbereitet. Das Live-Deployment und die tatsächlichen Netzwerkverbindungen müssen vor der Freigabe geprüft werden. Für den produktiven Betrieb sind außerdem Mailversand und die rechtlichen Angaben einzurichten und zu prüfen.
 
 ### 1. Supabase-Projekt (Frankfurt)
 
@@ -32,7 +32,7 @@ Die Beta läuft serverlos auf **Vercel (`fra1`)** mit **Supabase (`eu-central-1`
 ```bash
 npm install
 npm run build          # baut .vercel-dist/ + vendored /app/supabase.min.js
-vercel deploy --prod --prebuilt   # Ziel-Region fra1 im Projekt einstellen
+vercel deploy --prod             # Ziel-Region und Deployment Protection prüfen
 ```
 
 In Vercel unter **Settings → Environment Variables** (Production) setzen:
@@ -44,10 +44,13 @@ In Vercel unter **Settings → Environment Variables** (Production) setzen:
 | `SUPABASE_SERVICE_ROLE_KEY` | **nur server-seitig** — nie im Client/Repo |
 | `INVITE_REQUIRED` | `true` (geschlossene Beta) |
 | `NEXT_PUBLIC_SITE_URL` | `https://<domain>` |
-| `BREVO_API_KEY` / `SMTP_*` | optional: eigener Mailversand (sonst Supabase-Mailer-Fallback) |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `PUBLIC_PRICE_EUR` | optional, für M5-Zahlung (29 €/Monat · 290 €/Jahr, Bestandsschutz via `profiles.price_locked`) |
+| `BREVO_API_KEY` / `SMTP_*`, `MAIL_FROM` | Transaktionsmailer für Wartelisten-Bestätigung und Lösch-E-Mails; nur Auth hat einen Supabase-Mailer-Fallback |
+| `RATE_LIMIT_SALT` | Zufälliger geheimer Salt für das Rate-Limiting |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_29`, `STRIPE_PRICE_YEARLY_290` | optional, für M5-Zahlung (29 €/Monat · 290 €/Jahr, Bestandsschutz via `profiles.price_locked`) |
 
-> **Sicherheit:** `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY` und SMTP-Geheimnisse **niemals** in `.env`, im Client-Bundle oder im Klartext-Chat ablegen. `api/config` liefert bewusst nur öffentliche Parameter.
+> **Sicherheit:** Secrets nur in geschützten Umgebungsvariablen hinterlegen, niemals ins Repository, Client-Bundle oder den Klartext-Chat übernehmen. `api/config` liefert bewusst nur öffentliche Parameter.
+>
+> Ohne Transaktionsmailer werden Wartelisten-Bestätigungen nicht versendet; die Kontolöschung verwendet dann eine Bestätigungsphrase statt einer E-Mail. Supabase-Standardmails müssen separat lokalisiert und der Mailversand vollständig getestet werden.
 
 ### 3. Nach dem Deployment prüfen
 
