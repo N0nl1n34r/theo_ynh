@@ -101,6 +101,20 @@ label.f{display:block; font-size:12.5px; color:var(--sub); margin:12px 0 5px}
 .block{border-left:3px solid var(--ac,#C9C2B2); cursor:pointer; flex:1}
 .block.done{opacity:.5}
 .appt{background:#FBF8F1; cursor:pointer; flex:1}
+[draggable="true"]{cursor:grab}
+[draggable="true"]:active{cursor:grabbing}
+.apList{display:flex; flex-direction:column; gap:4px}
+.apHead{display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:11px; color:var(--sub); padding:1px 2px}
+.apAct{border:1px solid #DFD9CA; background:#FFF; border-radius:7px; padding:1px 6px; font-size:10.5px; color:#5C564A; cursor:pointer}
+.apAct:hover{background:#F4F0E7}
+.apWarn{color:#9E6230; font-weight:600}
+.apRow{display:flex; align-items:center; gap:6px; background:#FBF8F1; border:1px solid #ECE6D9; border-left:3px solid #B7AE9C; border-radius:10px; padding:5px 8px; font-size:12.5px; cursor:pointer; min-width:0}
+.apRow:hover{background:#F6F1E4}
+.apRow .apTm{font-size:11px; color:var(--sub); font-variant-numeric:tabular-nums; white-space:nowrap; flex:none}
+.apRow .apTt{font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.apBadge{font-size:10.5px; color:#7A7466; background:#EFEAE0; border-radius:6px; padding:1px 5px; white-space:nowrap; flex:none}
+.slotSubBtn{border:1px dashed #DFD9CA; background:rgba(255,255,255,.45); border-radius:9px; padding:3px 8px; font-size:11px; color:#8A8478; cursor:pointer; text-align:center}
+.slotSubBtn:hover{background:#FFF; border-color:#B9B2A2; color:#5C564A}
 .brow{display:flex; align-items:center; gap:8px}
 .bico{font-size:15px}
 .bttl{font-weight:600; flex:1}
@@ -347,7 +361,7 @@ function apTimeStr(t0,t1){return t0?(t1?t0+'–'+t1:t0):'—'}
 
 /* ================= Zustand ================= */
 let S=null;
-const ui={route:{view:'woche'},anchor:mondayOf(new Date()),year:new Date().getFullYear(),mobileDay:dayIdx(new Date()),projTab:'list',suggestion:null,pickCtx:null,ampCtx:null,emojiCtx:null,inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,menuOpen:false,wdCals:null,wdMsg:'',agRange:'woche',pickerWeek:null,pickerTitle:''};
+const ui={route:{view:'woche'},anchor:mondayOf(new Date()),year:new Date().getFullYear(),mobileDay:dayIdx(new Date()),projTab:'list',suggestion:null,pickCtx:null,ampCtx:null,emojiCtx:null,inbKind:'gedanke',inbQ:'',inbF:'alle',yearSel:null,areaDelConfirm:null,phIdx:0,confirmReset:false,menuOpen:false,wdCals:null,wdMsg:'',agRange:'woche',pickerWeek:null,pickerTitle:'',expSlots:{}};
 
 let storeOk=false;
 try{localStorage.setItem('__lr','1'); localStorage.removeItem('__lr'); storeOk=true}catch(e){}
@@ -365,6 +379,20 @@ function normalizeState(x){
   if(!x.tomb)x.tomb={};
   if(!x.capsuleTs)x.capsuleTs=0;
   if(x.meta.dirty===undefined)x.meta.dirty=false;
+  if(!x.appts)x.appts={};
+  if(x.blocks){
+    for(const w in x.blocks){
+      const bs=x.blocks[w]||{};
+      for(const k in bs){
+        const bl=bs[k];
+        if(bl&&Array.isArray(bl.stack)&&bl.stack.length){
+          const aps=x.appts[w]||(x.appts[w]={});
+          bl.stack.forEach(sa=>{if(!aps[k])aps[k]=sa; else{(aps[k].stack||(aps[k].stack=[])).push(sa)}});
+          delete bl.stack;
+        }
+      }
+    }
+  }
   return x;
 }
 function save(){if(!storeOk)return; try{if(S){S.meta.dirty=true; S.capsuleTs=Date.now()} localStorage.setItem('theo-state',JSON.stringify(S))}catch(e){} schedulePush()}
@@ -459,15 +487,113 @@ function parseClock(t){
 }
 function toMin(hm){return +hm.slice(0,2)*60+ +hm.slice(3,5)}
 function mapSlotForTime(start,end){
+  if(!start&&!end)return -1;
+  const cs=start?toMin(start):(end?Math.max(0,toMin(end)-60):0);
+  const ce=end?toMin(end):Math.min(1440,cs+60);
   let best=-1,bestOv=0;
   for(let s=0;s<3;s++){
     const w=slotWin(s);
-    const cs=start?toMin(start):toMin(w.s);
-    const ce=end?toMin(end):toMin(w.e);
     const ov=Math.max(0,Math.min(toMin(w.e),ce)-Math.max(toMin(w.s),cs));
     if(ov>bestOv){bestOv=ov;best=s}
   }
-  return best;
+  if(best>=0)return best;
+  const mid=(cs+Math.max(cs,ce))/2;
+  const b01=toMin(slotWin(0).e);
+  const b12=(toMin(slotWin(1).e)+toMin(slotWin(2).s))/2;
+  return mid<b01?0:(mid<b12?1:2);
+}
+function findAppt(id){
+  if(!id)return null;
+  for(const w in S.appts){
+    const aps=S.appts[w];
+    for(const k in aps){
+      const o=aps[k]; if(!o)continue;
+      if(o.id===id)return {ap:o,w:w,key:k,host:null,stackIdx:-1,inBlock:false};
+      if(o.stack){const si=o.stack.findIndex(x=>x&&x.id===id); if(si>=0)return {ap:o.stack[si],w:w,key:k,host:o,stackIdx:si,inBlock:false}}
+    }
+  }
+  for(const w in S.blocks){
+    const bs=S.blocks[w];
+    for(const k in bs){
+      const bl=bs[k];
+      if(bl&&bl.stack){const si=bl.stack.findIndex(x=>x&&x.id===id); if(si>=0)return {ap:bl.stack[si],w:w,key:k,host:bl,stackIdx:si,inBlock:true}}
+    }
+  }
+  return null;
+}
+function detachAppt(f){
+  if(!f)return;
+  if(f.inBlock){
+    if(f.host&&f.host.stack){f.host.stack.splice(f.stackIdx,1); if(!f.host.stack.length)delete f.host.stack}
+    return;
+  }
+  if(f.stackIdx>=0){
+    if(f.host&&f.host.stack)f.host.stack.splice(f.stackIdx,1);
+    return;
+  }
+  const aps=apsFor(f.w), cur=aps[f.key];
+  if(cur&&cur.stack&&cur.stack.length){
+    const nxt=cur.stack.shift();
+    if(cur.stack.length)nxt.stack=cur.stack;
+    delete cur.stack;
+    aps[f.key]=nxt;
+  }else{
+    delete aps[f.key];
+  }
+}
+function placeApptInSlot(w,d,s,ap){
+  ap.day=d; ap.slot=s;
+  const key=d+'|'+s, aps=apsFor(w), cur=aps[key];
+  if(!cur){aps[key]=ap}
+  else{cur.stack=cur.stack||[]; cur.stack.push(ap)}
+}
+function apRangeMin(ap){
+  if(!ap)return null;
+  const raw=ap.t0?apTimeStr(ap.t0,ap.t1):String(ap.time||'');
+  let m;
+  if((m=raw.match(/^bis\s+(\d{1,2}):(\d{2})/i)))return [0,(+m[1])*60+(+m[2])];
+  if((m=raw.match(/^ab\s+(\d{1,2}):(\d{2})/i)))return [(+m[1])*60+(+m[2]),1440];
+  const pc=parseClock(raw);
+  if(!pc||!pc[0])return null;
+  const s=toMin(pc[0]), e=pc[1]?toMin(pc[1]):Math.min(1440,s+60);
+  return [s,e>s?e:Math.min(1440,s+30)];
+}
+function apSortMin(ap){
+  const r=apRangeMin(ap);
+  return r?r[0]:-1;
+}
+function apptsInSlot(w,d,s){
+  const key=d+'|'+s, aps=S.appts[w]||{}, bs=S.blocks[w]||{};
+  const primary=aps[key], bl=bs[key], list=[];
+  if(primary){list.push(primary); if(primary.stack)primary.stack.forEach(x=>{if(x)list.push(x)})}
+  if(bl&&bl.stack)bl.stack.forEach(x=>{if(x)list.push(x)});
+  return list.slice().sort((a,b)=>apSortMin(a)-apSortMin(b));
+}
+function hasTimeOverlap(list){
+  const rs=[];
+  for(const ap of list){const r=apRangeMin(ap); if(r&&!(r[0]===0&&r[1]===1440))rs.push(r)}
+  rs.sort((a,b)=>a[0]-b[0]);
+  for(let i=1;i<rs.length;i++){if(rs[i][0]<rs[i-1][1])return true}
+  return false;
+}
+function removeApptsByRemoteUid(ruid){
+  if(!ruid)return 0;
+  const ids=[];
+  for(const w in S.appts){
+    const aps=S.appts[w];
+    for(const k in aps){
+      const o=aps[k]; if(!o)continue;
+      if(o.remoteUid===ruid)ids.push(o.id);
+      if(o.stack)o.stack.forEach(sa=>{if(sa&&sa.remoteUid===ruid)ids.push(sa.id)});
+    }
+  }
+  for(const w in S.blocks){
+    const bs=S.blocks[w];
+    for(const k in bs){const bl=bs[k]; if(bl&&bl.stack)bl.stack.forEach(sa=>{if(sa&&sa.remoteUid===ruid)ids.push(sa.id)})}
+  }
+  ids.forEach(id=>{const f=findAppt(id); if(f)detachAppt(f)});
+  for(const mk of Object.keys(S.mapped)){if(mk===ruid||mk.indexOf(ruid+'#')===0)delete S.mapped[mk]}
+  return ids.length;
 }
 function evTimes(date,slot,span,time){
   const sw=slotWin(slot);
@@ -480,7 +606,7 @@ function evTimes(date,slot,span,time){
 }
 function icsEsc(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n')}
 function icsD(dstr){return String(dstr).replace(/-/g,'')}
-function icsStats(){let nb=0,na=0,nf=0;for(const w in S.blocks){for(const k in S.blocks[w]){nb++;if(S.blocks[w][k].fb)nf++}}for(const w in S.appts){for(const k in S.appts[w]){na++;if(S.appts[w][k].fb)nf++}}return 'Enthalten: '+nb+' Blöcke · '+na+' Termine · '+Object.keys(S.mit).length+' MITs · '+S.phases.length+' Phasen · '+nf+' Rückmeldung(en) — als VEVENTs mit Kategorien LR-* und X-LR-Feldern (inkl. X-LR-SPAN, X-LR-FB, X-LR-FBNOTE für spätere Auswertung).'}
+function icsStats(){let nb=0,na=0,nf=0;for(const w in S.blocks){for(const k in S.blocks[w]){nb++;if(S.blocks[w][k].fb)nf++}}for(const w in S.appts){for(const k in S.appts[w]){const o=S.appts[w][k];na++;if(o.fb)nf++;if(o.stack)o.stack.forEach(sa=>{na++;if(sa.fb)nf++})}}return 'Enthalten: '+nb+' Blöcke · '+na+' Termine · '+Object.keys(S.mit).length+' MITs · '+S.phases.length+' Phasen · '+nf+' Rückmeldung(en) — als VEVENTs mit Kategorien LR-* und X-LR-Feldern (inkl. X-LR-SPAN, X-LR-FB, X-LR-FBNOTE für spätere Auswertung).'}
 function buildEvents(only){
   const stamp=iso(new Date()).replace(/-/g,'')+'T120000Z';
   const evs=[];
@@ -509,15 +635,20 @@ function buildEvents(only){
         x:{KIND:bl.kind||'typ',SLOT:p[1],SPAN:String(bl.span||1),DATE:date,WEEK:w,DAY:p[0],PROJECT:bl.projectId||'',TODO:bl.todoId||'',TYPE:bl.typeId||'',FB:bl.fb||'',FBNOTE:bl.fbNote||''}});
     }
   }
+  function emitLocalAppt(w,ap,uidSuffix){
+    if(!ap||ap.remoteUid)return;
+    const date=iso(addDays(parseISO(w),+ap.day));
+    const cat=['LR-APPT']; if(ap.ampel)cat.push('LR-'+String(ap.ampel).toUpperCase());
+    const tm=evTimes(date,+ap.slot,ap.span||1,ap.time);
+    const xf={KIND:'appt',SLOT:String(ap.slot),SPAN:String(ap.span||1),DATE:date,WEEK:w,DAY:String(ap.day),TIME:ap.time,SRC:ap.src||'',TYPE:ap.typeId||'',FB:ap.fb||'',FBNOTE:ap.fbNote||''};
+    if(ap.multiTotal>1){xf.MULTIID=ap.multiId||''; xf.MULTISTART=ap.multiStart||''; xf.MULTIEND=ap.multiEnd||''; xf.MULTIIDX=String(ap.multiIdx||1); xf.MULTITOTAL=String(ap.multiTotal)}
+    ev({uid:icsUid('appt',uidSuffix),dtstart:tm.start,dtend:tm.end,
+      sum:ap.title,desc:'Uhrzeit: '+ap.time,cat:cat,x:xf});
+  }
   for(const w in S.appts){const aps=S.appts[w];
     for(const k in aps){const ap=aps[k];
-      if(ap.remoteUid)continue;
-      const date=iso(addDays(parseISO(w),+ap.day));
-      const cat=['LR-APPT']; if(ap.ampel)cat.push('LR-'+String(ap.ampel).toUpperCase());
-      const tm=evTimes(date,+ap.slot,ap.span||1,ap.time);
-      ev({uid:icsUid('appt',w+'-'+ap.day+'-'+ap.slot),dtstart:tm.start,dtend:tm.end,
-        sum:ap.title,desc:'Uhrzeit: '+ap.time,cat:cat,
-        x:{KIND:'appt',SLOT:String(ap.slot),SPAN:String(ap.span||1),DATE:date,WEEK:w,DAY:String(ap.day),TIME:ap.time,SRC:ap.src||'',FB:ap.fb||'',FBNOTE:ap.fbNote||''}});
+      emitLocalAppt(w,ap,w+'-'+ap.day+'-'+ap.slot);
+      if(ap&&ap.stack)ap.stack.forEach(sa=>emitLocalAppt(w,sa,sa.id));
     }
   }
   for(const d in S.mit){const m=S.mit[d];
@@ -534,57 +665,149 @@ function buildICS(){
   L.push('END:VCALENDAR');
   return L.join('\r\n');
 }
+function xmlEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+/* Nextcloud legt Termine aus der Web-UI oft unter Dateinamen wie Nextcloud-XXXX.ics statt <UID>.ics ab.
+   wdResolveHref ermittelt per CalDAV-REPORT (calendar-query auf UID) bzw. PROPFIND die echte Objekt-URL. */
+async function wdResolveHref(cal,ruid){
+  if(!cal||!ruid)return null;
+  const hmap=SYNC.hrefs||(SYNC.hrefs={});
+  if(hmap[ruid])return hmap[ruid];
+  const normHr=raw=>{
+    let hr=String(raw||'').trim();
+    if(!hr||/\/$/.test(hr))return '';
+    if(!/^https?:/i.test(hr)&&/^https?:\/\/[^/]+/i.test(cal))hr=cal.match(/^https?:\/\/[^/]+/)[0]+(hr[0]==='/'?'':'/')+hr;
+    return hr;
+  };
+  try{
+    const qxml='<?xml version="1.0" encoding="utf-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/></d:prop><c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"><c:prop-filter name="UID"><c:text-match collation="i;octet">'+xmlEsc(ruid)+'</c:text-match></c:prop-filter></c:comp-filter></c:comp-filter></c:filter></c:calendar-query>';
+    const r=await wdFetch(cal,{method:'REPORT',headers:{'Depth':'1','Content-Type':'application/xml; charset=utf-8'},body:qxml});
+    if(r.ok||r.status===207){
+      const xml=await wdBody(r);
+      const parts=xml.split(/<(?:[A-Za-z0-9]+:)?response[>\s]/i);
+      for(const b of parts){
+        const hm=b.match(/<(?:[A-Za-z0-9]+:)?href>\s*([^<]+?)\s*<\//i);
+        const hr=hm&&normHr(hm[1]);
+        if(hr){hmap[ruid]=hr; return hr}
+      }
+    }
+  }catch(e){}
+  try{
+    const pxml='<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop></d:propfind>';
+    const r2=await wdFetch(cal,{method:'PROPFIND',headers:{'Depth':'1','Content-Type':'application/xml; charset=utf-8'},body:pxml});
+    if(r2.ok||r2.status===207){
+      const xml2=await wdBody(r2);
+      const parts2=xml2.split(/<(?:[A-Za-z0-9]+:)?response[>\s]/i);
+      for(const b of parts2){
+        const hm=b.match(/<(?:[A-Za-z0-9]+:)?href>\s*([^<]+?)\s*<\//i);
+        const hr=hm&&normHr(hm[1]);
+        const cd=b.match(/<(?:[A-Za-z0-9]+:)?calendar-data[^>]*>([\s\S]*?)<\/(?:[A-Za-z0-9]+:)?calendar-data>/i);
+        if(!hr||!cd)continue;
+        const rawCd=cd[1].trim().replace(/^<!\[CDATA\[([\s\S]*?)\]\]>$/,'$1');
+        const un=rawCd.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&amp;/g,'&');
+        const parsed=parseICSAll(un);
+        if(parsed.evs.some(ev=>String(ev.UID||'').trim()===ruid)){hmap[ruid]=hr; return hr}
+      }
+    }
+  }catch(e){}
+  return null;
+}
+async function wdDeleteRemote(ruid,calHref){
+  const c=wdCfg(), cal=calHref||c.cal;
+  if(!ruid||!cal)return false;
+  const hmap=SYNC.hrefs||(SYNC.hrefs={});
+  const direct=hmap[ruid]||(cal+encodeURIComponent(ruid)+'.ics');
+  try{
+    const r=await wdFetch(direct,{method:'DELETE'});
+    if(r.ok||r.status===204){delete hmap[ruid]; return true}
+    if(r.status===404){
+      delete hmap[ruid];
+      const real=await wdResolveHref(cal,ruid);
+      if(real&&real!==direct){
+        const r2=await wdFetch(real,{method:'DELETE'});
+        delete hmap[ruid];
+        return !!(r2.ok||r2.status===204||r2.status===404);
+      }
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 /* Gespiegelte Fremdtermine: bei Zeit-Änderung in Theo wird das Original im CalDAV-Server aktualisiert */
 function mirrorICS(ap,date){
-  const tm=evTimes(date,ap.slot,ap.span||1,ap.t0&&ap.t1?ap.t0+'–'+ap.t1:(ap.t0||ap.time));
   const stamp=iso(new Date()).replace(/-/g,'')+'T'+pad(new Date().getUTCHours())+pad(new Date().getUTCMinutes())+'00Z';
+  if(ap.multiTotal>1&&ap.multiStart&&ap.multiEnd){
+    const dEndEx=iso(addDays(parseISO(ap.multiEnd),1));
+    return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VEVENT','UID:'+ap.remoteUid,'DTSTAMP:'+stamp,'DTSTART;VALUE=DATE:'+icsD(ap.multiStart),'DTEND;VALUE=DATE:'+icsD(dEndEx),'SUMMARY:'+icsEsc(ap.title),'TRANSP:OPAQUE','CATEGORIES:LR-MIRROR','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  }
+  const tm=evTimes(date,ap.slot,ap.span||1,ap.t0&&ap.t1?ap.t0+'–'+ap.t1:(ap.t0||ap.time));
   return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Theo//Prototyp//DE','BEGIN:VEVENT','UID:'+ap.remoteUid,'DTSTAMP:'+stamp,'DTSTART:'+tm.start,'DTEND:'+tm.end,'SUMMARY:'+icsEsc(ap.title),'TRANSP:OPAQUE','CATEGORIES:LR-MIRROR','END:VEVENT','END:VCALENDAR'].join('\r\n');
 }
 async function wdPutRemote(ap,date){
   const c=wdCfg();
   if(!ap.remoteUid||!c.cal)return;
+  const hmap=SYNC.hrefs||(SYNC.hrefs={});
+  let href=hmap[ap.remoteUid]||(c.cal+encodeURIComponent(ap.remoteUid)+'.ics');
+  const body=mirrorICS(ap,date);
   try{
-    const r=await wdFetch(c.cal+encodeURIComponent(ap.remoteUid)+'.ics',{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:mirrorICS(ap,date)});
+    let r=await wdFetch(href,{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:body});
+    if(!r.ok&&(r.status===400||r.status===404||r.status===409||r.status===412)){
+      const real=await wdResolveHref(c.cal,ap.remoteUid);
+      if(real&&real!==href){href=real; r=await wdFetch(href,{method:'PUT',headers:{'Content-Type':'text/calendar; charset=utf-8'},body:body})}
+    }
     toast(r.ok?'Aktualisierung im Kalender übernommen.':'Kalender-Update scheiterte (HTTP '+r.status+').');
   }catch(e){toast('Kalender-Update nicht möglich (Netzwerk).')}
 }
 /* Fremde Einträge automatisch in die Woche einsortieren.
    Regel (R9): Die Zuordnung darf NIE scheitern — ist kein Slot frei, teilt sich der Eintrag
-   einen belegten Slot (er hat echte Uhrzeiten und verdrängt nichts). */
+   einen belegten Slot (er hat echte Uhrzeiten und verdrängt nichts).
+   R13d: Zeitgebundene Termine bleiben in ihrem echten Tageszeit-Slot (statt z. B. von 10:00 in den Abend auszuweichen). */
 function autoAssign(f){
   const w=iso(mondayOf(parseISO(f.date))), d=dayIdx(parseISO(f.date));
-  const pc=parseClock(f.time);
-  const prefer=pc?mapSlotForTime(pc[0],pc[1]):-1;
-  const order=prefer>=0?[prefer,0,1,2].filter((v,i,a)=>a.indexOf(v)===i):[0,1,2];
-  for(const s of order){
-    if(!apsFor(w)[d+'|'+s]&&!blocksFor(w)[d+'|'+s])return {w:w,d:d,s:s};
+  const raw=String(f.time||'');
+  let prefer=-1;
+  const bisM=raw.match(/^bis\s+(\d{1,2}:\d{2})/i);
+  if(bisM)prefer=mapSlotForTime(null,pad(+bisM[1].split(':')[0])+':'+bisM[1].split(':')[1]);
+  else{const pc=parseClock(raw); if(pc)prefer=mapSlotForTime(pc[0],pc[1])}
+  if(prefer>=0){
+    if(!apsFor(w)[d+'|'+prefer]&&!blocksFor(w)[d+'|'+prefer]&&!coveredByW(w,d,prefer))return {w:w,d:d,s:prefer};
+    return {w:w,d:d,s:prefer,stack:true};
   }
-  return {w:w,d:d,s:prefer>=0?prefer:0,stack:true};
+  for(const s of [0,1,2]){
+    if(!apsFor(w)[d+'|'+s]&&!blocksFor(w)[d+'|'+s]&&!coveredByW(w,d,s))return {w:w,d:d,s:s};
+  }
+  return {w:w,d:d,s:0,stack:true};
 }
 function stackAppt(w,d,s,ap){
   const key=d+'|'+s;
-  let occ=apsFor(w)[key]||blocksFor(w)[key];
-  if(!occ){const cov=coveredByW(w,d,s); if(cov){occ=apsFor(w)[d+'|'+cov.slot]||blocksFor(w)[d+'|'+cov.slot]; if(occ)s=cov.slot}}
+  const occ=apsFor(w)[key];
   if(occ){occ.stack=occ.stack||[]; occ.stack.push(ap)}
   else apsFor(w)[key]=ap;
   return s;
 }
 function takeRemote(f,place,srcLabel){
-  const pc=parseClock(f.time);
+  const raw=String(f.time||'');
+  const pc=(!/^(ab|bis)\s/i.test(raw))?parseClock(raw):null;
+  const mk=f.mapKey||f.uid;
   const ap={id:uid(),day:place.d,slot:place.s,title:f.title,time:f.time||'—',ampel:null,src:'',areaId:null,span:1,typeId:null,remoteUid:f.uid};
   if(pc){ap.t0=pc[0]; if(pc[1])ap.t1=pc[1]}
+  if(f.multiTotal>1){ap.multiStart=f.multiStart; ap.multiEnd=f.multiEnd; ap.multiIdx=f.multiIdx; ap.multiTotal=f.multiTotal; ap.mapKey=mk}
   if(place.stack)stackAppt(place.w,place.d,place.s,ap);
-  else apsFor(place.w)[place.d+'|'+place.s]=ap;
-  S.mapped[f.uid]={w:place.w,day:place.d,slot:place.s,auto:1};
-  wdAssignWriteback(ap,String(place.s),true);
+  else placeApptInSlot(place.w,place.d,place.s,ap);
+  S.mapped[mk]={w:place.w,day:place.d,slot:place.s,auto:1};
+  if(!f.subDay)wdAssignWriteback(ap,String(place.s),true);
 }
 /* Zuordnung in den Kalender zurückschreiben: das FREMDE Event selbst bekommt
    CATEGORIES:LR-ASSIGNED + X-LR-SLOT — Summary und Uhrzeiten bleiben exakt gleich. */
 async function wdAssignWriteback(ap,slotTag,quiet){
   const c=wdCfg(); if(!ap.remoteUid||!c.cal)return;
   try{
-    const href=c.cal+encodeURIComponent(ap.remoteUid)+'.ics';
-    const r=await wdFetch(href,{method:'GET'});
+    const hmap=SYNC.hrefs||(SYNC.hrefs={});
+    let href=hmap[ap.remoteUid]||(c.cal+encodeURIComponent(ap.remoteUid)+'.ics');
+    let r=await wdFetch(href,{method:'GET'});
+    if(!r.ok&&r.status===404){
+      const real=await wdResolveHref(c.cal,ap.remoteUid);
+      if(real){href=real; r=await wdFetch(href,{method:'GET'})}
+    }
     if(!r.ok){if(!quiet)toast('Markierung im Kalender nicht möglich (HTTP '+r.status+').'); return}
     const lines=(await r.text()).replace(/\r/g,'').split('\n');
     const out=[]; let inEv=false, hasCat=false, touched=false;
@@ -609,9 +832,10 @@ async function wdAssignWriteback(ap,slotTag,quiet){
 function processRemote(txt){
   let placed=0,queued=0;
   for(const f of classifyRemote(txt)){
+    const mk=f.mapKey||f.uid;
     const pl=autoAssign(f);
     if(pl){takeRemote(f,pl,'Kalender (Nextcloud)'); placed++}
-    else if(!S.unmapped.some(x=>x.uid===f.uid)){S.unmapped.push(f); queued++}
+    else if(!S.unmapped.some(x=>(x.mapKey||x.uid)===mk)){S.unmapped.push(f); queued++}
   }
   return {placed:placed,queued:queued};
 }
@@ -630,14 +854,35 @@ function parseICSAll(text){
 }
 function parseICS(text){return parseICSAll(text).evs}
 function fromIcsDate(v){
-  const s=String(v||'');
+  const s=String(v||'').trim();
+  const zm=s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/i);
+  if(zm){const d=new Date(Date.UTC(+zm[1],+zm[2]-1,+zm[3],+zm[4],+zm[5],+zm[6])); return iso(d)}
   if(s.length>=8&&/^\d{8}/.test(s))return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
   return null;
 }
 function fromIcsHM(v){
-  const s=String(v||'');
-  if(s.length>=15&&s.indexOf('T')>0)return s.slice(9,11)+':'+s.slice(11,13);
+  const s=String(v||'').trim();
+  const zm=s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/i);
+  if(zm){const d=new Date(Date.UTC(+zm[1],+zm[2]-1,+zm[3],+zm[4],+zm[5],+zm[6])); return pad(d.getHours())+':'+pad(d.getMinutes())}
+  if(s.length>=13&&s.indexOf('T')>0){const ti=s.indexOf('T'); if(/^\d{4}/.test(s.slice(ti+1)))return s.slice(ti+1,ti+3)+':'+s.slice(ti+3,ti+5)}
   return null;
+}
+function icsLastDay(dt,de,dur){
+  const dStart=fromIcsDate(dt); if(!dStart)return null;
+  const isAllDay=String(dt||'').indexOf('T')<0;
+  const dEnd=fromIcsDate(de);
+  if(dEnd){
+    if(isAllDay){const prev=iso(addDays(parseISO(dEnd),-1)); return prev>=dStart?prev:dStart}
+    if(dEnd<=dStart)return dStart;
+    const he=fromIcsHM(de);
+    if(he==='00:00'){const prev=iso(addDays(parseISO(dEnd),-1)); return prev>=dStart?prev:dStart}
+    return dEnd;
+  }
+  if(dur){
+    const dm=String(dur).match(/P(?:(\d+)W)?(?:(\d+)D)?/i);
+    if(dm){const tot=(+(dm[1]||0))*7+(+(dm[2]||0)); if(tot>1)return iso(addDays(parseISO(dStart),tot-1))}
+  }
+  return dStart;
 }
 /* ================= VTODO-Sync (Vorhaben/To-dos als CalDAV-Aufgaben) ================= */
 function icsStamp(){return iso(new Date()).replace(/-/g,'')+'T'+pad(new Date().getUTCHours())+pad(new Date().getUTCMinutes())+'00Z'}
@@ -805,12 +1050,14 @@ async function pruneSynced(currentUids){
   }
 }
 function reconcileDeleted(texts){
-  const present={};
+  const present={}, presentFull={};
+  let hasCal=false;
   for(const txt of (texts||[])){
     if(!txt)continue;
+    if(txt.indexOf('BEGIN:VCALENDAR')>=0)hasCal=true;
     const res=parseICSAll(txt);
-    for(const e of res.evs){const u=String(e.UID||'').split('@')[0]; if(u)present[u]=1}
-    for(const e of res.todos){const u=String(e.UID||'').split('@')[0]; if(u)present[u]=1}
+    for(const e of res.evs){const fu=String(e.UID||'').trim(); if(fu){presentFull[fu]=1; present[fu.split('@')[0]]=1}}
+    for(const e of res.todos){const fu=String(e.UID||'').trim(); if(fu){presentFull[fu]=1; present[fu.split('@')[0]]=1}}
   }
   let m;
   const allKeys=[].concat(Object.keys(S.synced),Object.keys(S.tomb).filter(k=>!S.synced[k]));
@@ -821,7 +1068,11 @@ function reconcileDeleted(texts){
       if(occ&&icsUid('block',m[1]+'-'+m[2]+'-'+m[3]).split('@')[0]===uid)delete blocksFor(m[1])[m[2]+'|'+m[3]];
     }else if((m=uid.match(/^theo-appt-(\d{4}-\d{2}-\d{2})-(\d)-(\d)$/))){
       const occ=apsFor(m[1])[m[2]+'|'+m[3]];
-      if(occ&&icsUid('appt',m[1]+'-'+m[2]+'-'+m[3]).split('@')[0]===uid)delete apsFor(m[1])[m[2]+'|'+m[3]];
+      if(occ&&!occ.remoteUid&&icsUid('appt',m[1]+'-'+m[2]+'-'+m[3]).split('@')[0]===uid){
+        const f=findAppt(occ.id); if(f)detachAppt(f);
+      }
+    }else if((m=uid.match(/^theo-appt-(x[a-z0-9]+)$/))){
+      const f=findAppt(m[1]); if(f&&!f.ap.remoteUid)detachAppt(f);
     }else if((m=uid.match(/^theo-mit-(\d{4}-\d{2}-\d{2})$/))){
       delete S.mit[m[1]];
     }else if((m=uid.match(/^theo-phase-(.+)$/))){
@@ -836,9 +1087,18 @@ function reconcileDeleted(texts){
     delete S.synced[uid];
     delete S.tomb[uid]; /* Server hat die Abwesenheit bestätigt — Grabstein abgeräumt */
   }
+  /* Auch in Nextcloud gelöschte Fremdtermine lokal abräumen */
+  if(Array.isArray(texts)&&texts.length){
+    const gone={};
+    for(const mk of Object.keys(S.mapped)){
+      const bu=mk.split('#')[0];
+      if(bu&&!presentFull[bu]&&!present[bu.split('@')[0]])gone[bu]=1;
+    }
+    for(const bu in gone)removeApptsByRemoteUid(bu);
+  }
 }
-/* Grabsteine: gelöschte Theo-UIDs bleiben markiert, bis der Server ihre Abwesenheit bestätigt.
-   Damit kann ein fehlgeschlagenes DELETE (z. B. 403-Throttle) nichts „wiederbeleben“:
+/* Grabsteine: gelöschte Theo-UIDs und gelöschte Fremd-UIDs bleiben markiert, bis der Server ihre Abwesenheit bestätigt.
+   Damit kann ein fehlgeschlagenes DELETE (z. B. 404 bei abweichendem Dateinamen oder 403-Throttle) nichts „wiederbeleben“:
    der Pull überspringt Grabstein-UIDs und versucht das DELETE erneut. */
 function tombMark(uid){if(uid)S.tomb[String(uid).split('@')[0]]=1}
 function tombDead(uid){return !!S.tomb[String(uid||'').split('@')[0]]}
@@ -855,27 +1115,54 @@ function processCapsule(text){
   }
   return {adopted:false,ts:0};
 }
-/* Fremde (nicht-Theo-)Kalendereinträge für den Zuordnungs-Assistenten erkennen */
+/* Fremde (nicht-Theo-)Kalendereinträge erkennen — inkl. Grabstein-Schutz und mehrtägigen Terminen */
+function enrichMappedMultiDay(u,dStart,dLast,total){
+  for(const w in S.appts){
+    const aps=S.appts[w];
+    for(const k in aps){
+      const o=aps[k]; if(!o)continue;
+      if(o.remoteUid===u&&!o.multiTotal){o.multiStart=dStart; o.multiEnd=dLast; o.multiIdx=1; o.multiTotal=total}
+      if(o.stack)o.stack.forEach(sa=>{if(sa&&sa.remoteUid===u&&!sa.multiTotal){sa.multiStart=dStart; sa.multiEnd=dLast; sa.multiIdx=1; sa.multiTotal=total}});
+    }
+  }
+}
 function classifyRemote(text){
   const evs=parseICS(text);
   const foreign=[];
   for(const e of evs){
-    let dt='',de='',cats='';
+    let dt='',de='',dur='',cats='';
     for(const k in e){
       const ku=k.toUpperCase();
       if(ku.indexOf('DTSTART')===0)dt=e[k];
       else if(ku.indexOf('DTEND')===0)de=e[k];
+      else if(ku.indexOf('DURATION')===0)dur=e[k];
       else if(ku==='CATEGORIES')cats=e[k];
     }
-    /* LR-ASSIGNED (Zuordnungs-Markierung) bewusst NICHT überspringen: andere Geräte sollen
-       den Eintrag ebenfalls zuordnen können; auf diesem Gerät verhindert S.mapped Dopplungen. */
-    if(/LR-(BLOCK|APPT|MIT|PHASE|MIRROR)/i.test(cats))continue;
+    if(/LR-(BLOCK|APPT|MIT|PHASE)/i.test(cats))continue;
     const u=(e.UID||'').trim();
-    if(!u||S.mapped[u]||S.ignored[u])continue;
-    const date=fromIcsDate(dt);
-    if(!date)continue;
+    if(!u)continue;
+    if(tombDead(u)){wdDeleteRemote(u); continue}
+    /* LR-ASSIGNED bewusst NICHT überspringen (andere Geräte sollen zuordnen können); LR-MIRROR überspringen */
+    if(/LR-MIRROR/i.test(cats))continue;
+    if(S.ignored[u])continue;
+    const dStart=fromIcsDate(dt);
+    if(!dStart)continue;
+    const dLast=icsLastDay(dt,de,dur)||dStart;
     const hs=fromIcsHM(dt), he=fromIcsHM(de);
-    foreign.push({uid:u,date:date,title:e.SUMMARY||'Termin',time:(hs?(he?hs+'–'+he:hs):'')});
+    const title=icsUnesc(e.SUMMARY||'Termin');
+    const totalDays=Math.min(90,Math.max(1,Math.round((parseISO(dLast)-parseISO(dStart))/86400000)+1));
+    if(totalDays===1){
+      if(S.mapped[u])continue;
+      foreign.push({uid:u,mapKey:u,date:dStart,title:title,time:(hs?(he?hs+'–'+he:hs):'')});
+    }else{
+      for(let i=0;i<totalDays;i++){
+        const dCur=iso(addDays(parseISO(dStart),i));
+        const mk=i===0?u:(u+'#'+dCur);
+        if(S.mapped[mk]){if(i===0)enrichMappedMultiDay(u,dStart,dLast,totalDays); continue}
+        const tStr=i===0?(hs?'ab '+hs:'ganztägig'):(i===totalDays-1?((he&&he!=='00:00')?'bis '+he:'ganztägig'):'ganztägig');
+        foreign.push({uid:u,mapKey:mk,date:dCur,title:title,time:tStr,multiStart:dStart,multiEnd:dLast,multiIdx:i+1,multiTotal:totalDays,subDay:i>0});
+      }
+    }
   }
   return foreign;
 }
@@ -906,13 +1193,36 @@ function importICS(text){
       if(tombDead(e.UID)){skip++; wdDeleteUid(String(e.UID).split('@')[0],c.cal); continue}
       const date=x('DATE'), slot=x('SLOT');
       if(!date||slot===''){skip++; continue}
-      const d0=parseISO(date); const w=iso(mondayOf(d0));
-      const ap={id:uid(),day:dayIdx(d0),slot:+slot,title:e.SUMMARY||'Termin',time:x('TIME')||'—',ampel:ampFromCat(cats),src:x('SRC')||'Kalender (importiert)',areaId:null};
+      const d0=parseISO(date); const w=iso(mondayOf(d0)), dd=dayIdx(d0), ss=+slot, key=dd+'|'+ss;
+      const uidL=e.UID?String(e.UID).split('@')[0]:'';
+      const idM=uidL.match(/^theo-appt-(x[a-z0-9]+)$/);
+      const wantId=idM?idM[1]:null;
+      const ap={id:wantId||uid(),day:dd,slot:ss,title:icsUnesc(e.SUMMARY||'Termin'),time:x('TIME')||'—',ampel:ampFromCat(cats),src:x('SRC')||'Kalender (importiert)',areaId:null};
+      const pc=parseClock(ap.time); if(pc&&!/^(ab|bis)\s/i.test(ap.time)){ap.t0=pc[0]; if(pc[1])ap.t1=pc[1]}
       const sp2=parseInt(x('SPAN'),10); if(sp2>1)ap.span=Math.min(3,sp2);
+      if(x('TYPE'))ap.typeId=x('TYPE');
       if(x('FB'))ap.fb=x('FB');
       if(x('FBNOTE'))ap.fbNote=x('FBNOTE');
-      if(e.UID)S.synced[String(e.UID).split('@')[0]]=1;
-      apsFor(w)[dayIdx(d0)+'|'+slot]=ap; na++;
+      const mt=parseInt(x('MULTITOTAL'),10);
+      if(mt>1){ap.multiId=x('MULTIID')||null; ap.multiStart=x('MULTISTART')||date; ap.multiEnd=x('MULTIEND')||date; ap.multiIdx=parseInt(x('MULTIIDX'),10)||1; ap.multiTotal=mt}
+      if(uidL)S.synced[uidL]=1;
+      const cur=apsFor(w)[key];
+      if(!cur){apsFor(w)[key]=ap}
+      else if(wantId){
+        const ex=findAppt(wantId);
+        if(ex)Object.assign(ex.ap,{title:ap.title,time:ap.time,ampel:ap.ampel,fb:ap.fb,fbNote:ap.fbNote,t0:ap.t0,t1:ap.t1});
+        else placeApptInSlot(w,dd,ss,ap);
+      }else if(!cur.remoteUid){
+        if(cur.stack)ap.stack=cur.stack;
+        ap.id=cur.id||ap.id;
+        apsFor(w)[key]=ap;
+      }else{
+        const st=(cur.stack||(cur.stack=[]));
+        const li=st.findIndex(sa=>sa&&!sa.remoteUid);
+        if(li>=0){ap.id=st[li].id||ap.id; st[li]=ap}
+        else st.push(ap);
+      }
+      na++;
     }else if(cats.includes('LR-MIT')){
       if(tombDead(e.UID)){skip++; wdDeleteUid(String(e.UID).split('@')[0],c.cal); continue}
       const d=x('DATE'); if(!d){skip++; continue}
@@ -1019,7 +1329,7 @@ function wdHuman(status,txt){
   return '✖ HTTP '+status+' — Server antwortete abweichend.'+wdServerMsg(txt);
 }
 /* ================= Live-Sync ================= */
-const SYNC={timer:null,running:false,last:null,msg:'',capJson:null,capMode:null,capFor:null};
+const SYNC={timer:null,running:false,last:null,msg:'',capJson:null,capMode:null,capFor:null,hrefs:{}};
 function resetCapCache(cal){if(SYNC.capFor!==cal){SYNC.capFor=cal; SYNC.capMode=null}}
 async function putCapsule(cal,cobj){
   resetCapCache(cal);
@@ -1204,6 +1514,18 @@ function coveredByW(w,d,s){
   return null;
 }
 function slotOccW(w,d,s){return blocksFor(w)[d+'|'+s]||apsFor(w)[d+'|'+s]||coveredByW(w,d,s)}
+function blockOccW(w,d,s){return !!(blocksFor(w)[d+'|'+s]||coveredByW(w,d,s))}
+function blockSpanRoomW(w,d,s,span,ignoreKey){
+  if(s+(span||1)>3)return false;
+  for(let k=0;k<(span||1);k++){
+    const sk=s+k, key=d+'|'+sk;
+    if(key===ignoreKey)continue;
+    if(blocksFor(w)[key])return false;
+    const cov=coveredByW(w,d,sk);
+    if(cov&&(d+'|'+cov.slot)!==ignoreKey)return false;
+  }
+  return true;
+}
 function spanRoomW(w,d,s,span){
   for(let k=1;k<span;k++){
     const sk=s+k;
@@ -1364,20 +1686,33 @@ function renderUpcoming(){
 function renderAgenda(){
   const t=todayISO();
   const w0=iso(mondayOf(new Date())), wEnd=iso(addDays(parseISO(w0),6));
-  const mon=t.slice(0,7);
+  const mon=t.slice(0,7), monStart=mon+'-01';
   if(!ui.agRange)ui.agRange='woche';
-  const items=allApptItems();
+  const rawItems=allApptItems();
+  const seenMulti={}, items=[];
+  rawItems.forEach(it=>{
+    const ap=it.ap;
+    if(ap&&ap.multiTotal>1&&(ap.remoteUid||ap.multiId)){
+      const gk=(ap.remoteUid||ap.multiId);
+      if(seenMulti[gk])return;
+      seenMulti[gk]=1;
+      items.push({w:it.w,day:it.day,slot:it.slot,ap:ap,date:ap.multiStart||it.date,endDate:ap.multiEnd||it.date,multiTotal:ap.multiTotal});
+    }else{
+      items.push(Object.assign({},it,{endDate:it.date}));
+    }
+  });
   const monEnd=iso(new Date(new Date().getFullYear(),new Date().getMonth()+1,0));
   /* Zähler und Filter verwenden dieselben (inklusiven) Zeiträume — die Zahl am Chip ist immer exakt das, was die Liste zeigt */
-  const inRange=(d,r)=>{
-    if(r==='heute')return d===t;
-    if(r==='woche')return d>=w0&&d<=wEnd;
-    if(r==='monat')return d.slice(0,7)===mon;
-    return d>monEnd;
+  const inRange=(it,r)=>{
+    const d0=it.date, d1=it.endDate||d0;
+    if(r==='heute')return d0<=t&&t<=d1;
+    if(r==='woche')return d0<=wEnd&&d1>=w0;
+    if(r==='monat')return d0<=monEnd&&d1>=monStart;
+    return d1>monEnd;
   };
   const counts={heute:0,woche:0,monat:0,spaeter:0};
-  items.forEach(it=>{const d=it.date; for(const r in counts)if(inRange(d,r))counts[r]++});
-  const inR=it=>inRange(it.date,ui.agRange);
+  items.forEach(it=>{for(const r in counts)if(inRange(it,r))counts[r]++});
+  const inR=it=>inRange(it,ui.agRange);
   let h='<div class="card upcard"><div class="fh2" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>📅 Termine</span><span class="pc">alle Kalendereinträge im Blick</span></div>';
   const phsT=activePhases(todayISO());
   if(phsT.length)h+='<div class="sub" style="margin:0 0 8px">🍂 Aktive Phase'+(phsT.length>1?'n (überlappend)':'')+': <b>'+esc(phsT.map(x=>x.title).join(' | '))+'</b></div>';
@@ -1390,7 +1725,10 @@ function renderAgenda(){
       const blTitle=it.bl.kind==='projekt'&&projOf(it.bl.projectId)?projOf(it.bl.projectId).name:(it.bl.title||'Block');
       h+='<div class="agRow" data-act="openBlockW" data-w="'+it.w+'" data-day="'+it.day+'" data-slot="'+it.slot+'"><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+(ty?ty.emoji+' ':'')+esc(blTitle)+'</span>'+ampDot(it.bl.ampel)+'<span class="pc">'+(it.bl.t0?esc(apTimeStr(it.bl.t0,it.bl.t1)):SLOTS[it.slot].ico+' '+slotWin(it.slot).s+'–'+slotWin(it.slot).e)+(it.bl.span>1?' · '+it.bl.span+' Blöcke':'')+'</span></div>';
     }else{
-      h+='<div class="agRow" data-act="openAppt" data-id="'+it.ap.id+'"><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+esc(it.ap.time||'')+(it.ap.span>1?' · '+it.ap.span+' Blöcke':'')+'</span></div>';
+      const isMulti=it.endDate&&it.endDate>it.date;
+      const dLbl=isMulti?(fmtDate(parseISO(it.date))+' – '+fmtDate(parseISO(it.endDate))):fmtDate(parseISO(it.date));
+      const meta=isMulti?(it.multiTotal+' Tage'):(esc(it.ap.time||'')+(it.ap.span>1?' · '+it.ap.span+' Blöcke':''));
+      h+='<div class="agRow" data-act="openAppt" data-id="'+it.ap.id+'"><span class="agD"'+(isMulti?' style="width:auto;min-width:88px"':'')+'>'+esc(dLbl)+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+meta+'</span></div>';
     }
   });
   h+='<div class="sheetBtns"><button class="btn" data-act="newAppt">＋ Termin (auch später)</button></div></div>';
@@ -1402,17 +1740,18 @@ function allApptItems(){
   for(const w in S.appts){
     const aps=S.appts[w];
     for(const k in aps){
-      const ap=aps[k];
+      const ap=aps[k]; if(!ap)continue;
       const date=iso(addDays(parseISO(w),ap.day));
       out.push({w:w,day:ap.day,slot:ap.slot,ap:ap,date:date});
-      if(ap.stack)ap.stack.forEach(sa=>out.push({w:w,day:sa.day,slot:sa.slot,ap:sa,date:date}));
+      if(ap.stack)ap.stack.forEach(sa=>{if(sa)out.push({w:w,day:sa.day,slot:sa.slot,ap:sa,date:iso(addDays(parseISO(w),sa.day))})});
     }
   }
-  /* Blocktypen mit „wie Termin“-Flag (z. B. 1:1-Termin) erscheinen ebenfalls bei Termine */
+  /* Blocktypen mit „wie Termin“-Flag (z. B. 1:1-Termin) erscheinen ebenfalls bei Termine; Legacy-Block-Stacks mitnehmen */
   for(const w in S.blocks){
     const bs=S.blocks[w];
     for(const k in bs){
-      const bl=bs[k];
+      const bl=bs[k]; if(!bl)continue;
+      if(bl.stack)bl.stack.forEach(sa=>{if(sa)out.push({w:w,day:sa.day,slot:sa.slot,ap:sa,date:iso(addDays(parseISO(w),sa.day))})});
       const ty=bl.typeId?typeOf(bl.typeId):null;
       if(!ty||!ty.asAppt)continue;
       const p=k.split('|');
@@ -1420,7 +1759,7 @@ function allApptItems(){
       out.push({w:w,day:+p[0],slot:+p[1],bl:bl,date:date});
     }
   }
-  out.sort((x,y)=>x.date<y.date?-1:(x.date>y.date?1:(x.slot-y.slot)));
+  out.sort((x,y)=>x.date<y.date?-1:(x.date>y.date?1:(x.slot!==y.slot?x.slot-y.slot:(apSortMin(x.ap)-apSortMin(y.ap)))));
   return out;
 }
 
@@ -1445,37 +1784,54 @@ function suggHtml(){
     '<button class="btn mini" data-act="suggestAccept">Annehmen</button><button class="btn mini" data-act="suggestOther">Anders wählen</button><button class="btn mini ghost" data-act="suggestDismiss">Nicht jetzt</button></div>';
 }
 
-function stackCard(ap){
-  const ty=ap.typeId?typeOf(ap.typeId):null;
-  return '<div class="card appt stacked" data-act="openAppt" data-id="'+ap.id+'">'+
-    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+'</span>'+(ampDot(ap.ampel)||'')+'</div>'+
-    '<div class="bttl">'+esc(ap.title)+'</div>'+
-    '<div class="bsrc">📥 geteilt · '+esc(ap.src||'Kalender')+(ty?' · '+ty.emoji+' '+esc(ty.name):'')+'</div></div>';
+function apptRowHtml(ap){
+  const mb=ap.multiTotal>1?'<span class="apBadge">↔ '+ap.multiIdx+'/'+ap.multiTotal+'</span>':'';
+  return '<div class="apRow" draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'" title="'+esc(ap.title+(ap.time?' ('+ap.time+')':''))+' — klicken zum Bearbeiten, ziehen zum Verschieben">'+
+    '<span class="apTm">🕐 '+esc(ap.time||'—')+'</span>'+
+    '<span class="apTt">'+esc(ap.title)+'</span>'+mb+(ampDot(ap.ampel)||'')+'</div>';
+}
+function apptClusterHtml(w,d,s,appts,withBlock){
+  const expKey=w+'|'+d+'|'+s, exp=!!ui.expSlots[expKey];
+  const ov=hasTimeOverlap(appts);
+  const lim=(!exp&&appts.length>3)?3:appts.length;
+  let h='<div class="apList">';
+  if(appts.length>=2||withBlock){
+    h+='<div class="apHead"><span>📅 '+(appts.length===1?'1 Termin':appts.length+' Termine')+(ov?' · <span class="apWarn" title="Uhrzeiten überschneiden sich">⚡ Überschneidung</span>':'')+'</span>'+
+      (appts.length>=2?'<button class="apAct" data-act="openSplitSlot" data-day="'+d+'" data-slot="'+s+'" title="Termine auf Tagesblöcke verteilen oder umsortieren">⇄ Aufteilen</button>':'')+'</div>';
+  }
+  for(let i=0;i<lim;i++)h+=apptRowHtml(appts[i]);
+  if(appts.length>3)h+='<button class="slotSubBtn" data-act="toggleApptExp" data-k="'+expKey+'">'+(exp?'▴ kompakt zeigen':'▾ +'+(appts.length-3)+' weitere Termine (alle '+appts.length+')')+'</button>';
+  return h+'</div>';
 }
 function slotCell(d,s,cur,tI,mobile){
-  const key=d+'|'+s;
-  const ap=getAppts()[key], bl=getBlocks()[key];
-  const stack=[].concat((ap&&ap.stack)||[],(bl&&bl.stack)||[]);
-  if(ap){
-    let h='<div class="slot">'+apptCard(ap);
-    stack.forEach(sa=>{h+=stackCard(sa)});
-    return h+'</div>';
+  const W=wk(), key=d+'|'+s;
+  const bl=getBlocks()[key];
+  const appts=apptsInSlot(W,d,s);
+  const cov=coveredByW(W,d,s);
+  if(bl&&appts.length){
+    return '<div class="slot" data-drop="w'+d+'s'+s+'">'+blockCard(bl,d,s)+apptClusterHtml(W,d,s,appts,true)+'</div>';
   }
   if(bl){
-    let h='<div class="slot" data-drop="w'+d+'s'+s+'">'+blockCard(bl,d,s);
-    stack.forEach(sa=>{h+=stackCard(sa)});
-    return h+'</div>';
+    return '<div class="slot" data-drop="w'+d+'s'+s+'">'+blockCard(bl,d,s)+'</div>';
   }
-  const cov=coveredByW(wk(),d,s);
-  if(cov)return '<div class="slot spancont">┃ belegt durch „'+esc(cov.title)+'“ ('+SLOTS[cov.slot].label+')</div>';
+  if(cov&&appts.length){
+    return '<div class="slot" data-drop="w'+d+'s'+s+'"><div class="spancont" style="min-height:0;padding:6px 9px">┃ „'+esc(cov.title)+'“ ('+SLOTS[cov.slot].label+')</div>'+apptClusterHtml(W,d,s,appts,true)+'</div>';
+  }
+  if(appts.length){
+    const body=appts.length===1?apptCard(appts[0]):apptClusterHtml(W,d,s,appts,false);
+    const canAddBlock=appts.every(a=>(a.span||1)===1);
+    return '<div class="slot" data-drop="w'+d+'s'+s+'">'+body+(canAddBlock?'<button class="slotSubBtn" data-act="openSlot" data-day="'+d+'" data-slot="'+s+'">＋ Block dazu</button>':'')+'</div>';
+  }
+  if(cov)return '<div class="slot spancont" data-drop="w'+d+'s'+s+'">┃ belegt durch „'+esc(cov.title)+'“ ('+SLOTS[cov.slot].label+')</div>';
   return '<div class="slot free" data-drop="w'+d+'s'+s+'" data-act="openSlot" data-day="'+d+'" data-slot="'+s+'" role="button"><span class="plus">＋</span><span class="fl">belegen</span></div>';
 }
 
 function apptCard(ap){
   const ar=ap.areaId?areaOfId(ap.areaId):null;
   const ty=ap.typeId?typeOf(ap.typeId):null;
-  return '<div class="card appt" data-act="openAppt" data-id="'+ap.id+'">'+
-    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · über '+ap.span+' Blöcke':'')+'</span>'+(ampDot(ap.ampel)||'<span class="noamp">＋ Ampel</span>')+'</div>'+
+  const mb=ap.multiTotal>1?' <span class="apBadge">↔ Tag '+ap.multiIdx+'/'+ap.multiTotal+'</span>':'';
+  return '<div class="card appt" draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'">'+
+    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · über '+ap.span+' Blöcke':'')+'</span>'+mb+(ampDot(ap.ampel)||'<span class="noamp">＋ Ampel</span>')+'</div>'+
     '<div class="bttl">'+esc(ap.title)+'</div>'+
     '<div class="bsrc">'+(ty?ty.emoji+' '+esc(ty.name):'')+(ar?(ty?' · ':'')+esc(ar.name):'')+(ap.fb?((ty||ar)?' · ':'')+FBL[ap.fb]:'')+'</div></div>';
 }
@@ -1714,7 +2070,8 @@ function sheetTypeAppt(d,s,tid,span){
 }
 
 function sheetSlot(d,s){
-  let h='<div class="shead"><h3>Block belegen</h3><div class="sub">'+esc(fmtDaySlot(d,s))+' — ein Block, normalerweise ein Schwerpunkt.</div></div>';
+  const curAps=apptsInSlot(wk(),d,s);
+  let h='<div class="shead"><h3>Block belegen</h3><div class="sub">'+esc(fmtDaySlot(d,s))+(curAps.length?' · 📅 '+curAps.length+' Termin'+(curAps.length===1?'':'e')+' im Slot — Block und Termine bleiben beide sichtbar.':' — ein Block, normalerweise ein Schwerpunkt.')+'</div></div>';
   h+='<div class="stack">'+S.types.map(t=>'<button class="typeB" data-act="fillType" data-day="'+d+'" data-slot="'+s+'" data-tid="'+t.id+'"><span class="bico">'+t.emoji+'</span><span style="flex:1">'+esc(t.name)+'</span>'+(t.ampel&&t.ampel!=='none'?ampDot(t.ampel):'')+'</button>').join('')+'</div>';
   h+='<label class="f">Dauer</label><select class="inp slim" id="f-span"><option value="1">1 Block</option><option value="2">2 Blöcke (z. B. Vormittag + Mittag)</option><option value="3">3 Blöcke — ganzer Tag (z. B. Workshop)</option></select>';
   h+='<div class="fh">Projekt</div>';
@@ -1725,9 +2082,10 @@ function sheetSlot(d,s){
   });
   const loose=S.projects.filter(p=>!p.areaId);
   if(loose.length)h+='<div class="chips">'+loose.map(p=>'<button class="chip" data-act="fillProject" data-day="'+d+'" data-slot="'+s+'" data-pid="'+p.id+'">'+(p.emoji||'📋')+' '+esc(p.name)+'</button>').join('')+'</div>';
-  h+='<div class="fh">Termin eintragen — auch für spätere Wochen &amp; Monate</div>';
+  h+='<div class="fh">Termin eintragen — auch mehrtägig oder für spätere Wochen</div>';
   h+='<input class="inp" id="ap-title" placeholder="Titel des Termins">';
-  h+='<div class="row2"><input class="inp slim" type="date" id="ap-date" value="'+iso(addDays(ui.anchor,d))+'" style="flex:1;min-width:145px"><input class="inp slim" type="time" id="ap-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="ap-t1" style="flex:1;min-width:100px"><select class="inp slim" id="f-span" style="flex:1;min-width:100px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke</option></select></div>';
+  h+='<div class="row2"><input class="inp slim" type="date" id="ap-date" value="'+iso(addDays(ui.anchor,d))+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="ap-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
+  h+='<div class="row2"><input class="inp slim" type="time" id="ap-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="ap-t1" style="flex:1;min-width:100px"><select class="inp slim" id="ap-span" style="flex:1;min-width:100px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke</option></select></div>';
   h+='<div class="row2"><select class="inp slim" id="ap-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="ap-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
   h+='<div class="sheetBtns"><button class="btn" data-act="addAppt" data-day="'+d+'" data-slot="'+s+'">Termin hinzufügen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
@@ -1752,7 +2110,13 @@ function sheetBlock(d,s,w){
   const p=bl.projectId?projOf(bl.projectId):null;
   const td=bl.todoId?findTodo(bl.todoId):null;
   const ty=bl.typeId?typeOf(bl.typeId):null;
+  const slotAps=apptsInSlot(W,d,s);
   let h='<div class="shead"><h3>'+esc(bl.kind==='projekt'&&p?p.name:bl.title)+'</h3><div class="sub">'+esc(fmtDaySlotW(W,d,s))+' · '+(bl.kind==='projekt'?'Projektblock'+(p?' — '+esc(p.name):''):(bl.kind==='task'?'Aufgabenblock':'Blocktyp: '+(ty?esc(ty.name):'frei definiert')))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+'</div></div>';
+  if(slotAps.length){
+    h+='<div class="note">📅 <b>Gleichzeitige Termine in diesem Slot ('+slotAps.length+'):</b> '+slotAps.map(a=>esc((a.time&&a.time!=='—'?a.time+' ':'')+a.title)).join(' · ')+
+      '<div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap"><button class="btn mini" data-act="splitBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">✂ Block teilen (Teil 2 im nächsten freien Slot)</button>'+
+      (slotAps.length>=2?'<button class="btn mini" data-act="openSplitSlot" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">⇄ Termine aufteilen</button>':'')+'</div></div>';
+  }
   if(bl.kind==='projekt'){
     h+='<label class="f">Erster Schritt — macht den Einstieg billiger (optional)</label><input class="inp" id="b-note" value="'+esc(bl.note||'')+'" placeholder="z. B. nur die Überschrift schreiben, erst Materialsammlung">';
   }else{
@@ -1784,21 +2148,18 @@ function sheetBlock(d,s,w){
 }
 
 function sheetAppt(id){
-  const aps=getAppts(); let ap=null, key=null;
-  for(const k in aps){
-    const o=aps[k];
-    if(o.id===id){ap=o; key=k; break}
-    if(o.stack)for(const sa of o.stack)if(sa.id===id){ap=sa; key=k; break}
-    if(ap)break;
-  }
-  if(!ap)return;
-  ui.ampCtx={t:'appt',d:ap.day,s:ap.slot,id:ap.id};
+  const f=findAppt(id);
+  if(!f)return;
+  const ap=f.ap, apW=f.w, apDate=iso(addDays(parseISO(apW),ap.day));
+  ui.ampCtx={t:'appt',d:ap.day,s:ap.slot,w:apW,id:ap.id};
   const ar=ap.areaId?areaOfId(ap.areaId):null;
-  let h='<div class="shead"><h3>Termin</h3><div class="sub">'+esc(fmtDate(addDays(ui.anchor,ap.day)))+' · '+esc(ap.time)+(ap.span>1?' · über '+ap.span+' Blöcke':'')+(ar?' · '+esc(ar.name):'')+'</div></div>';
+  const multiNote=ap.multiTotal>1?' · ↔ Mehrtägig ('+fmtDate(parseISO(ap.multiStart||apDate))+' – '+fmtDate(parseISO(ap.multiEnd||apDate))+', Tag '+ap.multiIdx+'/'+ap.multiTotal+')':'';
+  let h='<div class="shead"><h3>Termin</h3><div class="sub">'+esc(fmtDate(parseISO(apDate)))+' · '+esc(ap.time||'')+(ap.span>1?' · über '+ap.span+' Blöcke':'')+esc(multiNote)+(ar?' · '+esc(ar.name):'')+'</div></div>';
   h+='<label class="f">Titel</label><input class="inp" id="a-title" value="'+esc(ap.title||'')+'">';
   h+='<div class="fh">Ampel — wird beim Speichern übernommen</div>'+ampRowSel(ap.ampel||'none','appt');
-  const apc=parseClock(ap.time);
-  h+='<label class="f">Uhrzeit (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="a-t0" value="'+(apc?apc[0]:'')+'" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="a-t1" value="'+(apc&&apc[1]?apc[1]:'')+'" style="flex:1;min-width:110px"></div>';
+  const apc=(!/^(ab|bis)\s/i.test(ap.time||''))?parseClock(ap.time):null;
+  h+='<label class="f">Datum &amp; Tagesblock</label><div class="row2"><input class="inp slim" type="date" id="a-date" value="'+apDate+'" style="flex:1;min-width:140px"><select class="inp slim" id="a-slot" style="flex:1;min-width:155px">'+SLOTS.map((sl,si)=>'<option value="'+si+'"'+(ap.slot===si?' selected':'')+'>'+sl.ico+' '+esc(sl.label)+'</option>').join('')+'</select></div>';
+  h+='<label class="f">Uhrzeit (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2"><input class="inp slim" type="time" id="a-t0" value="'+(ap.t0||(apc?apc[0]:''))+'" style="flex:1;min-width:110px"><span class="pc">–</span><input class="inp slim" type="time" id="a-t1" value="'+(ap.t1||(apc&&apc[1]?apc[1]:''))+'" style="flex:1;min-width:110px"></div>';
   h+='<label class="f">Typ (optional — schlägt beim Speichern eine passende Ampel vor)</label><select class="inp" id="a-type"><option value="">— keiner —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(ap.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select>';
   const fb=ap.fb||null;
   h+='<div class="fh">Rückmeldung — optional, für den späteren Blick</div><div class="ampRow">'+
@@ -1806,9 +2167,26 @@ function sheetAppt(id){
     '<button class="ampB'+(fb==='bad'?' sel':'')+'" data-act="fbSet" data-v="bad">✖ hat nicht funktioniert</button>'+
     '<button class="ampB'+(fb==='none'?' sel':'')+'" data-act="fbSet" data-v="none">— nichts Besonderes</button></div>';
   h+='<input class="inp" id="a-fbnote" style="margin-top:8px" value="'+esc(ap.fbNote||'')+'" placeholder="Was war anders? Freitext — landet im Export (X-LR-FBNOTE).">';
-  h+='<div class="sheetBtns"><button class="btn primary" data-act="apptSave" data-id="'+ap.id+'">Speichern</button><button class="btn danger" data-act="apptDel" data-id="'+ap.id+'">🗑 Löschen</button></div>';
-  h+='<div class="sub" style="margin-top:10px">🔒 Kalenderspiegel: <code>VEVENT '+icsUid('appt',wk()+'-'+key)+'</code> · Kategorie LR-APPT'+(ap.ampel?' · LR-'+String(ap.ampel).toUpperCase():'')+' — Termine liegen ohnehin als CalDAV-Objekte im Server-Kalender; die Ampel ist ein lokales Overlay.</div>';
+  h+='<div class="sheetBtns"><button class="btn primary" data-act="apptSave" data-id="'+ap.id+'">Speichern</button><button class="btn" data-act="splitAppt" data-id="'+ap.id+'" title="'+(ap.multiTotal>1?'Diesen Tag als einzelnen Termin ablösen':'Termin in zwei Teile auf Folgeslot aufteilen')+'">✂ '+(ap.multiTotal>1?'Diesen Tag ablösen':'Termin teilen')+'</button><button class="btn danger" data-act="apptDel" data-id="'+ap.id+'">🗑 Löschen</button></div>';
+  h+='<div class="sub" style="margin-top:10px">🔒 Kalenderspiegel: <code>VEVENT '+(ap.remoteUid?esc(ap.remoteUid):icsUid('appt',apW+'-'+ap.day+'-'+ap.slot))+'</code>'+(ap.ampel?' · LR-'+String(ap.ampel).toUpperCase():'')+' — Termine liegen als CalDAV-Objekte im Server-Kalender; Löschen entfernt auch das Server-Objekt.</div>';
   h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
+  openSheet(h);
+}
+
+function sheetSplitSlot(d,s,w){
+  const W=w||wk();
+  const dayAps=[].concat(apptsInSlot(W,d,0),apptsInSlot(W,d,1),apptsInSlot(W,d,2));
+  let h='<div class="shead"><h3>⇄ Termine am '+esc(fmtDate(addDays(parseISO(W),d)))+' aufteilen</h3><div class="sub">Mehrere Termine lassen sich frei auf Vormittag, Mittag &amp; Nachmittag und Abend verteilen — die echten Uhrzeiten bleiben dabei erhalten.</div></div>';
+  if(!dayAps.length)h+='<div class="sub">Keine Termine an diesem Tag.</div>';
+  else{
+    h+='<div class="sheetBtns" style="margin:8px 0 12px"><button class="btn primary mini" data-act="autoSplitDay" data-day="'+d+'" data-w="'+W+'">✨ Automatisch auf Tagesblöcke verteilen</button></div>';
+    dayAps.forEach(ap=>{
+      h+='<div class="card inbItem" style="padding:9px 11px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><span class="btime">🕐 '+esc(ap.time||'—')+'</span> <b>'+esc(ap.title)+'</b></div>'+
+        '<div style="display:flex;gap:4px;flex-wrap:wrap">'+SLOTS.map((sl,si)=>'<button class="btn mini'+(ap.slot===si?' primary':'')+'" data-act="moveApptSlot" data-id="'+ap.id+'" data-slot="'+si+'" data-day="'+d+'" data-w="'+W+'">'+sl.ico+' '+esc(sl.label.split(' ')[0])+'</button>').join('')+
+        '<button class="btn mini" data-act="openAppt" data-id="'+ap.id+'" title="Termin bearbeiten / teilen">✎</button></div></div></div>';
+    });
+  }
+  h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Fertig</button></div>';
   openSheet(h);
 }
 
@@ -1821,17 +2199,18 @@ function slotPickerSheet(title){
   ui.pickerTitle=title;
   const pw=ui.pickerWeek;
   const realW=iso(mondayOf(new Date()));
-  let h='<div class="shead"><h3>'+esc(title)+'</h3><div class="sub">Freie Blöcke — Woche wechseln mit ‹ ›, auch in anderen Wochen und Monaten.</div></div>';
+  let h='<div class="shead"><h3>'+esc(title)+'</h3><div class="sub">Freie Blöcke — Woche wechseln mit ‹ ›, auch in anderen Wochen und Monaten. Slots mit kurzen Terminen können mitbelegt werden.</div></div>';
   h+='<div class="daychips" style="margin-bottom:8px"><button class="chip" data-act="pickerPrev">‹ eine Woche zurück</button><span class="chip" style="cursor:default">KW '+isoWeek(parseISO(pw))+' · '+fmtDate(parseISO(pw))+' – '+fmtDate(addDays(parseISO(pw),6))+'</span><button class="chip" data-act="pickerNext">eine Woche vor ›</button></div>';
   for(let d=0;d<7;d++){
     const dt=addDays(parseISO(pw),d);
     if(pw===realW&&d<dayIdx(new Date()))continue;
     h+='<div class="daySec"><div class="daySecT">'+fmtDate(dt)+(iso(dt)===todayISO()?' · heute':'')+'</div>';
     for(let s=0;s<3;s++){
-      const bl=blocksFor(pw)[d+'|'+s], ap=apsFor(pw)[d+'|'+s];
+      const bl=blocksFor(pw)[d+'|'+s], aps=apptsInSlot(pw,d,s), cov=coveredByW(pw,d,s);
       h+='<div class="pickRow"><span class="lbl">'+SLOTS[s].ico+' '+SLOTS[s].label+'</span>';
-      if(ap)h+='<span class="st">Termin: '+esc(ap.title)+'</span>';
-      else if(bl)h+='<span class="st">Block: '+esc(bl.title||'')+'</span>';
+      if(bl)h+='<span class="st">Block: '+esc(bl.title||'')+'</span>';
+      else if(cov)h+='<span class="st">belegt durch „'+esc(cov.title)+'“</span>';
+      else if(aps.length)h+='<span class="st">📅 '+aps.length+' Termin'+(aps.length===1?' ('+esc(aps[0].title)+')':'e')+'</span><button class="btn mini" data-act="pickSlot" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">→ dazu einplanen</button>';
       else h+='<button class="btn mini" data-act="pickSlot" data-week="'+pw+'" data-day="'+d+'" data-slot="'+s+'">→ hier einplanen</button>';
       h+='</div>';
     }
@@ -1894,9 +2273,10 @@ function sheetAssign(){
   S.unmapped.forEach(it=>{
     const pc=parseClock(it.time);
     const sug=pc?mapSlotForTime(pc[0],pc[1]):null;
-    h+='<div class="card inbItem"><div class="inbKind">📅 '+esc(fmtDate(parseISO(it.date)))+(it.time?' · '+esc(it.time):' · ganztägig ohne Uhrzeit')+'</div><div class="inbText">'+esc(it.title)+'</div>'+
-      '<div class="inbActs">'+[0,1,2].map(s=>'<button class="btn mini'+(sug===s?' primary':'')+'" data-act="assign" data-uid="'+it.uid+'" data-v="'+s+'" title="'+esc(SLOTS[s].label+' '+slotWin(s).s+'–'+slotWin(s).e)+'">'+SLOTS[s].ico+' '+SLOTS[s].label.split(' ')[0]+'</button>').join('')+
-      '<button class="btn mini" data-act="assign" data-uid="'+it.uid+'" data-v="all">📅 ganzer Tag</button><button class="btn mini ghost" data-act="assign" data-uid="'+it.uid+'" data-v="skip">ignorieren</button></div></div>';
+    const uk=esc(it.mapKey||it.uid);
+    h+='<div class="card inbItem"><div class="inbKind">📅 '+esc(fmtDate(parseISO(it.date)))+(it.multiTotal>1?' · Tag '+it.multiIdx+'/'+it.multiTotal:'')+(it.time?' · '+esc(it.time):' · ganztägig ohne Uhrzeit')+'</div><div class="inbText">'+esc(it.title)+'</div>'+
+      '<div class="inbActs">'+[0,1,2].map(s=>'<button class="btn mini'+(sug===s?' primary':'')+'" data-act="assign" data-uid="'+uk+'" data-v="'+s+'" title="'+esc(SLOTS[s].label+' '+slotWin(s).s+'–'+slotWin(s).e)+'">'+SLOTS[s].ico+' '+SLOTS[s].label.split(' ')[0]+'</button>').join('')+
+      '<button class="btn mini" data-act="assign" data-uid="'+uk+'" data-v="all">📅 ganzer Tag</button><button class="btn mini ghost" data-act="assign" data-uid="'+uk+'" data-v="skip">ignorieren</button></div></div>';
   });
   h+='<div class="sub" style="margin-top:6px">Ignorierte Einträge werden auch bei künftigen Syncs nicht mehr vorgeschlagen. Zeitliche Grenzfälle (z. B. 21:30–23:30) kannst du nach der Zuordnung im Termin frei editieren.</div>';
   h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
@@ -1904,11 +2284,11 @@ function sheetAssign(){
 }
 
 function sheetNewAppt(){
-  let h='<div class="shead"><h3>Termin eintragen</h3><div class="sub">Für jeden beliebigen Tag — auch Monate im Voraus. Er landet automatisch im passenden Block der richtigen Woche.</div></div>';
-  h+='<label class="f">Titel</label><input class="inp" id="na-title" placeholder="z. B. Workshop, Zahnarzt, Treffen mit K.">';
-  h+='<div class="row2"><input class="inp slim" type="date" id="na-date" value="'+todayISO()+'" style="flex:1;min-width:145px"><input class="inp slim" type="time" id="na-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="na-t1" style="flex:1;min-width:100px"></div>';
-  h+='<div class="row2"><select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select><select class="inp slim" id="na-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select></div>';
-  h+='<label class="f">Typ (optional)</label><select class="inp" id="na-type"><option value="">— keiner —</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select>';
+  let h='<div class="shead"><h3>Termin eintragen</h3><div class="sub">Für jeden beliebigen Tag oder Zeitraum — auch mehrtägig oder Monate im Voraus. Er landet automatisch im passenden Block der jeweiligen Woche.</div></div>';
+  h+='<label class="f">Titel</label><input class="inp" id="na-title" placeholder="z. B. Workshop, Zahnarzt, Konferenz, Urlaub">';
+  h+='<div class="row2"><input class="inp slim" type="date" id="na-date" value="'+todayISO()+'" style="flex:1;min-width:135px" title="Startdatum"><span class="pc">bis</span><input class="inp slim" type="date" id="na-end" value="" style="flex:1;min-width:135px" title="Optional: Enddatum bei mehrtägigen Terminen"></div>';
+  h+='<div class="row2"><input class="inp slim" type="time" id="na-t0" style="flex:1;min-width:100px"><span class="pc">–</span><input class="inp slim" type="time" id="na-t1" style="flex:1;min-width:100px"><select class="inp slim" id="na-span" style="flex:1;min-width:110px"><option value="1">1 Block</option><option value="2">2 Blöcke</option><option value="3">3 Blöcke — ganzer Tag</option></select></div>';
+  h+='<div class="row2"><select class="inp slim" id="na-ampel" style="flex:1;min-width:150px"><option value="">Ampel: keine</option>'+AMPKEYS.map(v=>'<option value="'+v+'">'+AMP[v].label+'</option>').join('')+'</select><select class="inp slim" id="na-type" style="flex:1;min-width:150px"><option value="">Typ: keiner</option>'+S.types.map(t=>'<option value="'+t.id+'">'+t.emoji+' '+esc(t.name)+'</option>').join('')+'</select></div>';
   h+='<div class="sheetBtns"><button class="btn primary" data-act="newApptSave">Eintragen</button><button class="btn ghost" data-act="closeModal">Abbrechen</button></div>';
   openSheet(h);
 }
@@ -2069,7 +2449,7 @@ const ACT={
     const d=+a.day, s=+a.slot;
     const want=readSpan(), avail=3-s;
     if(want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
-    if(!spanRoomW(wk(),d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
+    if(!blockSpanRoomW(wk(),d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
     if(t.asAppt){sheetTypeAppt(d,s,t.id,want); return}
     setBlockW(wk(),d,s,{id:uid(),kind:'typ',typeId:t.id,title:t.name,ampel:t.ampel==='none'?null:t.ampel,note:'',done:false,span:want>1?want:1});
     closeModal(); render(); toast('Block belegt: '+t.name+(want>1?' (über '+want+' Blöcke)':''));
@@ -2083,7 +2463,7 @@ const ACT={
     const sp=Math.max(1,Math.min(3,parseInt((document.getElementById('ta-span')||{}).value,10)||1));
     const avail=3-s;
     if(sp>avail){toast('Hier sind nur '+avail+' Blöcke frei — Dauer anpassen.'); return}
-    if(!spanRoomW(wk(),d,s,sp)){toast('Nicht genug freie Folgeböcke für diese Dauer.'); return}
+    if(!blockSpanRoomW(wk(),d,s,sp)){toast('Nicht genug freie Folgeböcke für diese Dauer.'); return}
     const bl={id:uid(),kind:'typ',typeId:t.id,title:title,ampel:t.ampel==='none'?null:t.ampel,note:'',done:false,span:sp>1?sp:1};
     if(t0){bl.t0=t0; if(t1)bl.t1=t1}
     setBlockW(wk(),d,s,bl);
@@ -2106,7 +2486,7 @@ const ACT={
     const theme=document.getElementById('f-theme').value;
     const want=readSpan(), avail=3-s;
     if(want>avail){toast('Hier ist nur '+(avail===1?'1 Block':'sind '+avail+' Blöcke')+' frei — Dauer anpassen oder anderen Start wählen.'); return}
-    if(!spanRoomW(wk(),d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
+    if(!blockSpanRoomW(wk(),d,s,want)){toast('Nicht genug freie Folgeböcke — Dauer anpassen oder anderen Tag wählen.'); return}
     const bl={id:uid(),kind:'projekt',projectId:p.id,todoId:tid||null,title:p.name,ampel:ui.tmpAmpel||'gelb',note:theme,done:false,span:want>1?want:1};
     if(tid){const f=findTodo(tid); if(f)f.t.planned={wk:wk(),day:d,slot:s}}
     setBlockW(wk(),d,s,bl); closeModal(); render();
@@ -2122,20 +2502,32 @@ const ACT={
     const amp=document.getElementById('ap-ampel').value||null;
     const tyEl=document.getElementById('ap-type');
     const ty=tyEl?tyEl.value||null:null;
-    const sp=readSpan();
+    const spEl=document.getElementById('ap-span')||document.getElementById('f-span');
+    const sp=spEl?Math.max(1,Math.min(3,parseInt(spEl.value,10)||1)):1;
     const dIn=(document.getElementById('ap-date')||{}).value||iso(addDays(ui.anchor,d));
+    const dEnd=(document.getElementById('ap-end')||{}).value||'';
+    if(dEnd&&dEnd>dIn){
+      const tot=Math.min(90,Math.round((parseISO(dEnd)-parseISO(dIn))/86400000)+1);
+      const mid=uid();
+      for(let i=0;i<tot;i++){
+        const dc=iso(addDays(parseISO(dIn),i)), cw=iso(mondayOf(parseISO(dc))), cd=dayIdx(parseISO(dc));
+        const tStr=i===0?(t0?'ab '+t0:'ganztägig'):(i===tot-1?(t1?'bis '+t1:'ganztägig'):'ganztägig');
+        const sl=i===0?(t0?mapSlotForTime(t0,null):s):(i===tot-1&&t1?mapSlotForTime(null,t1):0);
+        placeApptInSlot(cw,cd,Math.max(0,sl),{id:uid(),day:cd,slot:Math.max(0,sl),title:title,time:tStr,ampel:amp,src:'Manuell',areaId:null,span:1,typeId:ty,multiId:mid,multiStart:dIn,multiEnd:dEnd,multiIdx:i+1,multiTotal:tot});
+      }
+      save(); closeModal(); render(); toast('Mehrtägiger Termin ('+tot+' Tage) eingetragen.'); return;
+    }
     const w=iso(mondayOf(parseISO(dIn))), dd=dayIdx(parseISO(dIn));
     let s0=s;
     if(w!==wk()||dd!==d){
-      const f=findFreeSlot(w,dd,sp);
-      if(f<0){toast('An dem Tag ist kein passender freier Block — Dauer prüfen.'); return}
-      s0=f;
-    }else{
-      if(sp>3-s0){toast('Ab hier sind nur '+(3-s0)+' Blöcke frei — Dauer anpassen.'); return}
-      if(!spanRoomW(w,dd,s0,sp)){toast('Nicht genug freie Folgeböcke für diese Dauer.'); return}
+      if(t0){const ms=mapSlotForTime(t0,t1||null); s0=ms>=0?ms:0}
+      else{const f=findFreeSlot(w,dd,sp); s0=f>=0?f:0}
+    }else if(sp>3-s0){
+      toast('Ab hier sind nur '+(3-s0)+' Blöcke frei — Dauer anpassen.'); return;
     }
-    apsFor(w)[dd+'|'+s0]={id:uid(),day:dd,slot:s0,title:title,time:time,ampel:amp,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:ty};
-    if(t0){const apx=apsFor(w)[dd+'|'+s0]; apx.t0=t0; if(t1)apx.t1=t1}
+    const apN={id:uid(),day:dd,slot:s0,title:title,time:time,ampel:amp,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:ty};
+    if(t0){apN.t0=t0; if(t1)apN.t1=t1}
+    placeApptInSlot(w,dd,s0,apN);
     save(); closeModal(); render(); toast('Termin für '+fmtDate(parseISO(dIn))+' eingetragen'+(sp>1?' (über '+sp+' Blöcke)':'')+'.');
   },
   newAppt(){sheetNewAppt()},
@@ -2144,22 +2536,112 @@ const ACT={
     const dIn=document.getElementById('na-date').value;
     if(!title){toast('Titel fehlt.'); return}
     if(!dIn){toast('Datum fehlt.'); return}
+    const dEnd=(document.getElementById('na-end')||{}).value||'';
     const t0=(document.getElementById('na-t0')||{}).value||'';
     const t1=(document.getElementById('na-t1')||{}).value||'';
     const time=apTimeStr(t0,t1);
     const amp=document.getElementById('na-ampel').value||null;
     const ty=document.getElementById('na-type').value||null;
     const sp=Math.max(1,Math.min(3,parseInt(document.getElementById('na-span').value,10)||1));
+    if(dEnd&&dEnd>dIn){
+      const tot=Math.min(90,Math.round((parseISO(dEnd)-parseISO(dIn))/86400000)+1);
+      const mid=uid();
+      for(let i=0;i<tot;i++){
+        const dc=iso(addDays(parseISO(dIn),i)), cw=iso(mondayOf(parseISO(dc))), cd=dayIdx(parseISO(dc));
+        const tStr=i===0?(t0?'ab '+t0:'ganztägig'):(i===tot-1?(t1?'bis '+t1:'ganztägig'):'ganztägig');
+        const sl=i===0?(t0?mapSlotForTime(t0,null):0):(i===tot-1&&t1?mapSlotForTime(null,t1):0);
+        placeApptInSlot(cw,cd,Math.max(0,sl),{id:uid(),day:cd,slot:Math.max(0,sl),title:title,time:tStr,ampel:amp,src:'Manuell',areaId:null,span:1,typeId:ty,multiId:mid,multiStart:dIn,multiEnd:dEnd,multiIdx:i+1,multiTotal:tot});
+      }
+      save(); closeModal(); render();
+      toast('Mehrtägiger Termin ('+tot+' Tage) eingetragen.'); return;
+    }
     const w=iso(mondayOf(parseISO(dIn))), dd=dayIdx(parseISO(dIn));
-    const s0=findFreeSlot(w,dd,sp);
-    if(s0<0){toast('An dem Tag ist kein passender freier Block — Dauer prüfen.'); return}
+    let s0=t0?mapSlotForTime(t0,t1||null):-1;
+    if(s0<0){const f=findFreeSlot(w,dd,sp); s0=f>=0?f:0}
+    if(sp>3-s0)s0=Math.max(0,3-sp);
     const apN={id:uid(),day:dd,slot:s0,title:title,time:time,ampel:amp,src:'Manuell',areaId:null,span:sp>1?sp:1,typeId:ty};
     if(t0){apN.t0=t0; if(t1)apN.t1=t1}
-    apsFor(w)[dd+'|'+s0]=apN;
+    placeApptInSlot(w,dd,s0,apN);
     save(); closeModal(); render();
     toast('Termin für '+fmtDate(parseISO(dIn))+' eingetragen'+(w!==wk()?' — liegt in einer anderen Woche':'')+'.');
   },
   agRange(a){ui.agRange=a.r; render()},
+  toggleApptExp(a){ui.expSlots[a.k]=!ui.expSlots[a.k]; render()},
+  openSplitSlot(a){sheetSplitSlot(+a.day,+a.slot,a.w||wk())},
+  moveApptSlot(a){
+    const W=a.w||wk(), d=+a.day, ts=+a.slot;
+    moveApptTo(a.id,W,d,ts,true);
+    sheetSplitSlot(d,ts,W);
+  },
+  autoSplitDay(a){
+    const W=a.w||wk(), d=+a.day;
+    const all=[].concat(apptsInSlot(W,d,0),apptsInSlot(W,d,1),apptsInSlot(W,d,2));
+    if(all.length<2)return;
+    let moved=0;
+    all.forEach(ap=>{
+      const r=apRangeMin(ap);
+      let ns=-1;
+      if(r&&!(r[0]===0&&r[1]===1440)){
+        const sh=pad(Math.floor(r[0]/60))+':'+pad(r[0]%60), eh=pad(Math.floor(r[1]/60))+':'+pad(r[1]%60);
+        ns=mapSlotForTime(sh,eh);
+      }
+      if(ns>=0&&ns!==ap.slot){moveApptTo(ap.id,W,d,ns,true); moved++}
+    });
+    /* Liegen trotz Zeit-Zuordnung weiterhin alle im selben Slot (z. B. 6 Vormittags-Termine), gleichmäßig auf 0/1/2 verteilen */
+    if(!moved){
+      const sorted=all.slice().sort((x,y)=>apSortMin(x)-apSortMin(y));
+      sorted.forEach((ap,idx)=>{
+        const ns=Math.min(2,Math.floor(idx*3/sorted.length));
+        if(ns!==ap.slot){moveApptTo(ap.id,W,d,ns,true); moved++}
+      });
+    }
+    sheetSplitSlot(d,0,W);
+    toast(moved?(moved+' Termin'+(moved===1?'':'e')+' auf Tagesblöcke verteilt.'):'Termine sind bereits auf die Tagesblöcke verteilt.');
+  },
+  splitAppt(a){
+    const f=findAppt(a.id); if(!f)return;
+    const ap=f.ap, apW=f.w;
+    if(ap.multiTotal>1){
+      if(ap.mapKey&&S.mapped[ap.mapKey])delete S.mapped[ap.mapKey];
+      delete ap.multiStart; delete ap.multiEnd; delete ap.multiIdx; delete ap.multiTotal; delete ap.multiId; delete ap.mapKey;
+      delete ap.remoteUid;
+      save(); sheetAppt(ap.id); render();
+      toast('Dieser Tag wurde als eigenständiger Termin abgelöst.');
+      return;
+    }
+    const base=String(ap.title||'Termin').replace(/\s*\(\d+\/\d+\)\s*$/,'');
+    const r=apRangeMin(ap);
+    let t1a=ap.t0||'', t1b=ap.t1||'', t2a='', t2b='', nextSlot=Math.min(2,(ap.slot||0)+1);
+    if(r&&r[1]-r[0]>=30&&!(r[0]===0&&r[1]===1440)){
+      const mid=Math.round((r[0]+r[1])/2);
+      const fmtM=m=>pad(Math.floor(m/60))+':'+pad(m%60);
+      t1a=fmtM(r[0]); t1b=fmtM(mid); t2a=fmtM(mid); t2b=fmtM(r[1]);
+      const ms=mapSlotForTime(t2a,t2b);
+      if(ms>ap.slot)nextSlot=ms;
+    }
+    ap.title=base+' (1/2)'; ap.span=1;
+    if(t1a){ap.t0=t1a; ap.t1=t1b||null; ap.time=apTimeStr(ap.t0,ap.t1)}
+    const ap2={id:uid(),day:ap.day,slot:nextSlot,title:base+' (2/2)',time:t2a?apTimeStr(t2a,t2b):(ap.time||'—'),ampel:ap.ampel||null,src:'Manuell',areaId:ap.areaId||null,span:1,typeId:ap.typeId||null};
+    if(t2a){ap2.t0=t2a; if(t2b)ap2.t1=t2b}
+    placeApptInSlot(apW,ap.day,nextSlot,ap2);
+    if(ap.remoteUid)wdPutRemote(ap,iso(addDays(parseISO(apW),ap.day)));
+    save(); closeModal(); render();
+    toast('Termin geteilt: Teil 1/2 ('+SLOTS[ap.slot].label+') & Teil 2/2 ('+SLOTS[nextSlot].label+').');
+  },
+  splitBlock(a){
+    const W=a.w||wk(), d=+a.day, s=+a.slot;
+    const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
+    let td=d, ts=-1;
+    for(let k=s+1;k<3;k++){if(!blockOccW(W,d,k)){ts=k; break}}
+    if(ts<0){
+      for(let dd=d+1;dd<7&&ts<0;dd++)for(let k=0;k<3;k++)if(!blockOccW(W,dd,k)){td=dd; ts=k; break}
+    }
+    if(ts<0){toast('In dieser Woche ist kein freier Block für Teil 2 verfügbar.'); return}
+    const base=String(bl.title||'Block').replace(/\s*\(Teil \d+\)\s*$/,'');
+    blocksFor(W)[td+'|'+ts]={id:uid(),kind:bl.kind==='projekt'?'projekt':'typ',projectId:bl.projectId||null,typeId:bl.typeId||null,title:base+' (Teil 2)',ampel:bl.ampel||null,note:bl.note||'',done:false,span:1};
+    save(); closeModal(); render();
+    toast('Teil 2 angelegt: '+fmtDaySlotW(W,td,ts));
+  },
   openBlock(a){sheetBlock(+a.day,+a.slot)},
   openBlockW(a){sheetBlock(+a.day,+a.slot,a.w)},
   openAppt(a){sheetAppt(a.id)},
@@ -2191,18 +2673,18 @@ const ACT={
     save(); closeModal(); render(); toast('Block gespeichert.');
   },
   apptSave(a){
-    let ap=null, apW=null;
-    for(const w in S.appts){const aps=S.appts[w];
-      for(const k in aps){const o=aps[k];
-        if(o.id===a.id){ap=o; apW=w; break}
-        if(o.stack)for(const sa of o.stack)if(sa.id===a.id){ap=sa; apW=w; break}
-        if(ap)break;
-      }
-      if(ap)break;
-    }
-    if(!ap)return;
+    const f=findAppt(a.id);
+    if(!f)return;
+    const ap=f.ap; let apW=f.w;
     const tl=document.getElementById('a-title');
-    if(tl&&tl.value.trim())ap.title=tl.value.trim();
+    if(tl&&tl.value.trim()){
+      const newTitle=tl.value.trim();
+      if(ap.multiTotal>1&&(ap.remoteUid||ap.multiId)){
+        const gk=ap.remoteUid||ap.multiId;
+        allApptItems().forEach(it=>{if(it.ap&&(it.ap.remoteUid===gk||it.ap.multiId===gk))it.ap.title=newTitle});
+      }
+      ap.title=newTitle;
+    }
     if(ui.ampSel!=null&&ui.ampSelK==='appt'){
       ap.ampel=ui.ampSel==='none'?null:ui.ampSel;
       if(ui.ampSel==='rot'&&apW===wk()){const dd=ap.day, ss=ap.slot; setTimeout(()=>offerRegen(dd,ss),50)}
@@ -2215,6 +2697,16 @@ const ACT={
     if(ts){ap.typeId=ts.value||null; if(ap.typeId&&!ap.ampel){const ty=typeOf(ap.typeId); if(ty&&ty.ampel&&ty.ampel!=='none')ap.ampel=ty.ampel}}
     const fn=document.getElementById('a-fbnote');
     if(fn)ap.fbNote=fn.value.trim();
+    const dEl=document.getElementById('a-date'), sEl=document.getElementById('a-slot');
+    const wantDate=(dEl&&dEl.value)?dEl.value:iso(addDays(parseISO(apW),ap.day));
+    const wantSlot=(sEl&&sEl.value!==undefined&&sEl.value!=='')?+sEl.value:ap.slot;
+    const wantW=iso(mondayOf(parseISO(wantDate))), wantDay=dayIdx(parseISO(wantDate));
+    if(wantW!==apW||wantDay!==ap.day||wantSlot!==ap.slot){
+      detachAppt(f);
+      placeApptInSlot(wantW,wantDay,wantSlot,ap);
+      if(ap.remoteUid)S.mapped[ap.mapKey||ap.remoteUid]={w:wantW,day:wantDay,slot:wantSlot};
+      apW=wantW;
+    }
     save(); closeModal(); render();
     if(ap.remoteUid){wdPutRemote(ap,iso(addDays(parseISO(apW),ap.day)))}
     toast('Termin gespeichert.');
@@ -2227,12 +2719,10 @@ const ACT={
       save(); sheetBlock(c.d,c.s,c.w);
       toast(bl.fb?'Rückmeldung: '+FBL[bl.fb]:'Rückmeldung entfernt.');
     }else if(c.t==='appt'){
-      let ap=null;
-      for(const w in S.appts){const aps=S.appts[w]; for(const k in aps){if(aps[k].id===c.id){ap=aps[k]; break}} if(ap)break}
-      if(!ap)return;
-      ap.fb=ap.fb===a.v?null:a.v;
+      const f=findAppt(c.id); if(!f)return;
+      f.ap.fb=f.ap.fb===a.v?null:a.v;
       save(); sheetAppt(c.id);
-      toast(ap.fb?'Rückmeldung: '+FBL[ap.fb]:'Rückmeldung entfernt.');
+      toast(f.ap.fb?'Rückmeldung: '+FBL[f.ap.fb]:'Rückmeldung entfernt.');
     }
   },
   blockDone(a){
@@ -2249,6 +2739,7 @@ const ACT={
     const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
     if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned=null}
     if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned=null}
+    if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,d,s,sa)); delete bl.stack}
     const uid=icsUid('block',W+'-'+d+'-'+s).split('@')[0];
     delete S.synced[uid];
     tombMark(uid);
@@ -2261,52 +2752,52 @@ const ACT={
     ui.pickerWeek=a.w||wk();
     slotPickerSheet('Block verschieben — auch in andere Wochen');
   },
-  apptDel(a){
-    let ap=null, apW=null, apKey=null, stackIdx=-1;
-    for(const w in S.appts){const aps=S.appts[w];
-      for(const k in aps){const o=aps[k];
-        if(o.id===a.id){ap=o; apW=w; apKey=k; break}
-        if(o.stack){const si=o.stack.findIndex(x=>x.id===a.id); if(si>=0){ap=o.stack[si]; apW=w; apKey=k; stackIdx=si; break}}
-      }
-      if(ap)break;
-    }
-    if(!ap)return;
-    const c=wdCfg();
+  async apptDel(a){
+    const f=findAppt(a.id);
+    if(!f)return;
+    const ap=f.ap, apW=f.w;
+    let delP=null;
     if(ap.remoteUid){
-      if(c.cal){try{wdFetch(c.cal+encodeURIComponent(ap.remoteUid)+'.ics',{method:'DELETE'}).catch(()=>{})}catch(e){}}
-      delete S.mapped[ap.remoteUid];
+      const ruid=ap.remoteUid;
+      removeApptsByRemoteUid(ruid);
+      tombMark(ruid);
+      delP=wdDeleteRemote(ruid);
+    }else if(ap.multiId){
+      const mid=ap.multiId;
+      const sibs=allApptItems().filter(it=>it.ap&&it.ap.multiId===mid);
+      sibs.forEach(it=>{
+        const sf=findAppt(it.ap.id); if(!sf)return;
+        const suid=(sf.stackIdx>=0?icsUid('appt',sf.ap.id):icsUid('appt',sf.w+'-'+sf.ap.day+'-'+sf.ap.slot)).split('@')[0];
+        delete S.synced[suid]; tombMark(suid); wdDeleteUid(suid);
+        detachAppt(sf);
+      });
     }else{
-      const uid=icsUid('appt',apW+'-'+ap.day+'-'+ap.slot).split('@')[0];
+      const uid=(f.stackIdx>=0?icsUid('appt',ap.id):icsUid('appt',apW+'-'+ap.day+'-'+ap.slot)).split('@')[0];
       delete S.synced[uid];
       tombMark(uid);
       wdDeleteUid(uid);
+      detachAppt(f);
     }
-    if(ap.remoteUid)tombMark(ap.remoteUid);
-    const bucket=apsFor(apW)[apKey];
-    if(stackIdx>=0&&bucket&&bucket.stack)bucket.stack.splice(stackIdx,1);
-    else delete apsFor(apW)[apKey];
     save(); closeModal(); render();
     toast('Termin gelöscht'+(ap.remoteUid?' — auch im Kalender entfernt.':' — beim nächsten Sync auch im Kalender entfernt.'));
-  },
-  moveBlock(a){
-    ui.pickCtx={type:'move',from:{day:+a.day,slot:+a.slot}};
-    ui.pickerWeek=wk();
-    slotPickerSheet('Block verschieben — auch in andere Wochen');
+    if(delP)try{await delP}catch(e){}
   },
   pickSlot(a){
     const c=ui.pickCtx||{};
     const W=a.week||c.week||wk();
     const d=+a.day, s=+a.slot;
-    if(slotOccW(W,d,s)){toast('Dieser Block ist belegt.'); return}
+    if(blockOccW(W,d,s)){toast('Dieser Block ist belegt.'); return}
     if(c.type==='move'){
       const key=c.from.day+'|'+c.from.slot;
       const srcW=c.from.w||wk();
       const bl=blocksFor(srcW)[key]; if(!bl)return;
       const spn=bl.span||1;
-      if(!spanRoomW(W,d,s,spn)){toast('Ziel hat nicht genug Platz für '+spn+' Blöcke.'); return}
+      if(!blockSpanRoomW(W,d,s,spn,srcW===W?key:null)){toast('Ziel hat nicht genug Platz für '+spn+' Blöcke.'); return}
+      if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(srcW,c.from.day,c.from.slot,sa)); delete bl.stack}
       delete blocksFor(srcW)[key];
       blocksFor(W)[d+'|'+s]=bl;
       if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:d,slot:s}}
+      if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:d,slot:s}}
       toast('Verschoben nach '+fmtDaySlotW(W,d,s));
     }else if(c.type==='todo'){
       const f=findTodo(c.id); if(!f)return;
@@ -2756,7 +3247,8 @@ const ACT={
       reconcileDeleted([txt,txt2]);
       let added=0;
       for(const f of classifyRemote(txt)){
-        if(!S.unmapped.some(x=>x.uid===f.uid)){S.unmapped.push(f); added++}
+        const fk=f.mapKey||f.uid;
+        if(!S.unmapped.some(x=>(x.mapKey||x.uid)===fk)){S.unmapped.push(f); added++}
       }
       saveQuiet(); render();
       ui.wdMsg='✔ Gelesen: '+res.blocks+' Blöcke, '+res.appts+' Termine, '+res.mits+' MITs, '+res.phases+' Phasen'+(tr.updated?', '+tr.updated+' To-dos aktualisiert':'')+(tr.imported?', '+tr.imported+' Aufgaben aus VTODO':'')+(cp.adopted?', Kapsel übernommen (Motto/Kiste/Struktur'+(cp.sub?' aus theo-kapsel':'')+')':'')+(added?' · 📥 '+added+' fremde Einträge warten auf Zuordnung':'')+ '.';
@@ -2769,7 +3261,8 @@ const ACT={
   openAssign(){sheetAssign()},
   syncNow(){syncCycle().then(function(){render(); toast('Sync ausgeführt — Details in der Live-Sync-Zeile.')})},
   assign(a){
-    const it=S.unmapped.find(x=>x.uid===a.uid); if(!it)return;
+    const it=S.unmapped.find(x=>(x.mapKey||x.uid)===a.uid||x.uid===a.uid); if(!it)return;
+    const mk=it.mapKey||it.uid;
     if(a.v==='skip'){S.ignored[it.uid]=1; toast('Eintrag ignoriert — wird dauerhaft übersprungen.')}
     else{
       const w=iso(mondayOf(parseISO(it.date))), d=dayIdx(parseISO(it.date));
@@ -2783,19 +3276,22 @@ const ACT={
         }
       }
       const ap={id:uid(),day:d,slot:s0,title:it.title,time:it.time||'—',ampel:null,src:'',areaId:null,span:a.v==='all'?3:1,typeId:null,remoteUid:it.uid};
+      if(it.mapKey&&it.mapKey!==it.uid)ap.mapKey=it.mapKey;
+      if(it.multiTotal>1){ap.multiStart=it.multiStart; ap.multiEnd=it.multiEnd; ap.multiIdx=it.multiIdx; ap.multiTotal=it.multiTotal}
       const key=d+'|'+s0;
       const occ=apsFor(w)[key]||blocksFor(w)[key];
-      if(occ){
-        occ.stack=occ.stack||[]; occ.stack.push(ap);
+      if(apsFor(w)[key]){
+        placeApptInSlot(w,d,s0,ap);
         toast('Zugeordnet — teilt sich den Block mit „'+(occ.title||'Eintrag')+'“. Die echte Uhrzeit bleibt sichtbar, im Kalender wird die Zuordnung markiert.');
       }else{
         apsFor(w)[key]=ap;
-        toast('Zugeordnet: '+fmtDate(parseISO(it.date))+' · '+SLOTS[s0].label+' — im Kalender wird die Zuordnung markiert (Zeiten unverändert).');
+        if(occ)toast('Zugeordnet — läuft parallel zum Block „'+(occ.title||'Block')+'“. Die echte Uhrzeit bleibt sichtbar.');
+        else toast('Zugeordnet: '+fmtDate(parseISO(it.date))+' · '+SLOTS[s0].label+' — im Kalender wird die Zuordnung markiert (Zeiten unverändert).');
       }
       wdAssignWriteback(ap,tag,false);
-      S.mapped[it.uid]={w:w,day:d,slot:s0};
+      S.mapped[mk]={w:w,day:d,slot:s0};
     }
-    S.unmapped=S.unmapped.filter(x=>x.uid!==it.uid);
+    S.unmapped=S.unmapped.filter(x=>a.v==='skip'?x.uid!==it.uid:(x.mapKey||x.uid)!==mk);
     saveQuiet();
     sheetAssign();
     render();
@@ -2881,10 +3377,33 @@ const ACT={
   }
 };
 
+function closestEl(target,sel){
+  const el=target&&typeof target.closest==='function'?target:(target&&target.parentElement);
+  return el&&typeof el.closest==='function'?el.closest(sel):null;
+}
+function moveApptTo(apId,dstW,td,ts,quiet){
+  const f=findAppt(apId); if(!f)return false;
+  const ap=f.ap, srcW=f.w, oldDay=ap.day, oldSlot=ap.slot;
+  if(srcW===dstW&&oldDay===td&&oldSlot===ts)return false;
+  detachAppt(f);
+  placeApptInSlot(dstW,td,ts,ap);
+  if(ap.remoteUid){
+    const mk=ap.mapKey||ap.remoteUid;
+    S.mapped[mk]={w:dstW,day:td,slot:ts};
+    if((srcW!==dstW||oldDay!==td)&&(!ap.multiTotal||ap.multiTotal<=1))wdPutRemote(ap,iso(addDays(parseISO(dstW),td)));
+    else wdAssignWriteback(ap,String(ts),true);
+  }
+  save(); render();
+  if(!quiet)toast('Termin verschoben nach '+fmtDaySlotW(dstW,td,ts));
+  return true;
+}
+
 /* ================= Globale Events ================= */
+let dragPayload='', dragEndTs=0;
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-act]');
-  if(ui.menuOpen&&!(t&&t.dataset.act==='toggleMenu')&&e.target.closest&&!e.target.closest('#nav')){
+  if(Date.now()-dragEndTs<120)return;
+  const t=closestEl(e.target,'[data-act]');
+  if(ui.menuOpen&&!(t&&t.dataset.act==='toggleMenu')&&!closestEl(e.target,'#nav')){
     ui.menuOpen=false;
     const nv=document.querySelector('#nav');
     if(nv)nv.classList.remove('open');
@@ -2937,23 +3456,30 @@ document.addEventListener('keydown',e=>{
   }
 });
 document.addEventListener('dragstart',e=>{
-  const el=e.target.closest('[data-drag]');
-  if(el&&e.dataTransfer){e.dataTransfer.setData('text/plain',el.dataset.drag); e.dataTransfer.effectAllowed='move'}
+  const el=closestEl(e.target,'[data-drag]');
+  if(!el)return;
+  dragPayload=el.dataset.drag||'';
+  if(e.dataTransfer){try{e.dataTransfer.setData('text/plain',dragPayload); e.dataTransfer.effectAllowed='move'}catch(x){}}
+});
+document.addEventListener('dragend',()=>{
+  dragPayload=''; dragEndTs=Date.now();
+  try{document.querySelectorAll('.drop').forEach(x=>x.classList.remove('drop'))}catch(x){}
 });
 document.addEventListener('dragover',e=>{
-  const el=e.target.closest('[data-drop]');
-  if(el){e.preventDefault(); el.classList.add('drop')}
+  const el=closestEl(e.target,'[data-drop]');
+  if(el){e.preventDefault(); if(e.dataTransfer)e.dataTransfer.dropEffect='move'; el.classList.add('drop')}
 });
 document.addEventListener('dragleave',e=>{
-  const el=e.target.closest('[data-drop]');
-  if(el)el.classList.remove('drop');
+  const el=closestEl(e.target,'[data-drop]');
+  if(el&&(!e.relatedTarget||typeof el.contains!=='function'||!el.contains(e.relatedTarget)))el.classList.remove('drop');
 });
 document.addEventListener('drop',e=>{
-  const el=e.target.closest('[data-drop]');
+  const el=closestEl(e.target,'[data-drop]');
   if(!el)return;
   e.preventDefault();
   el.classList.remove('drop');
-  const data=e.dataTransfer.getData('text/plain');
+  const data=(e.dataTransfer&&e.dataTransfer.getData&&e.dataTransfer.getData('text/plain'))||dragPayload;
+  dragPayload='';
   if(!data)return;
   const drop=el.dataset.drop;
   if(drop[0]==='w'&&data.startsWith('block:')){
@@ -2961,12 +3487,43 @@ document.addEventListener('drop',e=>{
     const to=drop.slice(1).match(/(\d)s(\d)/);
     if(!to)return;
     const fd=+from[0], fs=+from[1], td=+to[1], ts=+to[2];
-    if(slotOccupied(td,ts)){toast('Ziel belegt.'); return}
-    const bl=getBlocks()[fd+'|'+fs]; if(!bl)return;
-    delete getBlocks()[fd+'|'+fs];
-    getBlocks()[td+'|'+ts]=bl;
-    if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:wk(),day:td,slot:ts}}
+    if(fd===td&&fs===ts)return;
+    const W=wk(), srcKey=fd+'|'+fs, dstKey=td+'|'+ts;
+    const bl=getBlocks()[srcKey]; if(!bl)return;
+    const spn=bl.span||1;
+    const dstBl=getBlocks()[dstKey];
+    if(dstBl&&spn===1&&(dstBl.span||1)===1){
+      getBlocks()[srcKey]=dstBl;
+      getBlocks()[dstKey]=bl;
+      if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:td,slot:ts}}
+      if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:td,slot:ts}}
+      if(dstBl.todoId){const f2=findTodo(dstBl.todoId); if(f2)f2.t.planned={wk:W,day:fd,slot:fs}}
+      if(dstBl.taskId){const t2=S.tasks.find(x=>x.id===dstBl.taskId); if(t2)t2.planned={wk:W,day:fd,slot:fs}}
+      save(); render(); toast('Blöcke getauscht: '+fmtDaySlot(fd,fs)+' ⇄ '+fmtDaySlot(td,ts));
+      return;
+    }
+    if(spn>3-ts){toast('Ab hier sind nur '+(3-ts)+' Blöcke frei.'); return}
+    if(!blockSpanRoomW(W,td,ts,spn,srcKey)){toast('Zielblock belegt.'); return}
+    if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
+    delete getBlocks()[srcKey];
+    getBlocks()[dstKey]=bl;
+    if(bl.todoId){const f=findTodo(bl.todoId); if(f)f.t.planned={wk:W,day:td,slot:ts}}
+    if(bl.taskId){const t=S.tasks.find(x=>x.id===bl.taskId); if(t)t.planned={wk:W,day:td,slot:ts}}
     save(); render(); toast('Verschoben nach '+fmtDaySlot(td,ts));
+  }else if(drop[0]==='w'&&data.startsWith('appt:')){
+    const to=drop.slice(1).match(/(\d)s(\d)/);
+    if(!to)return;
+    moveApptTo(data.slice(5),wk(),+to[1],+to[2],false);
+  }else if(drop[0]==='w'&&data.startsWith('todo:')){
+    const to=drop.slice(1).match(/(\d)s(\d)/);
+    if(!to)return;
+    const tid=data.slice(5).split('|')[1], td=+to[1], ts=+to[2], W=wk();
+    if(blockOccW(W,td,ts)){toast('Zielblock belegt.'); return}
+    const f=findTodo(tid); if(!f)return;
+    if(f.t.planned)delete blocksFor(f.t.planned.wk)[f.t.planned.day+'|'+f.t.planned.slot];
+    f.t.planned={wk:W,day:td,slot:ts};
+    setBlockW(W,td,ts,{id:uid(),kind:'projekt',projectId:f.p.id,todoId:tid,title:f.p.name,ampel:'gelb',note:f.t.firstStep||'',done:false});
+    save(); render(); toast('„'+f.t.title+'“ geplant: '+fmtDaySlot(td,ts));
   }else if(drop==='g'&&data.startsWith('gtodo:')){
     const tid=data.slice(6).split('|')[1];
     const f=findTodo(tid);
