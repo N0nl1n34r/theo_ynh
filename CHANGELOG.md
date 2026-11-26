@@ -1,5 +1,10 @@
 # CHANGELOG — theo_ynh
 
+### Wissen, Jahresansichten und Mobilansicht
+- Einstiegsseite und Psychoedukation mit kurzen, quellengestützten Beiträgen; Redaktion in `app/education.js`.
+- Jahresansicht mit Phasen, Ampel-Anzahlen und Terminen samt Sprung zur Woche.
+- Modulkonfiguration, Sync-Status, dunkles Menü, mobile Wisch- und Dialogdarstellung verbessert.
+
 ### Mobil, Konto und Offline
 - Mobile Wochenansicht mit 1/3/7 Tagen und tageweiser Navigation, auch über Wochenwechsel.
 - Konto und Daten von Theo-Einstellungen getrennt; Passwort-Anzeige, mobiler Menü- und Modal-Scroll-Fix.

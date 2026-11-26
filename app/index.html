@@ -354,7 +354,7 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
 .mobileDays .card{overflow-wrap:anywhere}
 .mobileDays .mslotLabel{font-size:11px}
 .mobileDays .dh{padding:5px 2px;overflow-wrap:anywhere}
-@media(max-width:600px) and (orientation:portrait){.mobileDays[data-count="7"]{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;touch-action:auto}.mobileDays[data-count="7"] .mdayView{flex:0 0 42%;scroll-snap-align:start}}
+
 /* Login occupies the whole grid, not the hidden navigation column. */
 #wrap.auth-gated{display:block}
 #wrap.auth-gated #main{width:100%;max-width:none;padding:24px 16px 60px}
@@ -413,6 +413,32 @@ body.auth-gated #topbar{display:none}
 :root[data-theme="nacht"] :where(.colorInp){background:var(--panel)}
 :root[data-theme="nacht"] .inp::placeholder{color:#a0b0ae;opacity:1}
 
+
+/* Mobile controls, sheets and legible multi-day layouts. */
+:root[data-theme="nacht"] #topbar .burger{background:var(--panel);color:var(--ink);border-color:var(--line)}
+#overlay .sheet{overflow-x:hidden;overflow-y:auto;min-width:0;overflow-wrap:anywhere}
+#overlay .sheet :where(input,select,textarea,button){max-width:100%;min-width:0}
+#overlay .slotPickGrid{grid-template-columns:minmax(38px,65px) repeat(7,minmax(0,1fr))}
+.cfgRow>*{min-width:0}.cfgRow .grow{display:block;border:0;overflow-wrap:anywhere;flex:1 1 180px}
+@media(max-width:940px){
+  .weekHead .hbtns{width:100%;display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:4px}
+  .weekHead .hbtns .inp{width:100%!important;min-width:0}
+  .weekHead .hbtns .btn{padding:6px 3px;white-space:nowrap}
+  .mobileDays{overflow:hidden;grid-template-columns:repeat(var(--days),minmax(0,1fr));touch-action:pan-y;align-items:stretch}
+  .mobileDays[data-count="7"]{grid-template-columns:repeat(7,minmax(105px,1fr))}
+  .mobileDays .mdayView{display:grid;grid-template-rows:subgrid;grid-row:span 7;row-gap:4px}
+  .mobileDays .slot{margin:0;min-height:80px}
+  .mobileDays .brow{flex-wrap:wrap}
+  .mobileDays .bttl{flex:1 0 100%;word-break:normal;overflow-wrap:break-word}
+  .mobileDays .card{padding:8px 7px}
+  .sheet .cfgRow,.sheet .pickRow{flex-wrap:wrap}
+}
+@media (min-width:600px) and (max-width:940px) and (orientation:landscape){.mobileDays[data-count="7"]{grid-template-columns:repeat(7,minmax(0,1fr))}}
+.swipeHint{display:none}@media (hover:none),(pointer:coarse){.swipeHint{display:block}}
+.eduGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
+.eduCard{padding:16px}.eduCard p{margin:7px 0}.eduArticle{max-width:690px}.eduArticle p{line-height:1.65}.eduArticle .note{overflow-wrap:anywhere}
+.mcell{border:0;background:transparent;padding:0;flex-direction:column;line-height:1;min-width:0;width:100%}.yearCounts{font-size:9px;line-height:1.2;display:block}.mcell.yearStat{aspect-ratio:auto;min-height:45px}.yearEnergy{display:grid;grid-template-columns:repeat(2,1fr);gap:1px 3px;font-size:8px;line-height:1}.yearEnergy span{white-space:nowrap}.yearEnergy i{width:5px;height:5px;border-radius:50%;display:inline-block}.yearEnergy .rot{background:var(--rot)}.yearEnergy .orange{background:var(--orange)}.yearEnergy .gelb{background:var(--gelb)}.yearEnergy .gruen{background:var(--gruen)}
+
 </style>
 </head>
 <body>
@@ -427,7 +453,7 @@ body.auth-gated #topbar{display:none}
     <button class="navbtn" data-act="nav" data-v="jahr">🍂 Jahr</button>
     <button class="navbtn" data-act="nav" data-v="bereiche">🧩 Bereiche</button>
     <button class="navbtn" data-act="nav" data-v="eingang">🧺 Eingangskiste</button>
-    <button class="navbtn" data-act="nav" data-v="module">✨ Module</button>
+    <button class="navbtn" data-act="nav" data-v="wissen">📚 Wissen &amp; Verstehen</button>
     <button class="navbtn" data-act="nav" data-v="konfig">⚙️ Konfiguration</button>
     <div class="navfoot" id="nav-foot">Beta · Frankfurt (EU)<br>Offline bereit</div>
   </nav>
@@ -437,6 +463,7 @@ body.auth-gated #topbar{display:none}
 <div id="toast"></div>
 
 <script src="/app/supabase.min.js"></script>
+<script src="/app/education.js"></script>
 <script>
 'use strict';
 /* ================= Hilfsfunktionen ================= */
@@ -475,7 +502,7 @@ const EMOJIS=['🌿','🫧','🤲','🫂','🛋️','🌅','🌊','🧭','🕯�
 const MODULES=[
   {id:'woche',name:'Wochenübersicht',icon:'🗓️',desc:'Eine ruhige Sicht auf Termine, Energie und Freiräume.',available:true},
   {id:'werte',name:'Werte',icon:'🧭',desc:'Sammeln, was dir wichtig ist und Orientierung geben kann.'},
-  {id:'wissen',name:'Psychoedukation',icon:'📚',desc:'Verständliche Impulse zum eigenen Alltag, ohne Diagnose oder Therapie.'},
+  {id:'wissen',name:'Psychoedukation',icon:'📚',desc:'Verständliche Impulse zum eigenen Alltag, ohne Diagnose oder Therapie.',available:true},
   {id:'eingang',name:'Eingangskiste',icon:'🧺',desc:'Gedanken und Aufgaben erst einmal ablegen.',available:true},
   {id:'bereiche',name:'Lebensbereiche',icon:'🧩',desc:'Vorhaben nach deinen eigenen Lebensbereichen ordnen.',available:true},
   {id:'reflexion',name:'Reflexionstool',icon:'🌱',desc:'Rückblicke für Woche, Monat, Quartal oder Jahr; Auswertungen werden noch konzipiert.'},
@@ -653,6 +680,7 @@ function save(){
     refreshDirtySignatures();
   }
   writeState();
+  if(typeof updateNavFooter==='function')updateNavFooter();
   if(!ui.demoMode)schedulePush();
 }
 function saveQuiet(){writeState()}
@@ -1181,7 +1209,7 @@ function isEditingInMain(){
   return !!(mn&&typeof mn.contains==='function'&&mn.contains(ae));
 }
 function safeBgRender(){
-  if(isEditingInMain()){ui.deferRender=true; return}
+  if(isEditingInMain()){ui.deferRender=true; updateNavFooter(); return}
   render();
 }
 
@@ -1600,10 +1628,10 @@ function schedulePush(){
     }
     const r=await pushAll();
     if(r&&r.ok>0){
-      SYNC.last=new Date();
+      SYNC.last=new Date(); SYNC.healthy=true;
       SYNC.msg='⏏ direkt synchronisiert ('+r.ok+')';
       safeBgRender();
-    }
+    }else if(r&&r.fail){SYNC.healthy=false; SYNC.msg='Schreiben fehlgeschlagen'; safeBgRender()}
   },1800);
 }
 
@@ -1637,7 +1665,7 @@ async function syncCycle(forceFull){
       const pl=await pullAll(!!forceFull);
       if(stale())return;
       if(!pl.ok){
-        SYNC.msg='Abruf pausiert: '+(pl.error||'offline');
+        SYNC.healthy=false; SYNC.msg='Abruf pausiert: '+(pl.error||'offline'); safeBgRender();
         return;
       }
       parts.push(pl.applied?('aktualisiert '+pl.applied):'synchron');
@@ -1645,13 +1673,14 @@ async function syncCycle(forceFull){
       if(hasPending){
         const pr2=await pushAll();
         if(stale())return;
-        if(pr2.ok)parts.push('geschrieben '+pr2.ok);
+        if(pr2.fail)parts.push('✖ Schreiben fehlgeschlagen');
+        else if(pr2.ok)parts.push('geschrieben '+pr2.ok);
       }
-      SYNC.last=new Date();
+      SYNC.last=new Date(); SYNC.healthy=!parts.some(x=>x.includes('fehlgeschlagen'));
       SYNC.msg=parts.join(' · ');
       safeBgRender();
     }catch(e){
-      SYNC.msg='Verbindung wird gleich erneut geprüft';
+      SYNC.healthy=false; SYNC.msg='Verbindung wird gleich erneut geprüft'; safeBgRender();
     }finally{
       SYNC.running=false;
       SYNC.promise=null;
@@ -1698,6 +1727,8 @@ async function fetchAccountProfile(){
 }
 
 function bindAuthSession(session){
+  const previousOwner=AUTH.user&&AUTH.user.id;
+  if(!session||!session.user||session.user.id!==previousOwner){SYNC.healthy=false; SYNC.last=null}
   AUTH.session=session||null;
   AUTH.user=(session&&session.user)||null;
   if(AUTH.user){
@@ -1734,7 +1765,7 @@ async function bootAuthAndSync(){
       const sp=new URLSearchParams(location.search||'');
       const hp=new URLSearchParams((location.hash||'').replace(/^#/,''));
       if(sp.get('mode')==='register')ui.authMode='register';
-      if(sp.get('mode')==='demo')ui.demoSurvey=true;
+      if(sp.get('mode')==='demo'){ui.demoSurvey=true; ui.demoStart=sp.get('start')==='wissen'?'wissen':null}
       const errCode=sp.get('error_code')||hp.get('error_code')||'';
       const errDesc=sp.get('error_description')||hp.get('error_description')||'';
       if(errCode==='otp_expired'||/expired|invalid/i.test(errDesc)){
@@ -1796,7 +1827,7 @@ async function bootAuthAndSync(){
 
 if(typeof window!=='undefined'&&typeof window.addEventListener==='function'){
   window.addEventListener('online',()=>{SYNC.online=true; if(AUTH.session)syncCycle(false); else bootAuthAndSync()});
-  window.addEventListener('offline',()=>{SYNC.online=false; SYNC.msg='📴 Offline'; safeBgRender()});
+  window.addEventListener('offline',()=>{SYNC.online=false; SYNC.healthy=false; SYNC.msg='📴 Offline'; safeBgRender()});
 }
 
 function getBlocks(){return S.blocks[wk()]||(S.blocks[wk()]={})}
@@ -1907,7 +1938,9 @@ function updateNavFooter(){
     nf.innerHTML='<button class="navAccount" data-act="nav" data-v="konto">👀 Lokale Vorschau · Konto &amp; Daten ›</button><button class="btn mini" style="margin-top:6px;width:100%" data-act="exitDemo">Mit Einladung anmelden</button>';
   }else if(AUTH.user||(!isOnlineNow()&&AUTH.offlineTrustedEmail)){
     const em=esc((AUTH.user&&AUTH.user.email)||AUTH.offlineTrustedEmail||'Angemeldet');
-    nf.innerHTML='<button class="navAccount" data-act="nav" data-v="konto" title="Konto öffnen"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🟢 '+em+'</span><span>'+(isOnlineNow()?'Konto &amp; Synchronisation':'📴 Offline · Konto')+' ›</span></button>';
+    const synced=isOnlineNow()&&!!AUTH.session&&!!SYNC.last&&SYNC.healthy===true&&!S.meta.dirty;
+    const state=!isOnlineNow()?'Offline':(synced?'Synchronisiert':(S.meta.dirty?'Änderungen noch nicht synchronisiert':'Synchronisation nicht bestätigt'));
+    nf.innerHTML='<button class="navAccount" data-act="nav" data-v="konto" title="'+state+' · Konto öffnen"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(synced?'🟢':'🔴')+' '+em+'</span><span>'+state+' · Konto ›</span></button>';
   }else{
     nf.innerHTML='Theo Beta · Frankfurt (EU)<br><a href="/" style="color:inherit">Zur Startseite</a>';
   }
@@ -1986,6 +2019,28 @@ function renderModules(){
   ordered.forEach(m=>{h+='<div class="moduleCard"><strong>'+m.icon+' '+m.name+(choices.includes(m.id)?' · Für dich':'')+'</strong><div class="sub">'+esc(m.desc)+'</div>'+(m.available?'<button class="btn mini" style="margin-top:12px" data-act="nav" data-v="'+m.id+'">Öffnen</button>':'<div class="sub" style="margin-top:10px">In Planung – noch nicht verfügbar</div>')+'</div>'});
   return h+'</div>';
 }
+function safeExternalUrl(url){return /^https:\/\//i.test(String(url||''))?String(url):''}
+function educationItems(){return Array.isArray(globalThis.THEO_EDUCATION)?globalThis.THEO_EDUCATION:[]}
+function renderEducation(){
+  const items=educationItems(), article=items.find(x=>x.id===ui.educationId);
+  let h='<div class="vhead"><div><h1>📚 Wissen &amp; Verstehen</h1><div class="sub">Kleine Impulse, in deinem Tempo. Ohne Pflichtprogramm.</div></div></div>';
+  if(!article){
+    h+='<p>Erst verstehen, was dir begegnet. Dann ausprobieren, was zu dir passt. Du kannst überall anfangen.</p><div class="eduGrid">';
+    items.forEach(x=>{h+='<div class="card eduCard"><div class="sub">'+esc(x.category)+' · ca. '+esc(x.minutes)+' Min. Lesen</div><h3>'+esc(x.title)+'</h3><p>'+esc(x.summary)+'</p><button class="btn mini" data-act="openEducation" data-id="'+esc(x.id)+'">Lesen →</button></div>'});
+    if(!items.length)h+='<div class="sub">Die Wissensinhalte konnten nicht geladen werden.</div>';
+    h+='</div>';
+  }else{
+    h+='<article class="eduArticle"><button class="btn mini" data-act="educationIndex">← Alle Themen</button><div class="sub" style="margin-top:12px">'+esc(article.category)+' · ca. '+esc(article.minutes)+' Min. Lesen</div><h2>'+esc(article.title)+'</h2><div class="note"><b>Kurz gesagt:</b> '+esc(article.takeaway)+'</div>';
+    (article.paragraphs||[]).forEach(p=>{h+='<p>'+esc(p)+'</p>'});
+    if(article.practice)h+='<div class="note"><b>Wenn du magst:</b> '+esc(article.practice)+'</div>';
+    if((article.actions||[]).length)h+='<div class="sheetBtns">'+article.actions.filter(a=>['woche','jahr','eingang','bereiche'].includes(a.view)).map(a=>'<button class="btn mini" data-act="'+(a.view==='woche'?'educationWeek':'nav')+'" data-v="'+esc(a.view)+'">'+esc(a.label)+' →</button>').join('')+'</div>';
+    const resources=(article.resources||[]).filter(r=>safeExternalUrl(r.url));
+    if(resources.length)h+='<div class="fh">Weitere Angebote</div>'+resources.map(r=>'<p><a href="'+esc(safeExternalUrl(r.url))+'" target="_blank" rel="noopener noreferrer'+(r.affiliate?' sponsored':'')+'">'+esc(r.label)+'</a>'+(r.affiliate?' <b>· Werbung / Affiliate-Link</b>':'')+(r.description?' · '+esc(r.description):'')+'</p>').join('');
+    h+='<details><summary>Quellen und Einordnung</summary><p class="sub">Die Quellen sind überwiegend englischsprachig. Dieser Text ist ein allgemeiner Impuls, keine individuelle Diagnose oder Behandlung.</p><ul>'+(article.sources||[]).filter(x=>safeExternalUrl(x.url)).map(x=>'<li><a href="'+esc(safeExternalUrl(x.url))+'" target="_blank" rel="noopener noreferrer">'+esc(x.label)+'</a></li>').join('')+'</ul></details></article>';
+  }
+  return h+'<p class="sub" style="margin-top:20px">Theo ersetzt keine ärztliche oder psychotherapeutische Beratung. Wenn dich Beschwerden stark belasten, suche dir professionelle Unterstützung.</p>';
+}
+
 function render(){
   const nv=$('#nav');
   const gated=shouldShowAuthGate();
@@ -2008,7 +2063,7 @@ function render(){
   const v=ui.route.view;
   let h='';
   if(ui.demoMode){
-    h+='<div class="demoBar"><span>👀 <b>Lokaler Vorschau-Modus:</b> Du kannst alles frei ausprobieren — Änderungen bleiben nur in dieser Vorschau.</span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn mini primary" data-act="exitDemo">Zur Anmeldung</button><button class="btn mini" data-act="nav" data-v="module">Module entdecken</button></span></div>';
+    h+='<div class="demoBar"><span>👀 <b>Lokaler Vorschau-Modus:</b> Du kannst alles frei ausprobieren — Änderungen bleiben nur in dieser Vorschau.</span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn mini primary" data-act="exitDemo">Zur Anmeldung</button><button class="btn mini" data-act="goModuleConfig">Module einstellen</button></span></div>';
   }
   if(v==='woche')h+=renderWeek();
   else if(v==='jahr')h+=renderYear();
@@ -2016,6 +2071,7 @@ function render(){
   else if(v==='projekt')h+=renderProject(ui.route.id);
   else if(v==='eingang')h+=renderInbox();
   else if(v==='module')h+=renderModules();
+  else if(v==='wissen')h+=renderEducation();
   else if(v==='konfig')h+=renderConfig();
   else if(v==='konto')h+=renderAccount();
   $('#main').innerHTML=h;
@@ -2044,9 +2100,10 @@ function renderWeek(){
   const days=[0,1,2,3,4,5,6].map(i=>addDays(ui.anchor,i));
   const cur=isCurrentWeek(), tI=dayIdx(new Date());
   const jumpVal=ui.jumpMonth||iso(addDays(ui.anchor,3)).slice(0,7);
-  let h='<div class="vhead"><div><h1>Woche</h1><div class="sub">'+fmtDate(days[0])+' – '+fmtDate(days[6])+' · KW '+isoWeek(days[0])+'</div></div>'+
+  let h='<div class="vhead weekHead"><div><h1>Woche</h1><div class="sub">'+fmtDate(days[0])+' – '+fmtDate(days[6])+' · KW '+isoWeek(days[0])+'</div></div>'+
     '<div class="hbtns"><input type="month" class="inp slim" data-field="weekJump" value="'+jumpVal+'" title="Monat wählen — springt in die erste Woche dieses Monats (z. B. Juni 2026)" style="width:150px"><button class="btn mini" data-act="weekPrev">‹ zurück</button><button class="btn mini" data-act="weekThis">Heute</button><button class="btn mini" data-act="weekNext">weiter ›</button></div></div>';
   h+=orientBar();
+  h+='<div class="chips"><button class="chip" data-act="openEducation" data-id="energie">📚 Energie &amp; Übergänge verstehen</button><button class="chip" data-act="openEducation" data-id="reize">📚 Reize &amp; Entlastung</button></div>';
   if(ui.suggestion)h+=suggHtml();
   if(!S.meta.intro)h+=renderOnboardingCard();
   h+='<div class="wgrid"><div class="dragTrashCell"><div class="dragTrash" id="drag-trash" data-drop="trash" title="Hierhin ziehen, um direkt ohne Fenster zu löschen">🗑<span>Löschen</span></div></div>'+days.map(d=>{
@@ -2060,7 +2117,7 @@ function renderWeek(){
   h+='</div>';
   const md=Math.min(ui.mobileDay??tI,6), count=[1,3,7].includes(ui.mobileCount)?ui.mobileCount:1;
   const mobileStart=addDays(ui.anchor,md);
-  h+='<div class="wmobile"><div class="mobileControls"><button class="btn mini" data-act="mobileShift" data-step="-1" aria-label="Vorheriger Tag">‹</button><b>'+esc(fmtDate(mobileStart))+'</b><button class="btn mini" data-act="mobileShift" data-step="1" aria-label="Nächster Tag">›</button><span class="sub">Ansicht:</span>'+[1,3,7].map(n=>'<button class="chip'+(count===n?' on':'')+'" data-act="mobileCount" data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+' '+(n===1?'Tag':'Tage')+'</button>').join('')+'</div><div class="sub">Zum nächsten oder vorherigen Tag wischen.'+(count===7?' Im Hochformat horizontal scrollen.':'')+'</div><div class="mobileDays" style="--days:'+count+'" data-count="'+count+'">';
+  h+='<div class="wmobile"><div class="mobileControls"><button class="btn mini" data-act="mobileShift" data-step="-1" aria-label="Vorheriger Tag">‹</button><b>'+esc(fmtDate(mobileStart))+'</b><button class="btn mini" data-act="mobileShift" data-step="1" aria-label="Nächster Tag">›</button><span class="sub">Ansicht:</span>'+[1,3,7].map(n=>'<button class="chip'+(count===n?' on':'')+'" data-act="mobileCount" data-count="'+n+'" aria-pressed="'+(count===n)+'">'+n+' '+(n===1?'Tag':'Tage')+'</button>').join('')+'</div><div class="sub swipeHint">Im Tagesraster zum nächsten oder vorherigen Tag wischen.</div><div class="mobileDays" style="--days:'+count+'" data-count="'+count+'">';
   const originalAnchor=ui.anchor;
   for(let i=0;i<count;i++){
     const date=addDays(mobileStart,i), day=dayIdx(date), week=iso(mondayOf(date));
@@ -2359,36 +2416,53 @@ function blockCard(bl,d,s){
 }
 
 
+// Count planned entries by their start date, once per block or appointment (including stacks).
+function yearDayCounts(year){
+  const out={};
+  function add(w,day,item,isAppointment){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(w)||!Number.isInteger(day)||day<0||day>6||!item)return;
+    const date=iso(addDays(parseISO(w),day)); if(date.slice(0,4)!==String(year))return;
+    const entry=out[date]||(out[date]={rot:0,orange:0,gelb:0,gruen:0,none:0,appointments:0});
+    const color=['rot','orange','gelb','gruen'].includes(item.ampel)?item.ampel:'none'; entry[color]++;
+    if(isAppointment)entry.appointments++;
+  }
+  for(const w in S.blocks){for(const key in S.blocks[w]){const bl=S.blocks[w][key]; if(!bl)continue; const day=Number(key.split('|')[0]); add(w,day,bl,isAsApptBlock(bl)); (bl.stack||[]).forEach(ap=>add(w,Number.isInteger(ap.day)?ap.day:day,ap,true))}}
+  for(const w in S.appts){for(const key in S.appts[w]){const ap=S.appts[w][key]; if(!ap)continue; const day=Number(key.split('|')[0]); add(w,Number.isInteger(ap.day)?ap.day:day,ap,true); (ap.stack||[]).forEach(x=>add(w,Number.isInteger(x.day)?x.day:day,x,true))}}
+  return out;
+}
 function renderYear(){
-  const y=ui.year;
-  let h='<div class="vhead"><div><div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><h1>Jahr '+y+'</h1><input class="mottoInp" data-field="motto" data-year="'+y+'" value="'+esc((S.motto&&S.motto[y])||'')+'" placeholder="Jahresmotto … (klicken &amp; tippen)"></div><div class="sub">Datum anklicken: Details einer Phase ansehen — oder zwei Daten wählen (Start + Ende), um eine neue Phase festzulegen. Überlappende Phasen werden mehrfarbig gestreift dargestellt.</div></div>'+
+  const y=ui.year, mode=['phasen','energie','termine'].includes(ui.yearMode)?ui.yearMode:'phasen';
+  const counts=mode==='phasen'?{}:yearDayCounts(y);
+  let h='<div class="vhead"><div><div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><h1>Jahr '+y+'</h1><input class="mottoInp" data-field="motto" data-year="'+y+'" value="'+esc((S.motto&&S.motto[y])||'')+'" placeholder="Jahresmotto … (klicken &amp; tippen)"></div></div>'+
     '<div class="hbtns"><button class="btn mini" data-act="yearPrev">‹</button><button class="btn mini" data-act="yearThis">'+(new Date().getFullYear())+'</button><button class="btn mini" data-act="yearNext">›</button></div></div>';
-  if(ui.yearSel)h+='<div class="yhint"><span>📅 Start gewählt: <b>'+esc(fmtDate(parseISO(ui.yearSel.start)))+'</b> — jetzt das Enddatum anklicken. Gleicher Tag = abbrechen.</span><button class="btn mini ghost" data-act="yearSelCancel">Abbrechen</button></div>';
+  h+='<div class="chips">'+[['phasen','🍂 Phasen'],['energie','🚦 Energie-Dichte'],['termine','📅 Termine']].map(x=>'<button class="chip'+(mode===x[0]?' on':'')+'" data-act="yearMode" data-mode="'+x[0]+'" aria-pressed="'+(mode===x[0])+'">'+x[1]+'</button>').join('')+'</div>';
+  h+='<div class="sub" style="margin-bottom:10px">'+(mode==='phasen'?'Datum anklicken: Phase ansehen oder Start und Ende für eine neue Phase wählen.':mode==='energie'?'Anzahl deiner Ampel-Markierungen pro Starttag, keine Messung deiner Energie. Farben mit Zahlen zeigen die Anzahl je Ampel; die Zahl darunter zählt alle Einträge einschließlich ohne Ampel. Datum öffnet die Woche.':'Anzahl der Termine pro Starttag, einschließlich gestapelter Termine und Blocktypen „wie Termin“. Datum öffnet die Woche.')+'</div>';
+  if(mode==='energie')h+='<div class="legend"><span class="dot rot"></span> Rot <span class="dot orange"></span> Orange <span class="dot gelb"></span> Gelb <span class="dot gruen"></span> Grün</div>';
+  if(ui.yearSel&&mode==='phasen')h+='<div class="yhint"><span>📅 Start gewählt: <b>'+esc(fmtDate(parseISO(ui.yearSel.start)))+'</b> — jetzt das Enddatum anklicken. Gleicher Tag = abbrechen.</span><button class="btn mini ghost" data-act="yearSelCancel">Abbrechen</button></div>';
   h+='<div class="ygrid">';
   for(let m=0;m<12;m++){
-    const first=new Date(y,m,1);
-    const len=new Date(y,m+1,0).getDate();
+    const first=new Date(y,m,1), len=new Date(y,m+1,0).getDate();
     h+='<div class="card mcard"><div class="mname">'+MONNAMES[m]+'</div><div class="mrow">'+DAYSHORT.map(d=>'<div class="mwd">'+d+'</div>').join('')+'</div><div class="mrow">';
     for(let e=0;e<dayIdx(first);e++)h+='<div></div>';
     for(let dd=1;dd<=len;dd++){
-      const dstr=y+'-'+pad(m+1)+'-'+pad(dd);
-      const phs=activePhases(dstr);
-      let cls='mcell'+(phs.length?' ph':'');
-      if(dstr===todayISO())cls+=' today';
-      if(ui.yearSel&&ui.yearSel.start===dstr)cls+=' sel';
-      const tip=phs.length?phs.map(p=>esc(p.title)+(p.desc?' — '+esc(p.desc):'')).join(' | '):'Tag '+dd+'. '+MONNAMES[m]+' — anklicken für Details oder Zeiträume';
-      h+='<div class="'+cls+'" style="'+phaseBgStyle(phs)+'" data-act="yearDay" data-date="'+dstr+'" title="'+tip+'">'+dd+'</div>';
+      const dstr=y+'-'+pad(m+1)+'-'+pad(dd), phs=mode==='phasen'?activePhases(dstr):[], c=counts[dstr];
+      let cls='mcell'+(mode!=='phasen'?' yearStat':'')+(phs.length?' ph':'')+(dstr===todayISO()?' today':'')+(mode==='phasen'&&ui.yearSel&&ui.yearSel.start===dstr?' sel':'');
+      let tip=phs.length?phs.map(p=>p.title+(p.desc?' — '+p.desc:'')).join(' | '):'Tag '+dd+'. '+MONNAMES[m];
+      let extra='';
+      if(mode==='energie'&&c){const total=c.rot+c.orange+c.gelb+c.gruen+c.none; tip+=': '+c.rot+' rot, '+c.orange+' orange, '+c.gelb+' gelb, '+c.gruen+' grün, '+c.none+' ohne Ampel'; extra='<span class="yearEnergy">'+['rot','orange','gelb','gruen'].filter(k=>c[k]).map(k=>'<span><i class="'+k+'"></i>'+c[k]+'</span>').join('')+'</span><span class="yearCounts">'+total+'</span>'}
+      if(mode==='termine'&&c&&c.appointments){tip+=': '+c.appointments+' Termine'; extra='<span class="yearCounts">📅 '+c.appointments+'</span>'}
+      h+='<button type="button" class="'+cls+'" style="'+(mode==='phasen'?phaseBgStyle(phs):'')+'" data-act="'+(mode==='phasen'?'yearDay':'yearJump')+'" data-date="'+dstr+'" title="'+esc(tip)+'" aria-label="'+esc(tip)+'">'+dd+extra+'</button>';
     }
     h+='</div></div>';
   }
   h+='</div>';
-  const phs=S.phases.filter(p=>p.start.slice(0,4)==String(y)).sort((a,b)=>a.start<b.start?-1:1);
-  h+='<div class="phlist"><div class="fh">Phasen '+y+'</div>';
-  if(!phs.length)h+='<div class="sub">Noch keine Phasen in diesem Jahr — gut, dass auch das erlaubt ist. Oder direkt oben im Kalender zwei Daten anklicken.</div>';
-  phs.forEach(p=>{
-    h+='<button class="phchip" style="--c:'+itemColor(p)+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+' · '+esc(p.desc||'')+'</span></span></button>';
-  });
-  h+='<button class="btn" data-act="addPhase">＋ Phase anlegen</button></div>';
+  if(mode==='phasen'){
+    const phs=S.phases.filter(p=>p.start.slice(0,4)==String(y)).sort((a,b)=>a.start<b.start?-1:1);
+    h+='<div class="phlist"><div class="fh">Phasen '+y+'</div>';
+    if(!phs.length)h+='<div class="sub">Noch keine Phasen in diesem Jahr — gut, dass auch das erlaubt ist. Oder direkt oben im Kalender zwei Daten anklicken.</div>';
+    phs.forEach(p=>{h+='<button class="phchip" style="--c:'+itemColor(p)+'" data-act="editPhase" data-id="'+p.id+'"><span class="phbar"></span><span style="flex:1"><b>'+esc(p.title)+'</b><br><span class="phmeta">'+fmtDate(parseISO(p.start))+' – '+fmtDate(parseISO(p.end))+' · '+esc(p.desc||'')+'</span></span></button>'});
+    h+='<button class="btn" data-act="addPhase">＋ Phase anlegen</button></div>';
+  }
   return h;
 }
 
@@ -2488,12 +2562,15 @@ function renderInbox(){
 function renderConfig(){
   let h='<div class="vhead"><div><h1>Theo-Konfiguration</h1><div class="sub">Alles optional — das System funktioniert auch, wenn du an den Vorlagen nie etwas änderst.</div></div></div>';
   h+='<div class="cfgNav">'+
-    '<button class="chip" data-act="cfgScroll" data-to="cfg-types">🧩 Blocktypen &amp; Vorlagen</button>'+
+    '<button class="chip" data-act="cfgScroll" data-to="cfg-theme">🎨 Farbschema</button>'+
+    '<button class="chip" data-act="cfgScroll" data-to="cfg-modules">✨ Module</button>'+
     '<button class="chip" data-act="cfgScroll" data-to="cfg-areas">🗂 Lebensbereiche</button>'+
+    '<button class="chip" data-act="cfgScroll" data-to="cfg-types">🧩 Blocktypen &amp; Vorlagen</button>'+
     '<button class="chip" data-act="cfgScroll" data-to="cfg-slots">🌅 Blockzeiten</button>'+
   '</div>';
 
   h+='<div class="fh" id="cfg-theme">🎨 Farbschema</div><div class="sub">Wähle eine Farbwelt. Schemafarben für Bereiche und Phasen passen sich an; selbst gewählte Farben und Energiefarben bleiben erhalten.</div><div class="chips">'+THEMES.map(t=>'<button class="chip'+(S.settings.theme===t[0]?' on':'')+'" data-act="setTheme" data-theme="'+t[0]+'" aria-pressed="'+(S.settings.theme===t[0]?'true':'false')+'">'+esc(t[1])+'</button>').join('')+'</div>';
+  h+='<div class="fh" id="cfg-modules">✨ Module</div><div class="sub">Markiere Themen, die dich interessieren. Geplante Module bleiben als Ideen sichtbar; die Markierung aktiviert keine noch nicht verfügbaren Funktionen.</div><div class="cfgList">'+MODULES.map(m=>'<label class="cfgRow"><input type="checkbox" data-field="moduleChoice" data-id="'+m.id+'"'+((S.settings.modules||[]).includes(m.id)?' checked':'')+'><span class="grow">'+m.icon+' '+esc(m.name)+' <span class="sub">'+(m.available?'verfügbar':'in Planung')+'</span></span>'+(m.available?'<button type="button" class="btn mini" data-act="nav" data-v="'+m.id+'">Öffnen</button>':'')+'</label>').join('')+'</div>';
   h+='<div class="fh" id="cfg-areas">Lebensbereiche — ⠿ ziehen zum Sortieren (oder ▲▼)</div><div class="cfgList">';
   S.areas.forEach((a,idx)=>{
     h+='<div class="cfgRow" data-drop="reorder:area:'+idx+'"><span class="grip" draggable="true" data-drag="reorder:area:'+idx+'" title="ziehen zum Sortieren">⠿</span>'+
@@ -3129,6 +3206,10 @@ const ACT={
     if(a.v==='woche'){ui.anchor=mondayOf(new Date()); ui.mobileDay=dayIdx(new Date()); ui.jumpMonth=null}
     ui.route={view:a.v}; ui.menuOpen=false; render();
   },
+  goModuleConfig(){ui.route={view:'konfig'};ui.menuOpen=false;render(); setTimeout(()=>{const el=document.getElementById('cfg-modules');if(el&&el.scrollIntoView)el.scrollIntoView({block:'start'})},30)},
+  openEducation(a){ui.educationId=a.id; ui.route={view:'wissen'}; ui.menuOpen=false; closeModal(); render(); try{window.scrollTo({top:0})}catch(e){}},
+  educationWeek(){ui.route={view:'woche'};render();try{window.scrollTo({top:0})}catch(e){}},
+  educationIndex(){ui.educationId=null; render()},
   togglePassword(a,t){const input=document.getElementById(a.id); if(!input)return; const show=input.type==='password'; input.type=show?'text':'password'; t.setAttribute('aria-pressed',String(show)); t.setAttribute('aria-label',show?'Passwort verbergen':'Passwort anzeigen')},
   mobileCount(a){ui.mobileCount=+a.count; render()},
   mobileShift(a){const date=addDays(ui.anchor,(ui.mobileDay||0)+(+a.step)); ui.anchor=mondayOf(date); ui.mobileDay=dayIdx(date); ui.jumpMonth=null; render()},
@@ -4079,6 +4160,8 @@ const ACT={
   },
   suggestOther(){ui.pickCtx={type:'regen'}; slotPickerSheet('Regeneration einplanen — wo passt es?')},
   suggestDismiss(){ui.suggestion=null; render(); toast('Verstanden — kein Vorschlag, kein Druck.')},
+  yearMode(a){ui.yearMode=a.mode; ui.yearSel=null; render()},
+  yearJump(a){const date=parseISO(a.date); ui.route={view:'woche'}; ui.anchor=mondayOf(date); ui.mobileDay=dayIdx(date); ui.jumpMonth=null; render(); try{window.scrollTo({top:0})}catch(e){}},
   yearPrev(){ui.year--; render()},
   yearNext(){ui.year++; render()},
   yearThis(){ui.year=new Date().getFullYear(); render()},
@@ -4316,8 +4399,8 @@ const ACT={
     ui.demoMode=true;
     S=buildDemoState();
     S.settings.modules=ui.demoChoices.slice();
-    const first=ui.demoChoices.find(id=>['woche','eingang','bereiche'].includes(id));
-    ui.route={view:first||'woche'};
+    const first=ui.demoChoices.find(id=>['woche','wissen','eingang','bereiche'].includes(id));
+    ui.route={view:first||ui.demoStart||'woche'}; ui.demoStart=null;
     render();
     toast('Lokale Beispiel-Woche geöffnet — probiere alles in Ruhe aus.');
   },
@@ -4332,6 +4415,7 @@ const ACT={
     if(sb&&sb.auth){try{await sb.auth.signOut()}catch(e){}}
     AUTH.session=null;
     AUTH.user=null;
+    SYNC.healthy=false; SYNC.last=null;
     AUTH.offlineTrustedEmail='';
     ui.profile=null;
     if(storeOk){
@@ -4573,7 +4657,7 @@ function moveApptTo(apId,dstW,td,ts,quiet){
 
 /* Tageweise navigieren, vertikales Scrollen und die 7-Tage-Hochformat-Scroller nicht stören. */
 let mobileTouch=null;
-document.addEventListener('touchstart',e=>{const grid=closestEl(e.target,'.mobileDays'); if(grid&&!(grid.dataset.count==='7'&&matchMedia('(max-width:600px) and (orientation:portrait)').matches)&&e.touches.length===1)mobileTouch={x:e.touches[0].clientX,y:e.touches[0].clientY}; else mobileTouch=null},{passive:true});
+document.addEventListener('touchstart',e=>{const grid=closestEl(e.target,'.mobileDays'); if(grid&&e.touches.length===1)mobileTouch={x:e.touches[0].clientX,y:e.touches[0].clientY}; else mobileTouch=null},{passive:true});
 document.addEventListener('touchend',e=>{if(!mobileTouch||!e.changedTouches.length)return; const dx=e.changedTouches[0].clientX-mobileTouch.x,dy=e.changedTouches[0].clientY-mobileTouch.y; mobileTouch=null; if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5){dragEndTs=Date.now(); ACT.mobileShift({step:dx<0?1:-1})}},{passive:true});
 /* ================= Globale Events ================= */
 let dragPayload='', dragEndTs=0;
@@ -4593,7 +4677,8 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const el=e.target; const f=el.dataset.field||'';
-  if(f==='areaName'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
+  if(f==='moduleChoice'){const list=S.settings.modules||(S.settings.modules=[]); const i=list.indexOf(el.dataset.id); if(el.checked&&i<0)list.push(el.dataset.id); else if(!el.checked&&i>=0)list.splice(i,1); save()}
+  else if(f==='areaName'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.name=el.value; save()}}
   else if(f==='areaColor'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.color=el.value; delete x.colorIndex; save(); render(); toast('Eigene Farbe gesetzt.')}}
   else if(f==='phColor'){ui.phColor=el.value; ui.phColorIndex=null; const overlay=$('#overlay'); if(overlay&&overlay.querySelectorAll)overlay.querySelectorAll('.sw2.sel').forEach(b=>b.classList.remove('sel'))}
   else if(f==='motto'){(S.motto||(S.motto={}))[el.dataset.year]=el.value.trim(); save(); if(!isEditingInMain())render()}

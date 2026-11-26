@@ -1,7 +1,8 @@
-const CACHE_NAME = 'theo-beta-shell-v2';
+const CACHE_NAME = 'theo-beta-shell-v3';
 const SHELL_ASSETS = [
   './',
   './index.html',
+  './education.js',
   './manifest.webmanifest',
   './theo-icon.png',
   './supabase.min.js'
@@ -37,7 +38,8 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('/index.html') ||
     url.pathname.endsWith('/manifest.webmanifest') ||
     url.pathname.endsWith('/theo-icon.png') ||
-    url.pathname.endsWith('/supabase.min.js');
+    url.pathname.endsWith('/supabase.min.js') ||
+    url.pathname.endsWith('/education.js');
 
   if (!isShellDoc) return;
 

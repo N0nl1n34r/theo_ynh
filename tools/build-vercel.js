@@ -24,6 +24,7 @@ for (const f of landingFiles) {
 const appFiles = [
   'index.html',
   'manifest.webmanifest',
+  'education.js',
   'sw.js',
   'theo-icon.png'
 ];

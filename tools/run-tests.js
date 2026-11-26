@@ -48,6 +48,7 @@ checkHtmlInlineScripts('landing/index.html');
 checkHtmlInlineScripts('landing/agb.html');
 checkHtmlInlineScripts('conf/lebensrhythmus-prototyp.html');
 checkJsFiles('api');
+checkJsFiles('app');
 
 console.log('\n=== 2. Alpha-Baseline-Regression (smoke7..smoke19 gegen conf/) ===');
 fs.writeFileSync('/tmp/theo.js', extractLargestScript(path.join(ROOT, 'conf/lebensrhythmus-prototyp.html')), 'utf8');

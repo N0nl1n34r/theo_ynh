@@ -136,7 +136,7 @@ Danach ist Theo unter `https://<domain><pfad>/` erreichbar.
 1. `https://<domain><pfad>/` im Browser öffnen → ggf. mit YunoHost-Konto anmelden (einmalig).
 2. Android/Chrome: **„App installieren“** → Theo startet standalone mit eigenem Icon. iOS/Safari: „Zum Home-Bildschirm“.
 3. Offline auf Handy oder Desktop: Theo vorher auf dem **gleichen Gerät und im gleichen Browser** online öffnen, anmelden und vollständig synchronisieren; dabei wird die App für den Offline-Start zwischengespeichert. Optional zum Startbildschirm hinzufügen. Danach bleiben Änderungen im lokalen Browserspeicher und werden bei Verbindung und gültiger Anmeldung synchronisiert. Nach Abmeldung, beim Löschen von Browserdaten, im privaten Browsermodus oder bei vom System geräumtem Speicher ist der Offline-Zugriff nicht gewährleistet. Eine neue Anmeldung benötigt Internet. Bei gleichzeitiger Bearbeitung auf mehreren Geräten gilt pro Datensatz die letzte Änderungszeit; bei Konflikten können ältere Änderungen überschrieben werden. Bis zur erfolgreichen Synchronisation sind Änderungen nur auf diesem Gerät vorhanden.
-4. Mobil: In der Woche 1, 3 oder 7 Tage wählen und im Tagesraster seitlich wischen; im Hochformat lässt sich die 7-Tage-Ansicht horizontal scrollen. Konto, Abo und Datenexport stehen im Kontobereich unten im Menü, die Theo-Konfiguration enthält nur Theo-Einstellungen.
+4. Mobil: In der Woche 1, 3 oder 7 Tage wählen und im Tagesraster seitlich wischen; in der 7-Tage-Ansicht sind auf schmalen Displays zunächst nur einige Spalten sichtbar; seitliches Wischen wechselt tageweise. Konto, Abo und Datenexport stehen im Kontobereich unten im Menü, die Theo-Konfiguration enthält nur Theo-Einstellungen.
 
 ## Update der App (immer leicht)
 
@@ -174,3 +174,5 @@ Browser/PWA  ──HTTPS──▶  nginx (YunoHost, Zertifikat, SSO-Gate)
                                └─ CalDAV-Proxy ──▶ Nextcloud (Ziel fest gepinnt,
                                                    Credentials nur im Browser)
 ```
+
+Psychoedukation: Startbeiträge liegen in `app/education.js`. Die redaktionelle Pflege, Quellen und Affiliate-Kennzeichnung sind in `docs/psychoedukation.md` beschrieben. Die Texte ersetzen keine Diagnose oder Therapie.

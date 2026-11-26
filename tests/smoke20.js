@@ -93,6 +93,11 @@ ok(/Widerrufsbelehrung/i.test(agbHtml) && /312k/i.test(agbHtml) && agbHtml.inclu
 const appHtml = fs.readFileSync(path.join(ROOT, 'app/index.html'), 'utf8');
 const scripts = [...appHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
 const mainScript = scripts.sort((a, b) => b.length - a.length)[0];
+const eduDataSandbox = {}; eduDataSandbox.globalThis = eduDataSandbox;
+vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'app/education.js'), 'utf8'), eduDataSandbox);
+const eduItems = eduDataSandbox.THEO_EDUCATION;
+ok(Array.isArray(eduItems) && eduItems.length >= 3 && new Set(eduItems.map(x => x.id)).size === eduItems.length && eduItems.every(x => x.id && x.takeaway && x.paragraphs.length && x.sources.length && x.sources.every(source => /^https:\/\//.test(source.url))), 'Wissensbeiträge besitzen stabile IDs, Zusammenfassungen und HTTPS-Quellen');
+ok(appHtml.includes('Werbung / Affiliate-Link') && appHtml.includes("r.affiliate?' sponsored'") && fs.readFileSync(path.join(ROOT, 'app/sw.js'), 'utf8').includes("'./education.js'"), 'Affiliate-Kennzeichnung und Offline-Cache für Wissensinhalte vorhanden');
 
 function bootAppInstance(opts = {}) {
   const els = {};
@@ -156,8 +161,9 @@ function bootAppInstance(opts = {}) {
   };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/education.js'), 'utf8'), sandbox);
   vm.runInContext(
-    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle};',
+    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle,yearDayCounts};',
     sandbox
   );
   return { ex: sandbox.__EX, els, store, handlers };
@@ -334,6 +340,30 @@ function bootAppInstance(opts = {}) {
   ok(mdHtml.includes('<b>Wichtig</b>') && !mdHtml.includes('<script>'), 'Eingangskiste rendert Markdown XSS-sicher');
   const tp = gAuth.ex.timePickHtml('09:15', 'data-test="1"', false);
   ok(tp.includes('value="09:15" selected') && !tp.includes('09:17'), '15-Minuten-Time-Picker (:00/:15/:30/:45) intakt');
+
+  // Year aggregation uses start dates and counts stacked appointments exactly once.
+  const state = gAuth.ex.S(), oldBlocks = state.blocks, oldAppts = state.appts;
+  state.blocks = {'2026-11-23': {'6|0': {title:'Block', ampel:'rot', span:2}}};
+  state.appts = {'2026-11-23': {'6|1': {id:'a',day:6,slot:1,ampel:'gruen',stack:[{id:'b',day:6,slot:1,ampel:'orange'}]}}};
+  const count = gAuth.ex.yearDayCounts(2026)['2026-11-29'];
+  ok(count.rot === 1 && count.gruen === 1 && count.orange === 1 && count.appointments === 2, 'Jahresübersicht zählt Blöcke und gestapelte Termine korrekt');
+  state.blocks = oldBlocks; state.appts = oldAppts;
+  gAuth.ex.ACT.yearJump({date:'2026-11-29'});
+  ok(gAuth.ex.wk() === '2026-11-23' && gAuth.ex.ui.mobileDay === 6, 'Jahresübersicht springt zum gewählten Tag in die richtige Woche');
+  gAuth.ex.ACT.openEducation({id:'reize'});
+  const eduHtml = gAuth.els['q:#main'].innerHTML;
+  ok(eduHtml.includes('Wenn Reize zu viel werden') && eduHtml.includes('Quellen und Einordnung') && eduHtml.includes('data-v="woche"'), 'Wissensartikel hat Quellen und Rückweg in die Wochenansicht');
+  gAuth.ex.ACT.nav({v:'konfig'});
+  const configNav = gAuth.els['q:#main'].innerHTML;
+  ok(configNav.indexOf('data-to="cfg-theme"') < configNav.indexOf('data-to="cfg-modules"') && configNav.indexOf('data-to="cfg-modules"') < configNav.indexOf('data-to="cfg-areas"') && configNav.indexOf('data-to="cfg-areas"') < configNav.indexOf('data-to="cfg-types"'), 'Konfigurations-Chips entsprechen der Reihenfolge der Abschnitte');
+  gAuth.handlers.change({target:{dataset:{field:'moduleChoice',id:'wissen'},checked:true}});
+  ok(state.settings.modules.includes('wissen'), 'Modulauswahl lässt sich in der Konfiguration speichern');
+  gAuth.ex.SYNC.online = false; gAuth.ex.render();
+  ok(gAuth.els['nav-foot'].innerHTML.includes('🔴') && gAuth.els['nav-foot'].innerHTML.includes('Offline'), 'Kontostatus zeigt offline rot');
+  gAuth.ex.SYNC.online = true; gAuth.ex.SYNC.last = new Date(); gAuth.ex.SYNC.healthy = true; state.meta.dirty = false; gAuth.ex.render();
+  ok(gAuth.els['nav-foot'].innerHTML.includes('🟢'), 'Kontostatus zeigt grün nur nach bestätigtem Abgleich');
+  state.meta.dirty = true; gAuth.ex.render();
+  ok(gAuth.els['nav-foot'].innerHTML.includes('🔴'), 'Kontostatus zeigt ungespeicherte Serveränderungen rot');
 
   // Kontoansicht: Bestandsschutz, Export, Konto löschen, Abmelden
   gAuth.ex.ACT.nav({ v: 'konfig' });
