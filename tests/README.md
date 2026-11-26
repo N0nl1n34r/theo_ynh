@@ -8,7 +8,7 @@ python3 -c "import re;h=open('../conf/lebensrhythmus-prototyp.html',encoding='ut
 node --check /tmp/theo.js
 
 # 2) alle Driver:
-for s in 7 8 9 10 11 12 13 14 15 16 17; do node smoke$s.js; done
+for s in 7 8 9 10 11 12 13 14 15 16 17 18; do node smoke$s.js; done
 ```
 
 **Erwartung: alle grün.** Inhalte:
@@ -26,5 +26,6 @@ for s in 7 8 9 10 11 12 13 14 15 16 17; do node smoke$s.js; done
 | smoke15 | R13b | **Kapsel-Neugeräte-Schutz**: Adoption trotz lokalem ts, kein Kapsel-PUT vor erstem Lesen, Konvergenz, Legacy unverändert (13) |
 | smoke16 | R13c | **Nextcloud-VJOURNAL (`theo-kapsel` per MKCALENDAR) & To-do-Änderungserkennung**: 403-Ausweichen, kein Verschlucken von Kapsel-Fehlern, kein Falsch-Positiv bei unveränderten VTODOs, Multi-Gerät-Projekt-To-dos (17) |
 | smoke17 | R13d | **Nextcloud-Termine löschen (`REPORT` auf `Nextcloud-XXXX.ics` + Grabstein), mehrtägige Termine, 6×1h-Überlappungen/Koexistenz/Teilen & Wochen-Drag-&-Drop** (37) |
+| smoke18 | R13e | **`asAppt` konsistent als Termin + Block-Koexistenz, Sync ohne Drag-&-Drop-Duplikate & Live-Edit-Schutz, Anstehend-Drag-&-Drop, 15-Min-Time-Picker, Blocktyp-Vorlagen, Hover/Touch-„＋ Block dazu“ & Karten-Überlauf-Fix** (34) |
 
 Driver-Konventionen/Fallstricke: siehe HANDOFF.md §4. `/tmp` ist flüchtig — vor jeder Validierung neu extrahieren. Ältere Driver setzen `S.meta.pulled=true` (etabliertes Gerät); nur smoke15 deckt den Neugeräte-Pfad ab.
