@@ -1,0 +1,16 @@
+{
+  "name": "theo-beta",
+  "version": "0.14.0-beta.1",
+  "private": true,
+  "description": "Theo Beta — Ruhige Alltagsplanung (Landingpage, Einladungs-Beta, Supabase Frankfurt & PWA ohne CalDAV)",
+  "scripts": {
+    "build": "node tools/build-vercel.js",
+    "test": "node tools/run-tests.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

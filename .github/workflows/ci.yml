@@ -1,0 +1,34 @@
+name: Theo CI (Smoke & Beta Suite)
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  smoke-and-build:
+    name: Node Check, Smoke Suite & Beta Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Verify zero CalDAV/Nextcloud paths in Beta code
+        run: |
+          if grep -rniE "caldav|nextcloud|webdav|__dav_proxy__|__theo_proxy__" app/ landing/ api/; then
+            echo "Forbidden legacy calendar integration found in Beta directories!"
+            exit 1
+          fi
+
+      - name: Run full syntax, smoke & Beta test suite
+        run: npm test

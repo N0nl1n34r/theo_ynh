@@ -1,4 +1,88 @@
-# Theo als YunoHost-App 🐣
+# Theo 🐣
+
+Theo ist ein Werkzeug zur persönlichen Selbstorganisation im Alltag und ersetzt **keine** ärztliche oder psychotherapeutische Diagnose, Beratung oder Behandlung.
+
+Es gibt zwei Betriebsarten:
+
+| Variante | Wohin | Für wen |
+|---|---|---|
+| **Theo Beta** (Supabase + Vercel, Frankfurt `eu-central-1`) | [theo.example → Vercel `fra1`] | Öffentlicher Prototyp mit lokaler Demo; Konten in geschlossener Beta, Passwort- oder optional Magic-Link-Login und serverbasierter Sync |
+| **Theo als YunoHost-App** (Alpha, Nextcloud/CalDAV) | eigene YunoHost-Maschine | Selbsthosting mit eigener Nextcloud |
+
+---
+
+## Theo Beta — Deployment (closed Beta)
+
+Die Beta ist für **Vercel (`fra1`)** und **Supabase (`eu-central-1`, Frankfurt)** vorbereitet. Das Live-Deployment und die tatsächlichen Netzwerkverbindungen müssen vor der Freigabe geprüft werden. Für den produktiven Betrieb sind außerdem Mailversand und die rechtlichen Angaben einzurichten und zu prüfen.
+
+### Aktueller Prototyp und offene Punkte
+
+- Die Demo ist ohne Konto zugänglich. Die freiwillige Auswahl personalisiert den Einstieg und die Modulübersicht; sie ist nicht mit einer Warteliste verknüpft. Das frühere Wartelistenformular ist ausgeblendet. Mailanbindung und Warteliste kommen später.
+- Wochenübersicht, Eingangskiste und Lebensbereiche sind vorhanden; Werte, Psychoedukation, Reflexion samt späteren Auswertungen, Übergänge und Social Accountability sind zunächst als Ideen markiert, nicht als fertige Funktionen. Fünf Farbschemata einschließlich Nachtmodus sind auswählbar. Neue Schemafarben für Bereiche und Phasen folgen dem aktiven Schema; eigene und bereits vorhandene Farben ohne Herkunft bleiben unverändert.
+- Bestehende Konten können sich mit E-Mail und Passwort anmelden; nach einem erfolgreichen Login lässt sich das Passwort unter Konto ändern. Die Registrierung mit Einladung und der optionale Magic Link benötigen einen funktionierenden Mailversand. Fiktive Adressen können keine E-Mails empfangen.
+- Lokale Kontodaten werden getrennt nach Benutzer-ID zwischengespeichert; diese Daten sind nicht verschlüsselt und können für andere Personen mit Zugriff auf dasselbe Browserprofil sichtbar sein. Beim Konto-Wechsel werden verspätete Antworten des vorherigen Kontos verworfen und Sync-Anfragen an die ursprüngliche Sitzung gebunden. Öffentliche Geräte nicht für echte Daten verwenden.
+- Die Test-Suite verwendet Auth-/Sync-Mocks; Browser-Anmeldungen, Kontowechsel im Browser und der Mailversand müssen vor einer Freigabe zusätzlich Ende zu Ende getestet werden. Die beiden bekannten Testkonten wurden separat direkt gegen den Live-Auth-Dienst geprüft. Rechtstexte bleiben Entwürfe, Stripe ist nicht freigeschaltet.
+
+### 1. Supabase-Projekt (Frankfurt)
+
+- Neues Projekt in Region **Frankfurt (`eu-central-1`)** anlegen.
+- Migrationen aus `supabase/migrations/` einspielen (Reihenfolge beachten):
+  - `20261126000100_theo_beta_init.sql` — Tabellen `profiles`, `items`, `waitlist`, `invite_codes`, `rate_limits`, Trigger, `upsert_user_items`-RPC, RLS (alle Tabellen `FORCE ROW LEVEL SECURITY`).
+  - `20261126000200_auth_lookup_rpc.sql` — RPC `find_auth_user_by_email` für die geschlossene Beta.
+- Auth-Härtung (Supabase-Dashboard → Authentication → Providers/URL Configuration):
+  - **Sign-ups deaktivieren** (`disable_signup = true`) — die Beta ist rein invite-basiert; Konten werden serverseitig über die Service-Role angelegt.
+  - **Site URL** = deine Vercel-Domain (z. B. `https://theo.example.vercel.app`).
+  - **Redirect allow list** = `https://<domain>/app/` (Magic-Link-Landing).
+  - Deutsche E-Mail-Texte hinterlegen (oder den eigenen SMTP/Brevo-Mailer nutzen — die App verschickt die Magic-Link-, Willkommens- und Lösch-E-Mails selbst auf Deutsch).
+
+### 2. Vercel-Deployment (`fra1`)
+
+Das bestehende Vercel-Projekt mit dem GitHub-Repository verbinden. Git-Pushes können ein Deployment auslösen; dessen Zielumgebung und Domain in Vercel kontrollieren: Das erste Deployment kann auch von einem anderen Branch aus als Production eingestuft werden. Vor Tests prüfen, ob Vercel Deployment Protection den Zugriff einschränkt. `NEXT_PUBLIC_SITE_URL` und Supabase-Redirects müssen zur tatsächlich verwendeten Domain passen; sonst führen E-Mail-Links auf die falsche Umgebung.
+
+```bash
+npm install
+npm run build          # baut .vercel-dist/ + vendored /app/supabase.min.js
+vercel deploy --prod             # Ziel-Region und Deployment Protection prüfen
+```
+
+In Vercel unter **Settings → Environment Variables** (Production) setzen:
+
+| Variable | Inhalt |
+|---|---|
+| `SUPABASE_URL` | `https://<ref>.supabase.co` |
+| `SUPABASE_ANON_KEY` | anon/public Key (Client-seitig) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **nur server-seitig** — nie im Client/Repo |
+| `INVITE_REQUIRED` | `true` (geschlossene Beta) |
+| `NEXT_PUBLIC_SITE_URL` | `https://<domain>` |
+| `BREVO_API_KEY` / `SMTP_*`, `MAIL_FROM` | Transaktionsmailer für Wartelisten-Bestätigung und Lösch-E-Mails; nur Auth hat einen Supabase-Mailer-Fallback |
+| `RATE_LIMIT_SALT` | Zufälliger geheimer Salt für das Rate-Limiting |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY_29`, `STRIPE_PRICE_YEARLY_290` | optional, für M5-Zahlung (29 €/Monat · 290 €/Jahr, Bestandsschutz via `profiles.price_locked`) |
+
+> **Sicherheit:** Secrets nur in geschützten Umgebungsvariablen hinterlegen, niemals ins Repository, Client-Bundle oder den Klartext-Chat übernehmen. `api/config` liefert bewusst nur öffentliche Parameter.
+>
+> Ohne Transaktionsmailer werden Wartelisten-Bestätigungen nicht versendet; die Kontolöschung verwendet dann eine Bestätigungsphrase statt einer E-Mail. Supabase-Standardmails müssen separat lokalisiert und der Mailversand vollständig getestet werden.
+
+### 3. Nach dem Deployment prüfen
+
+```bash
+npm test               # Syntax + Alpha-Regression + Beta-Suites (smoke7..smoke23)
+curl -I https://<domain>/          # Landingpage
+curl -I https://<domain>/app/      # PWA
+curl -I https://<domain>/api/config
+curl -I https://<domain>/impressum
+```
+
+### Beta-Funktionen (M0–M5)
+
+- **M1** Öffentliche Landingpage; Warteliste (Double Opt-in) für später vorbereitet und derzeit ausgeblendet und ehrlichen Datenschutz-/Impressum-/AGB-Entwürfen (`legal-review: needed`).
+- **M2** Einladungscode-gates Registration, Passwort-Login für bestehende Konten und optionaler Magic-Link-Login (Mailversand offen), `profiles`-Zeile bei Erstlogin (`price_locked = 29`, `price_locked_at`, `invite_code`).
+- **M3** Single-File-PWA ohne CalDAV/Nextcloud, Supabase-`items`-Sync (Pro-Row-LWW, Tombstones, R13b Pull-first auf Neugeräten), 5-Minuten-Onboarding.
+- **M4** Self-Service JSON-Datenexport + Konto-Löschung (E-Mail-Bestätigung → löscht `auth.users` + kaskadiert).
+- **M5** Stripe-Checkout (29 €/Monat · 290 €/Jahr) mit Bestandsschutz über `profiles.price_locked`, HMAC-Webhook, § 312k-BGB-Zweischritt-Kündigung.
+
+---
+
+# Theo als YunoHost-App 🐣 (Alpha / Selbsthosting)
 
 Theo auf der eigenen YunoHost-Maschine installieren — YunoHost übernimmt dabei **HTTPS-Zertifikat, Domain, Zugangsschutz (SSO) und Dienst-Verwaltung**. Theo läuft als systemd-Dienst hinter nginx; das Handy installiert Theo als PWA über echtes HTTPS.
 
@@ -51,7 +135,8 @@ Danach ist Theo unter `https://<domain><pfad>/` erreichbar.
 
 1. `https://<domain><pfad>/` im Browser öffnen → ggf. mit YunoHost-Konto anmelden (einmalig).
 2. Android/Chrome: **„App installieren“** → Theo startet standalone mit eigenem Icon. iOS/Safari: „Zum Home-Bildschirm“.
-3. Offline-Start: der Service-Worker hält den letzten Stand bereit; Daten liegen im Gerätespeicher und synchronisieren, sobald Verbindung besteht.
+3. Offline auf Handy oder Desktop: Theo vorher auf dem **gleichen Gerät und im gleichen Browser** online öffnen, anmelden und vollständig synchronisieren; dabei wird die App für den Offline-Start zwischengespeichert. Optional zum Startbildschirm hinzufügen. Danach bleiben Änderungen im lokalen Browserspeicher und werden bei Verbindung und gültiger Anmeldung synchronisiert. Nach Abmeldung, beim Löschen von Browserdaten, im privaten Browsermodus oder bei vom System geräumtem Speicher ist der Offline-Zugriff nicht gewährleistet. Eine neue Anmeldung benötigt Internet. Bei gleichzeitiger Bearbeitung auf mehreren Geräten gilt pro Datensatz die letzte Änderungszeit; bei Konflikten können ältere Änderungen überschrieben werden. Bis zur erfolgreichen Synchronisation sind Änderungen nur auf diesem Gerät vorhanden.
+4. Mobil: In der Woche 1, 3 oder 7 Tage wählen und im Tagesraster seitlich wischen; in der 7-Tage-Ansicht sind auf schmalen Displays zunächst nur einige Spalten sichtbar; seitliches Wischen wechselt tageweise. Konto, Abo und Datenexport stehen im Kontobereich unten im Menü, die Theo-Konfiguration enthält nur Theo-Einstellungen.
 
 ## Update der App (immer leicht)
 
@@ -89,3 +174,7 @@ Browser/PWA  ──HTTPS──▶  nginx (YunoHost, Zertifikat, SSO-Gate)
                                └─ CalDAV-Proxy ──▶ Nextcloud (Ziel fest gepinnt,
                                                    Credentials nur im Browser)
 ```
+
+Psychoedukation: Startbeiträge liegen in `app/education.js`. Die redaktionelle Pflege, Quellen und Affiliate-Kennzeichnung sind in `docs/psychoedukation.md` beschrieben. Die Texte ersetzen keine Diagnose oder Therapie.
+
+Die Wissensredaktion und der Umgang mit Medien sind in [docs/psychoedukation.md](docs/psychoedukation.md) beschrieben. Private Rückmeldungen, Datenschutz und die kontrollierte manuelle Übergabe an Coding-Agenten stehen in [docs/feedback.md](docs/feedback.md).
