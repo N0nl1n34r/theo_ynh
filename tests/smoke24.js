@@ -38,6 +38,21 @@ vm.runInContext(read('app/education.js'),context);vm.runInContext(read('app/admi
   assert(context.THEO_ADMIN.items().some(x=>x.id==='selbst-erkennen'));
   context.THEO_ADMIN.tab='feedback';context.THEO_ADMIN.feedback=[{id:'a',category:'bug',message:'<img src=x>',page:'woche',status:'neu',summary:'',created_at:'2026-01-01'}];
   assert(!context.THEO_ADMIN.render().includes('<img src=x>'),'feedback escaped');
+  context.THEO_ADMIN.reset();
+  context.getDataClient=()=>({rpc:async name=>{
+    if(name==='theo_feature_access')return {error:new Error('unavailable')};
+    if(name==='theo_is_admin')return {data:true};
+    return {data:[]};
+  }});
+  await context.THEO_ADMIN.init();
+  assert.equal(context.THEO_ADMIN.isAdmin,true,'unrelated RPC failure must not hide admin access');
+  let resolveAdmin;
+  context.getDataClient=()=>({rpc:name=>name==='theo_is_admin'?new Promise(r=>resolveAdmin=r):Promise.resolve({data:[]})});
+  const pending=context.THEO_ADMIN.init();
+  context.AUTH.user={id:'other'};context.AUTH.session={access_token:'other-token'};context.THEO_ADMIN.reset();
+  resolveAdmin({data:true});await pending;
+  assert.equal(context.THEO_ADMIN.isAdmin,false,'stale admin response must not survive account switch');
+  assert(JSON.parse(read('vercel.json')).rewrites.some(r=>r.source==='/admin'&&r.destination==='/app/index.html'));
   context.THEO_ADMIN.reset(); assert.equal(context.THEO_ADMIN.isAdmin,false);
   assert(context.THEO_ADMIN.render().includes('Kein Zugriff'));
   console.log('SMOKE 24 ALL GREEN — admin authorization, rollout, editorial and escaping');

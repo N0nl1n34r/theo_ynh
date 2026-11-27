@@ -8,6 +8,8 @@
     { "source": "/impressum", "destination": "/impressum.html" },
     { "source": "/datenschutz", "destination": "/datenschutz.html" },
     { "source": "/agb", "destination": "/agb.html" },
+    { "source": "/admin", "destination": "/app/index.html" },
+    { "source": "/admin/", "destination": "/app/index.html" },
     { "source": "/app", "destination": "/app/index.html" },
     { "source": "/app/", "destination": "/app/index.html" }
   ],

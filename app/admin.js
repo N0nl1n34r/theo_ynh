@@ -21,19 +21,32 @@
     const access=ui.demoMode?{authenticity:true}:A.access;
     return merged.filter(x=>!x.feature || (access && access[x.feature]===true));
   };
-  A.reset=()=>{A.isAdmin=false;A.access=null;A.feedback=[];A.users=[];A.articles=[];A.flags=[];A.overrides=[];A.editing=null;A.busy=false;A.status=''};
+  A.reset=()=>{A.isAdmin=false;A.access=null;A.feedback=[];A.users=[];A.articles=[];A.flags=[];A.overrides=[];A.editing=null;A.busy=false;A.status='';A.checking=false;A.checkError=''};
   A.init=async()=>{
     const user=AUTH.user&&AUTH.user.id, session=AUTH.session;
     if(!user||!session)return;
+    const token=session.access_token;
+    A.checkError=''; A.checking=true;
     try{const value=JSON.parse(localStorage.getItem('theo-feature-access-'+user)||'null'); if(value&&typeof value==='object')A.access=value}catch(e){}
-    try{
-      const [admin,access,published]=await Promise.all([rpc('theo_is_admin'),rpc('theo_feature_access'),rpc('theo_published_education')]);
-      if(!AUTH.user||AUTH.user.id!==user||AUTH.session!==session)return;
-      A.isAdmin=admin===true; if(!A.isAdmin){A.feedback=[];A.articles=[];A.users=[];A.flags=[];A.overrides=[];A.editing=null} A.access=access&&typeof access==='object'?access:{};
-      A.published=Array.isArray(published)?published.map(validDoc).filter(Boolean):[];
-      try{localStorage.setItem('theo-feature-access-'+user,JSON.stringify(A.access));localStorage.setItem('theo-published-education',JSON.stringify(A.published))}catch(e){}
+    const current=()=>AUTH.user&&AUTH.user.id===user&&AUTH.session&&AUTH.session.access_token===token;
+    const admin=rpc('theo_is_admin').then(async value=>{
+      if(!current())return;
+      A.checking=false;A.isAdmin=value===true;
+      if(!A.isAdmin){A.feedback=[];A.articles=[];A.users=[];A.flags=[];A.overrides=[];A.editing=null}
       safeBgRender();
-    }catch(e){if(AUTH.user&&AUTH.user.id===user)safeBgRender()}
+      if(A.isAdmin&&ui.standaloneAdmin&&ui.route.view==='admin')await A.load();
+    }).catch(()=>{if(current()){A.checking=false;A.isAdmin=false;A.checkError='Admin-Berechtigung konnte nicht geprüft werden. Bitte Internetverbindung prüfen und erneut versuchen.';safeBgRender()}});
+    const access=rpc('theo_feature_access').then(value=>{
+      if(!current())return;
+      A.access=value&&typeof value==='object'?value:{};
+      try{localStorage.setItem('theo-feature-access-'+user,JSON.stringify(A.access))}catch(e){} safeBgRender();
+    }).catch(()=>{});
+    const published=rpc('theo_published_education').then(value=>{
+      if(!current())return;
+      A.published=Array.isArray(value)?value.map(validDoc).filter(Boolean):[];
+      try{localStorage.setItem('theo-published-education',JSON.stringify(A.published))}catch(e){} safeBgRender();
+    }).catch(()=>{});
+    await Promise.all([admin,access,published]);
   };
   A.open=async()=>{if(!A.isAdmin){toast('Kein Admin-Zugriff.');return}ui.route={view:'admin'};ui.menuOpen=false;render();await A.load()};
   A.load=async()=>{
@@ -53,7 +66,7 @@
   };
   A.tabTo=async tab=>{if(!['feedback','articles','users'].includes(tab))return;A.tab=tab;A.editing=null;await A.load()};
   A.render=()=>{
-    if(!A.isAdmin)return '<div class="vhead"><h1>Administration</h1></div><p>Kein Zugriff.</p>';
+    if(!A.isAdmin)return '<div class="vhead"><h1>Administration</h1></div><p>'+(A.checking?'Berechtigung wird geprüft …':escape(A.checkError||'Kein Zugriff: Dieses Konto hat keine Admin-Berechtigung.'))+'</p><button class="btn" data-act="adminRetry">Erneut prüfen</button>';
     let h='<div class="vhead"><div><h1>⚙ Theo-Administration</h1><div class="sub">Feedback, Redaktion und Freigaben – keine Einsicht in Termine, Aufgaben oder Notizen.</div></div></div><div class="chips">'+[['feedback','💬 Feedback'],['articles','📚 Redaktion'],['users','👥 Nutzer & Freigaben']].map(([id,label])=>'<button class="chip'+(A.tab===id?' on':'')+'" data-act="adminTab" data-tab="'+id+'">'+label+'</button>').join('')+'</div>';
     if(A.status)h+='<p role="status" class="sub">'+escape(A.status)+'</p>';
     if(A.tab==='feedback'){

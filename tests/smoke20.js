@@ -164,7 +164,7 @@ function bootAppInstance(opts = {}) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/education.js'), 'utf8'), sandbox);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/presets.js'), 'utf8'), sandbox);
   vm.runInContext(
-    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle,yearDayCounts,capsulePayloadFromState,applyLiveItem,normalizeState};',
+    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle,yearDayCounts,capsulePayloadFromState,applyLiveItem,normalizeState,performDrop,parseISO};',
     sandbox
   );
   return { ex: sandbox.__EX, els, store, handlers };
@@ -200,6 +200,21 @@ function bootAppInstance(opts = {}) {
   await new Promise((r) => setTimeout(r, 20));
   ok(gExp.els['q:#main'].innerHTML.includes('abgelaufen oder wurde schon einmal verwendet'),
     'Abgelaufener Magic-Link (otp_expired) zeigt klaren deutschen Hinweis zum Neu-Anfordern');
+
+  // Undated items remain optional, persist, and can be planned across a week boundary.
+  const dragTest=bootAppInstance({ protocol:'https:', search:'?mode=demo' });
+  await new Promise((r)=>setTimeout(r,25));dragTest.ex.ACT.enterDemo();
+  const ds=dragTest.ex.S();ds.projects=[];ds.tasks=[{id:'no-date',title:'Ohne Deadline',done:false}];
+  dragTest.ex.ui.anchor=dragTest.ex.parseISO('2026-11-23');dragTest.ex.ui.mobileDay=6;
+  dragTest.ex.render();
+  ok(!dragTest.els['q:#main'].innerHTML.includes('Ohne Deadline'),'Unterminierte Aufgabe standardmäßig ausgeblendet');
+  dragTest.handlers.change({target:{dataset:{field:'showUndated'},checked:true}});
+  ok(dragTest.els['q:#main'].innerHTML.includes('Ohne Deadline')&&dragTest.ex.normalizeState(ds).settings.showUndated&&dragTest.ex.capsulePayloadFromState().settings.showUndated,'Schalter zeigt unterminierte Aufgaben und wird gespeichert');
+  const cell={dataset:{mobileWeek:'2026-11-30'}};
+  const dest={dataset:{drop:'w0s0'},classList:{remove(){}},closest:()=>cell};
+  dragTest.ex.performDrop(dest,'task:no-date','2026-11-23');
+  ok(ds.tasks[0].planned.wk==='2026-11-30'&&ds.tasks[0].planned.day===0&&ds.tasks[0].planned.slot===0,'Drop plant Aufgabe in der Zielwoche');
+  ok(appHtml.includes("closestEl(e.target,'.touchGrip,.upGrip')")&&appHtml.includes('touchcancel')&&appHtml.includes('touchScroll()'),'Touch-Griffe unterstützen Scrollen und Abbrechen');
 
   // Responsive login layout and optional discovery survey, with no remote persistence.
   ok(appHtml.includes('#wrap.auth-gated{display:block}') && gateHtml1.includes('auth-password') && gateHtml1.includes('placeholder="Passwort eingeben"') && gateHtml1.includes('authPassword'),

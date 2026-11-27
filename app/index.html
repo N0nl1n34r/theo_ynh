@@ -170,6 +170,8 @@ body.dragging-ev .mobTrashWrap{display:flex; justify-content:flex-start}
 .agRow{cursor:pointer; border-radius:8px; padding:6px 6px}
 .agRow:hover{background:#FAF7F0}
 .uprow[draggable="true"]:hover{background:#FAF7F0; border-radius:9px}
+.touchGrip{display:none}.touchDragging{opacity:.45}.touchGhost{position:fixed;z-index:9999;pointer-events:none;background:#363b36;color:white;border-radius:8px;padding:7px 11px;font-size:13px;box-shadow:0 3px 12px #0005}.touchDrop{outline:3px solid #5b9b73!important;outline-offset:-3px}
+@media (pointer:coarse){.touchGrip,.upGrip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;touch-action:none;user-select:none;cursor:grab;color:#526b5c;font-size:20px}.swipeHint:after{content:" Zum Verschieben am ⠿ ziehen."}}
 .upGrip{color:#C1BAAB; cursor:grab; user-select:none; font-size:13px; padding:0 2px}
 .wmobile{display:none}
 .daychips{display:flex; gap:6px; overflow-x:auto; padding:2px 0 8px}
@@ -343,6 +345,7 @@ code{background:#F1EDE3;border-radius:5px;padding:1px 5px;font-size:11.5px}
   .kb{min-width:560px}
 }
 
+body.admin-standalone #nav,body.admin-standalone #topbar{display:none!important}body.admin-standalone #wrap{display:block}body.admin-standalone #main{max-width:1000px;width:100%;margin:auto;padding:28px 16px 60px}body.admin-standalone .adminBack{display:block;margin-bottom:18px}
 body.modal-open{overflow:hidden;overscroll-behavior:none}
 .passwordWrap{display:flex;align-items:center;gap:6px}
 .passwordWrap .inp{min-width:0}
@@ -630,7 +633,7 @@ function normalizeState(x){
   if(!x.settings.aids)x.settings.aids={mit:true,focus:true,year:true};
   if(!x.settings.slotTimes)x.settings.slotTimes={0:{s:'09:00',e:'12:00'},1:{s:'14:00',e:'17:00'},2:{s:'19:00',e:'22:00'}};
   if(!x.settings.liveSync)x.settings.liveSync={on:true,interval:60};
-  x.settings={aids:x.settings.aids,slotTimes:x.settings.slotTimes,liveSync:x.settings.liveSync,theme:THEMES.some(t=>t[0]===x.settings.theme)?x.settings.theme:'natur',modules:Array.isArray(x.settings.modules)?x.settings.modules.filter(id=>MODULES.some(m=>m.id===id)):[],educationDone:Array.isArray(x.settings.educationDone)?x.settings.educationDone.filter(id=>typeof id==='string'):[],educationHidden:x.settings.educationHidden===true};
+  x.settings={aids:x.settings.aids,slotTimes:x.settings.slotTimes,liveSync:x.settings.liveSync,theme:THEMES.some(t=>t[0]===x.settings.theme)?x.settings.theme:'natur',modules:Array.isArray(x.settings.modules)?x.settings.modules.filter(id=>MODULES.some(m=>m.id===id)):[],educationDone:Array.isArray(x.settings.educationDone)?x.settings.educationDone.filter(id=>typeof id==='string'):[],educationHidden:x.settings.educationHidden===true,showUndated:x.settings.showUndated===true};
   if(!x.motto)x.motto={};
   if(!x.synced)x.synced={};
   if(!x.tomb)x.tomb={};
@@ -1033,11 +1036,11 @@ function dueChip(due,extra){
   const r=relDue(due); if(!r)return '';
   return '<button class="duechip'+(due<todayISO()?' past':'')+'" '+(extra||'')+'>🕐 '+esc(r)+'</button>';
 }
-function allDeadlineItems(){
+function allDeadlineItems(includeUndated){
   const out=[];
-  for(const p of S.projects)for(const t of p.todos){if(t.due&&!t.done&&!t.delegated&&!t.planned)out.push({kind:'todo',t:t,p:p})}
-  for(const t of S.tasks){if(t.due&&!t.done&&!t.delegated&&!t.planned)out.push({kind:'task',t:t,p:null})}
-  out.sort((a,b)=>a.t.due<b.t.due?-1:1);
+  for(const p of S.projects)for(const t of p.todos){if((t.due||includeUndated)&&!t.done&&!t.delegated&&!t.planned)out.push({kind:'todo',t:t,p:p})}
+  for(const t of S.tasks){if((t.due||includeUndated)&&!t.done&&!t.delegated&&!t.planned)out.push({kind:'task',t:t,p:null})}
+  out.sort((a,b)=>(a.t.due||'9999').localeCompare(b.t.due||'9999'));
   return out;
 }
 function plannedWithDue(){
@@ -1266,6 +1269,7 @@ function capsulePayloadFromState(){
       modules:S.settings.modules||[],
       educationDone:S.settings.educationDone||[],
       educationHidden:!!S.settings.educationHidden,
+      showUndated:!!S.settings.showUndated,
       intro:!!S.meta.intro
     }
   };
@@ -1403,6 +1407,7 @@ function applyLiveItem(u,kind,payload){
       if(Array.isArray(payload.settings.modules))S.settings.modules=payload.settings.modules.filter(id=>MODULES.some(m=>m.id===id));
       if(Array.isArray(payload.settings.educationDone))S.settings.educationDone=payload.settings.educationDone.filter(id=>typeof id==='string');
       if(typeof payload.settings.educationHidden==='boolean')S.settings.educationHidden=payload.settings.educationHidden;
+      if(typeof payload.settings.showUndated==='boolean')S.settings.showUndated=payload.settings.showUndated;
       if(typeof payload.settings.intro==='boolean')S.meta.intro=payload.settings.intro;
     }
     return;
@@ -1817,9 +1822,9 @@ async function bootAuthAndSync(){
         const previousUser=AUTH.user&&AUTH.user.id;
         bindAuthSession(session);
         render();
+        if(session&&session.user&&globalThis.THEO_ADMIN)setTimeout(()=>globalThis.THEO_ADMIN.init(),0);
         if(session&&session.user&&session.user.id!==previousUser){
           fetchAccountProfile();
-          if(globalThis.THEO_ADMIN)setTimeout(()=>globalThis.THEO_ADMIN.init(),0);
           syncCycle(true);
           startSync();
         }
@@ -2060,7 +2065,7 @@ function render(){
   const nv=$('#nav');
   const gated=shouldShowAuthGate();
   const wrap=$('#wrap'); if(wrap&&wrap.classList)wrap.classList.toggle('auth-gated',gated);
-  if(document.body&&document.body.classList)document.body.classList.toggle('auth-gated',gated);
+  if(document.body&&document.body.classList){document.body.classList.toggle('auth-gated',gated);document.body.classList.toggle('admin-standalone',!!ui.standaloneAdmin)}
   if(document.documentElement&&S&&S.settings)document.documentElement.setAttribute('data-theme',S.settings.theme||'natur');
   if(nv){
     nv.classList.toggle('open',ui.menuOpen);
@@ -2077,7 +2082,7 @@ function render(){
   const inb=document.querySelectorAll('#nav .navbtn')[3];
   if(inb){const old=inb.querySelector('.navdot'); if(old)old.remove(); if(inboxDot){const d=document.createElement('span'); d.className='navdot'; inb.appendChild(d)}}
   const v=ui.route.view;
-  let h='';
+  let h=ui.standaloneAdmin?'<div class="adminBack"><a href="/app/">← Zurück zu Theo</a></div>':'';
   if(ui.demoMode){
     h+='<div class="demoBar"><span>👀 <b>Lokaler Vorschau-Modus:</b> Du kannst alles frei ausprobieren — Änderungen bleiben nur in dieser Vorschau.</span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn mini primary" data-act="exitDemo">Zur Anmeldung</button><button class="btn mini" data-act="goModuleConfig">Module einstellen</button></span></div>';
   }
@@ -2208,10 +2213,10 @@ function renderGantt(p){
 }
 
 function renderUpcoming(){
-  const items=allDeadlineItems(); const nd=delegatedCount(); const np=plannedWithDue();
-  let h='<div class="card upcard"><div class="fh2" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>🕐 Anstehend — mit Deadline, ohne Block</span><span class="pc">Deadlines sind Erwartungsanker, keine Urteile</span></div>';
-  h+='<div class="sub" style="margin-bottom:6px">Hier steht nur, was eine <b>Deadline</b> hat und noch <b>keinen Block</b> bekommen hat'+(np?' — bereits in Blöcken geplant: '+np+' (in der Wochenansicht sichtbar)':'')+'. Per <b>Drag &amp; Drop (⠿)</b> direkt oben in einen Wochenblock ziehen oder mit „→ Block“ einplanen. Bei knapper Kapazität: <b>Timeline verschieben</b>, <b>Scope anpassen</b> oder <b>delegieren</b>.</div>';
-  if(!items.length)h+='<div class="sub">Nichts mit Deadline. Auch das ist ein zulässiger Zustand.</div>';
+  const showUndated=!!S.settings.showUndated, items=allDeadlineItems(showUndated); const nd=delegatedCount(); const np=plannedWithDue();
+  let h='<div class="card upcard"><div class="fh2" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>🕐 Offene Aufgaben — ohne Block</span><span class="pc">Deadlines sind Erwartungsanker, keine Urteile</span></div>';
+  h+='<label class="checkrow"><input type="checkbox" data-field="showUndated"'+(showUndated?' checked':'')+'><span>Auch Aufgaben ohne Deadline anzeigen</span></label><div class="sub" style="margin-bottom:6px">Offene, nicht delegierte Aufgaben ohne geplanten Block'+(showUndated?' mit und ohne Deadline':' mit Deadline')+(np?' · bereits mit Deadline in Blöcken geplant: '+np:'')+'. Über ⠿ ziehen oder mit „→ Block“ einplanen.</div>';
+  if(!items.length)h+='<div class="sub">Keine offenen ungeplanten Aufgaben'+(showUndated?'':' mit Deadline')+'.</div>';
   items.forEach(it=>{
     const t=it.t; const pn=it.p?(it.p.emoji+' '+it.p.name):'Einzelne Aufgabe';
     const toggleAct=it.kind==='todo'?'toggleTodoBox':'toggleTaskBox';
@@ -2221,7 +2226,7 @@ function renderUpcoming(){
       '<span class="upT"><span'+(t.done?' class="strike"':'')+'>'+esc(t.title)+'</span>'+(t.firstStep?'<div class="firstStep">→ '+esc(t.firstStep)+'</div>':'')+'<div class="upP">'+esc(pn)+'</div></span>'+
       dueChip(t.due,'data-act="editTodoSheet" data-kind="'+it.kind+'" data-id="'+t.id+'"')+
       '<div class="miniBtns"><button class="btn mini" data-act="'+planAct+'" data-id="'+t.id+'" title="in einen Block überführen">→ Block</button>'+
-      '<button class="btn mini" data-act="duePlusWeek" data-kind="'+it.kind+'" data-id="'+t.id+'" title="Timeline: Deadline +1 Woche">+1 W</button>'+
+      (t.due?'<button class="btn mini" data-act="duePlusWeek" data-kind="'+it.kind+'" data-id="'+t.id+'" title="Timeline: Deadline +1 Woche">+1 W</button>':'')+
       '<button class="btn mini" data-act="editTodoSheet" data-kind="'+it.kind+'" data-id="'+t.id+'" title="Scope anpassen, delegieren, Datum ändern">✎</button></div></div>';
   });
   if(nd)h+='<div class="sub" style="margin-top:8px">↗ '+nd+' delegiert — in den Projekten sichtbar, zählt nicht als offener Posten.</div>';
@@ -2349,7 +2354,7 @@ function apptRowHtml(ap){
   const ty=ap.typeId?typeOf(ap.typeId):null;
   const actAttr=ap._asBl?'draggable="true" data-drag="block:'+ap.day+'|'+ap.slot+'" data-act="openBlock" data-day="'+ap.day+'" data-slot="'+ap.slot+'"':'draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'"';
   return '<div class="apRow" '+actAttr+' title="'+esc(ap.title+(ap.time?' ('+ap.time+')':''))+' — klicken zum Bearbeiten, ziehen zum Verschieben">'+
-    '<span class="apTm">🕐 '+esc(ap.time||'—')+'</span>'+
+    '<span class="touchGrip" aria-label="Termin ziehen">⠿</span><span class="apTm">🕐 '+esc(ap.time||'—')+'</span>'+
     '<span class="apTt">'+(ap._asBl&&ty?ty.emoji+' ':'')+esc(ap.title)+'</span>'+mb+(ampDot(ap.ampel)||'')+'</div>';
 }
 function apptClusterHtml(w,d,s,appts,withBlock){
@@ -2395,7 +2400,7 @@ function apptCard(ap){
   const mb=ap.multiTotal>1?' <span class="apBadge">↔ Tag '+ap.multiIdx+'/'+ap.multiTotal+'</span>':'';
   const actAttr=ap._asBl?'draggable="true" data-drag="block:'+ap.day+'|'+ap.slot+'" data-act="openBlock" data-day="'+ap.day+'" data-slot="'+ap.slot+'"':'draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'"';
   return '<div class="card appt'+(ap.done?' done':'')+'" '+actAttr+'>'+
-    '<div class="brow"><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · '+ap.span+' Blöcke':'')+'</span>'+mb+(ampDot(ap.ampel)||'<span class="noampDot" title="Ampel im Termin setzen"></span>')+'</div>'+
+    '<div class="brow"><span class="touchGrip" aria-label="Termin ziehen">⠿</span><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · '+ap.span+' Blöcke':'')+'</span>'+mb+(ampDot(ap.ampel)||'<span class="noampDot" title="Ampel im Termin setzen"></span>')+'</div>'+
     '<div class="bttl">'+(ap._asBl&&ty?ty.emoji+' ':'')+esc(ap.title)+'</div>'+
     (ap.note?'<div class="bnote">→ '+esc(ap.note)+'</div>':'')+
     '<div class="bsrc">'+(ty?ty.emoji+' '+esc(ty.name):'')+(ar?(ty?' · ':'')+esc(ar.name):'')+(ap.fb?((ty||ar)?' · ':'')+FBL[ap.fb]:'')+'</div></div>';
@@ -2409,7 +2414,7 @@ function blockCard(bl,d,s){
   const title=bl.kind==='projekt'&&p?p.name:bl.title;
   const openCnt=items.filter(r=>!r.t.done).length;
   let h='<div class="card block'+(bl.done?' done':'')+'" style="--ac:'+ac+'" draggable="true" data-drag="block:'+d+'|'+s+'" data-act="openBlock" data-day="'+d+'" data-slot="'+s+'">'+
-    '<div class="brow"><span class="bico">'+ico+'</span><span class="bttl">'+esc(title)+'</span>'+ampDot(bl.ampel)+'</div>'+
+    '<div class="brow"><span class="touchGrip" aria-label="Block ziehen">⠿</span><span class="bico">'+ico+'</span><span class="bttl">'+esc(title)+'</span>'+ampDot(bl.ampel)+'</div>'+
     (bl.t0?'<div class="btime">🕐 '+esc(apTimeStr(bl.t0,bl.t1))+'</div>':'');
   if(items.length>=2||bl.kind==='bundle'){
     items.forEach(r=>{
@@ -2540,7 +2545,7 @@ function renderProject(pid){
       const col=c[0], items=p.todos.filter(t=>kanOf(t)===col);
       h+='<div class="kcol" data-drop="k'+col+'"><div class="kname"><span>'+c[1]+'</span><span class="pc">'+items.length+'</span></div>';
       items.forEach(t=>{
-        h+='<div class="card kcard" draggable="true" data-drag="todo:'+p.id+'|'+t.id+'" data-act="kanCard" data-tid="'+t.id+'"><div class="brow"><span class="bttl">'+esc(t.title)+'</span>'+(t.planned?'<span class="btime">📅</span>':'')+'</div>'+
+        h+='<div class="card kcard" draggable="true" data-drag="todo:'+p.id+'|'+t.id+'" data-act="kanCard" data-tid="'+t.id+'"><div class="brow"><span class="touchGrip" aria-label="Karte ziehen">⠿</span><span class="bttl">'+esc(t.title)+'</span>'+(t.planned?'<span class="btime">📅</span>':'')+'</div>'+
           (t.delegated?'<div class="bnote">↗ '+esc(t.delegated)+'</div>':'')+
           (t.planned?'<div class="bnote">📅 '+esc(fmtPlanChip(t.planned))+'</div>':'')+
           (fmtEst(t)?'<div class="bnote">'+fmtEst(t)+(t.due?' · 🕐 '+esc(relDue(t.due)):'')+'</div>':'')+'</div>';
@@ -2548,7 +2553,7 @@ function renderProject(pid){
       h+='<input class="kadd" placeholder="＋ Neue Karte" data-enter="kbAdd|'+p.id+'|'+col+'"></div>';
     });
     h+='</div></div>';
-    h+='<div class="sub" style="margin-top:8px">Karten ziehen (Desktop) oder antippen zum Verschieben. <b>Pending</b> = delegiert (↗), <b>Backlog</b> = jetzt gerade nicht relevant. Liste und Kanban teilen denselben Status.</div>';
+    h+='<div class="sub" style="margin-top:8px">Karten am ⠿ ziehen oder antippen zum Verschieben. <b>Pending</b> = delegiert (↗), <b>Backlog</b> = jetzt gerade nicht relevant. Liste und Kanban teilen denselben Status.</div>';
   }else{
     h+=renderGantt(p);
   }
@@ -3242,7 +3247,8 @@ const ACT={
   toggleEducationVisibility(){S.settings.educationHidden=!S.settings.educationHidden; save(); render()},
   applyPreset(a){const p=(globalThis.THEO_PRESETS||[]).find(x=>x.id===a.id); if(!p)return; let added=0; p.areas.forEach(name=>{if(!S.areas.some(x=>x.name.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){const i=S.areas.length%PHC.length; S.areas.push({id:uid(),name,emoji:'🌱',color:themePalette()[i],colorIndex:i}); added++}}); p.types.forEach(([name,emoji,asAppt])=>{if(!S.types.some(x=>x.name.trim().toLocaleLowerCase()===name.toLocaleLowerCase())){S.types.push(normalizeType({id:uid(),name,emoji,asAppt,ampel:'none',defSpan:1,openEdit:true})); added++}}); save();render();toast(added?added+' Vorschläge ergänzt.':'Gleichnamige Vorschläge sind bereits vorhanden.')},
   feedbackOpen(){sheetFeedback()},
-  adminOpen(){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.open()},
+  adminOpen(){if(globalThis.THEO_ADMIN&&globalThis.THEO_ADMIN.isAdmin)location.href='/admin'},
+  adminRetry(){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.init()},
   adminTab(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.tabTo(a.tab)},
   adminSaveReview(a){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.saveReview(a.id)},
   adminCopySummaries(){if(globalThis.THEO_ADMIN)globalThis.THEO_ADMIN.copy()},
@@ -4400,7 +4406,7 @@ const ACT={
         else if(err.status===429)ui.authErr='Zu viele Anmeldeversuche. Bitte warte kurz und versuche es erneut.';
         else ui.authErr='Die Anmeldung ist gerade nicht verfügbar. Bitte prüfe deine Verbindung und versuche es erneut.';
       }
-      else if(!AUTH.session){bindAuthSession(result.data.session);fetchAccountProfile();syncCycle(true);startSync()}
+      else if(!AUTH.session){bindAuthSession(result.data.session);if(globalThis.THEO_ADMIN)setTimeout(()=>globalThis.THEO_ADMIN.init(),0);fetchAccountProfile();syncCycle(true);startSync()}
     }catch(e){password='';ui.authErr='Anmeldung fehlgeschlagen. Bitte prüfe deine Verbindung.'}
     ui.authBusy=false;render();
   },
@@ -4721,6 +4727,57 @@ function moveApptTo(apId,dstW,td,ts,quiet){
 let mobileTouch=null;
 document.addEventListener('touchstart',e=>{const grid=closestEl(e.target,'.mobileDays'); if(grid&&e.touches.length===1)mobileTouch={x:e.touches[0].clientX,y:e.touches[0].clientY}; else mobileTouch=null},{passive:true});
 document.addEventListener('touchend',e=>{if(!mobileTouch||!e.changedTouches.length)return; const dx=e.changedTouches[0].clientX-mobileTouch.x,dy=e.changedTouches[0].clientY-mobileTouch.y; mobileTouch=null; if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5){dragEndTs=Date.now(); ACT.mobileShift({step:dx<0?1:-1})}},{passive:true});
+// Only the grip captures touch: ordinary scrolling, taps and day swipes remain available.
+let touchDrag=null;
+function touchTarget(x,y){return closestEl(document.elementFromPoint(x,y),'[data-drop]')}
+function touchUpdate(){
+  if(!touchDrag||!touchDrag.active)return;
+  const t=touchDrag;
+  t.ghost.style.left=(t.x+12)+'px'; t.ghost.style.top=(t.y+12)+'px';
+  const next=touchTarget(t.x,t.y);
+  if(t.target!==next){if(t.target)t.target.classList.remove('touchDrop');t.target=next;if(next)next.classList.add('touchDrop')}
+}
+function touchScroll(){
+  if(!touchDrag||!touchDrag.active)return;
+  const t=touchDrag, edge=70;
+  if(t.y<edge)window.scrollBy(0,-12); else if(t.y>window.innerHeight-edge)window.scrollBy(0,12);
+  const scroller=document.querySelector('.mobileDays,.kscroll');
+  if(scroller){const r=scroller.getBoundingClientRect();if(t.y>=r.top&&t.y<=r.bottom){if(t.x<r.left+35)scroller.scrollLeft-=10;else if(t.x>r.right-35)scroller.scrollLeft+=10}}
+  touchUpdate(); t.frame=requestAnimationFrame(touchScroll);
+}
+document.addEventListener('touchstart',e=>{
+  const grip=closestEl(e.target,'.touchGrip,.upGrip');
+  const source=grip&&closestEl(grip,'[data-drag]');
+  if(!source||e.touches.length!==1)return;
+  const p=e.touches[0], cell=closestEl(source,'.mdayView[data-mobile-week]');
+  touchDrag={id:p.identifier,x:p.clientX,y:p.clientY,startX:p.clientX,startY:p.clientY,source:source,data:source.dataset.drag,week:cell?cell.dataset.mobileWeek:wk(),active:false};
+  mobileTouch=null;
+  e.preventDefault();
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+  if(!touchDrag)return;
+  const p=Array.from(e.touches).find(x=>x.identifier===touchDrag.id);if(!p)return;
+  e.preventDefault(); const t=touchDrag;t.x=p.clientX;t.y=p.clientY;
+  if(!t.active&&Math.hypot(t.x-t.startX,t.y-t.startY)>8){
+    t.active=true;t.source.classList.add('touchDragging');
+    t.ghost=document.createElement('div');t.ghost.className='touchGhost';t.ghost.textContent='Verschieben';document.body.appendChild(t.ghost);
+    touchUpdate();t.frame=requestAnimationFrame(touchScroll);
+  }else if(t.active)touchUpdate();
+},{passive:false});
+function finishTouchDrag(e,cancelled){
+  if(!touchDrag)return;
+  const t=touchDrag, p=Array.from(e.changedTouches).find(x=>x.identifier===t.id);if(!p&&!cancelled)return;
+  if(p){t.x=p.clientX;t.y=p.clientY}
+  if(t.frame)cancelAnimationFrame(t.frame);
+  if(t.active)touchUpdate();
+  const target=t.target;
+  if(target)target.classList.remove('touchDrop');
+  t.source.classList.remove('touchDragging');if(t.ghost)t.ghost.remove();
+  touchDrag=null;mobileTouch=null;dragEndTs=Date.now();
+  if(t.active&&!cancelled&&target)performDrop(target,t.data,t.week);
+}
+document.addEventListener('touchend',e=>finishTouchDrag(e,false),{passive:true});
+document.addEventListener('touchcancel',e=>finishTouchDrag(e,true),{passive:true});
 /* ================= Globale Events ================= */
 let dragPayload='', dragEndTs=0;
 document.addEventListener('click',e=>{
@@ -4744,6 +4801,7 @@ document.addEventListener('change',e=>{
   else if(f==='areaColor'){const x=S.areas.find(y=>y.id===el.dataset.id); if(x){x.color=el.value; delete x.colorIndex; save(); render(); toast('Eigene Farbe gesetzt.')}}
   else if(f==='phColor'){ui.phColor=el.value; ui.phColorIndex=null; const overlay=$('#overlay'); if(overlay&&overlay.querySelectorAll)overlay.querySelectorAll('.sw2.sel').forEach(b=>b.classList.remove('sel'))}
   else if(f==='motto'){(S.motto||(S.motto={}))[el.dataset.year]=el.value.trim(); save(); if(!isEditingInMain())render()}
+  else if(f==='showUndated'){S.settings.showUndated=!!el.checked; save(); render()}
   else if(f==='liveOn'){S.settings.liveSync.on=el.checked; save(); startSync(); render()}
   else if(f==='liveInterval'){S.settings.liveSync.interval=+el.value; save(); startSync(); render()}
   else if(f==='slotS'){S.settings.slotTimes[el.dataset.slot].s=el.value||slotWin(+el.dataset.slot).s; save(); render()}
@@ -4840,6 +4898,7 @@ document.addEventListener('dragstart',e=>{
   const el=closestEl(e.target,'[data-drag]');
   if(!el)return;
   dragPayload=el.dataset.drag||'';
+  const src=closestEl(el,'.mdayView[data-mobile-week]'); dragSourceWeek=src?src.dataset.mobileWeek:wk();
   if(dragPayload.startsWith('block:')||dragPayload.startsWith('appt:')){
     try{document.body.classList.add('dragging-ev')}catch(x){}
   }
@@ -4862,15 +4921,21 @@ document.addEventListener('drop',e=>{
   const el=closestEl(e.target,'[data-drop]');
   if(!el)return;
   e.preventDefault();
+  const data=(e.dataTransfer&&e.dataTransfer.getData&&e.dataTransfer.getData('text/plain'))||dragPayload;
+  performDrop(el,data,dragSourceWeek);
+});
+let dragSourceWeek='';
+function performDrop(el,data,sourceWeek){
   el.classList.remove('drop');
   try{document.body.classList.remove('dragging-ev')}catch(x){}
-  const data=(e.dataTransfer&&e.dataTransfer.getData&&e.dataTransfer.getData('text/plain'))||dragPayload;
   dragPayload='';
   if(!data)return;
+  const mobileDest=closestEl(el,'.mdayView[data-mobile-week]');
+  const destWeek=mobileDest?mobileDest.dataset.mobileWeek:wk();
   const drop=el.dataset.drop;
   if(drop==='trash'){
     if(data.startsWith('block:')){
-      const p=data.slice(6).split('|'), fd=+p[0], fs=+p[1], W=wk();
+      const p=data.slice(6).split('|'), fd=+p[0], fs=+p[1], W=sourceWeek||wk();
       const bl=blocksFor(W)[fd+'|'+fs];
       if(bl){
         blockItems(bl).forEach(it=>{const r=resolveBlockItem(it); if(r)r.t.planned=null});
@@ -4889,66 +4954,66 @@ document.addEventListener('drop',e=>{
     const to=drop.slice(1).match(/(\d)s(\d)/);
     if(!to)return;
     const fd=+from[0], fs=+from[1], td=+to[1], ts=+to[2];
-    if(fd===td&&fs===ts)return;
-    const W=wk(), srcKey=fd+'|'+fs, dstKey=td+'|'+ts;
-    const bl=getBlocks()[srcKey]; if(!bl)return;
+    const W=sourceWeek||wk(), DW=destWeek, srcKey=fd+'|'+fs, dstKey=td+'|'+ts;
+    if(W===DW&&fd===td&&fs===ts)return;
+    const bl=blocksFor(W)[srcKey]; if(!bl)return;
     const spn=bl.span||1;
-    const dstBl=getBlocks()[dstKey];
+    const dstBl=blocksFor(DW)[dstKey];
     if(isAsApptBlock(bl)){
       if(spn>3-ts){toast('Ab hier sind nur '+(3-ts)+' Blöcke frei.'); return}
       if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
-      delete getBlocks()[srcKey];
+      delete blocksFor(W)[srcKey];
       retireLocalBlockUid(W,fd,fs);
       if(!dstBl){
-        clearTomb(itemUid('block',W+'-'+td+'-'+ts));
-        getBlocks()[dstKey]=bl;
+        clearTomb(itemUid('block',DW+'-'+td+'-'+ts));
+        blocksFor(DW)[dstKey]=bl;
       }else{
         const apN={id:bl.id||uid(),day:td,slot:ts,title:bl.title||'Termin',time:apTimeStr(bl.t0||'',bl.t1||''),ampel:bl.ampel&&bl.ampel!=='none'?bl.ampel:null,src:'Manuell',areaId:null,span:spn,typeId:bl.typeId||null};
         if(bl.t0){apN.t0=bl.t0; if(bl.t1)apN.t1=bl.t1}
         if(bl.note||bl.fbNote)apN.fbNote=bl.fbNote||bl.note;
         if(bl.fb)apN.fb=bl.fb;
-        placeApptInSlot(W,td,ts,apN);
+        placeApptInSlot(DW,td,ts,apN);
       }
-      save(); render(); toast('Termin verschoben nach '+fmtDaySlot(td,ts));
+      save(); render(); toast('Termin verschoben nach '+fmtDaySlotW(DW,td,ts));
       return;
     }
     if(dstBl&&hasBlockTodoItems(bl)&&hasBlockTodoItems(dstBl)){
       const srcItems=blockItems(bl);
       if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
-      delete getBlocks()[srcKey];
+      delete blocksFor(W)[srcKey];
       retireLocalBlockUid(W,fd,fs);
       srcItems.forEach(it=>{
         const r=resolveBlockItem(it); if(r)r.t.planned=null;
-        combineItemIntoBlock(W,td,ts,dstBl,it);
+        combineItemIntoBlock(DW,td,ts,dstBl,it);
       });
       save(); render(); toast('☑️ Aufgaben zu einem Bündel kombiniert ('+blockItems(dstBl).length+' im Block).');
       return;
     }
     if(dstBl&&!isAsApptBlock(dstBl)&&spn===1&&(dstBl.span||1)===1){
-      getBlocks()[srcKey]=dstBl;
-      getBlocks()[dstKey]=bl;
-      clearTomb(itemUid('block',W+'-'+fd+'-'+fs)); clearTomb(itemUid('block',W+'-'+td+'-'+ts));
-      syncBlockItemsPlanned(W,td,ts,bl);
+      blocksFor(W)[srcKey]=dstBl;
+      blocksFor(DW)[dstKey]=bl;
+      clearTomb(itemUid('block',W+'-'+fd+'-'+fs)); clearTomb(itemUid('block',DW+'-'+td+'-'+ts));
+      syncBlockItemsPlanned(DW,td,ts,bl);
       syncBlockItemsPlanned(W,fd,fs,dstBl);
-      save(); render(); toast('Blöcke getauscht: '+fmtDaySlot(fd,fs)+' ⇄ '+fmtDaySlot(td,ts));
+      save(); render(); toast('Blöcke getauscht: '+fmtDaySlot(fd,fs)+' ⇄ '+fmtDaySlotW(DW,td,ts));
       return;
     }
     if(spn>3-ts){toast('Ab hier sind nur '+(3-ts)+' Blöcke frei.'); return}
-    if(!blockSpanRoomW(W,td,ts,spn,srcKey)){toast('Zielblock belegt.'); return}
+    if(!blockSpanRoomW(DW,td,ts,spn,W===DW?srcKey:null)){toast('Zielblock belegt.'); return}
     if(bl.stack&&bl.stack.length){bl.stack.forEach(sa=>placeApptInSlot(W,fd,fs,sa)); delete bl.stack}
-    delete getBlocks()[srcKey];
+    delete blocksFor(W)[srcKey];
     retireLocalBlockUid(W,fd,fs);
-    setBlockW(W,td,ts,bl);
-    syncBlockItemsPlanned(W,td,ts,bl);
-    save(); render(); toast('Verschoben nach '+fmtDaySlot(td,ts));
+    setBlockW(DW,td,ts,bl);
+    syncBlockItemsPlanned(DW,td,ts,bl);
+    save(); render(); toast('Verschoben nach '+fmtDaySlotW(DW,td,ts));
   }else if(drop[0]==='w'&&data.startsWith('appt:')){
     const to=drop.slice(1).match(/(\d)s(\d)/);
     if(!to)return;
-    moveApptTo(data.slice(5),wk(),+to[1],+to[2],false);
+    moveApptTo(data.slice(5),destWeek,+to[1],+to[2],false);
   }else if(drop[0]==='w'&&data.startsWith('todo:')){
     const to=drop.slice(1).match(/(\d)s(\d)/);
     if(!to)return;
-    const tid=data.slice(5).split('|')[1], td=+to[1], ts=+to[2], W=wk();
+    const tid=data.slice(5).split('|')[1], td=+to[1], ts=+to[2], W=destWeek;
     const f=findTodo(tid); if(!f)return;
     const dstBl=realBlockAt(W,td,ts);
     if(dstBl&&hasBlockTodoItems(dstBl)){
@@ -4960,11 +5025,11 @@ document.addEventListener('drop',e=>{
     detachItemEverywhere('todo',tid,W,td,ts);
     f.t.planned={wk:W,day:td,slot:ts};
     setBlockW(W,td,ts,{id:uid(),kind:'projekt',projectId:f.p.id,todoId:tid,title:f.p.name,ampel:'gelb',note:f.t.firstStep||'',done:false});
-    save(); render(); toast('„'+f.t.title+'“ geplant: '+fmtDaySlot(td,ts));
+    save(); render(); toast('„'+f.t.title+'“ geplant: '+fmtDaySlotW(W,td,ts));
   }else if(drop[0]==='w'&&data.startsWith('task:')){
     const to=drop.slice(1).match(/(\d)s(\d)/);
     if(!to)return;
-    const taskId=data.slice(5), td=+to[1], ts=+to[2], W=wk();
+    const taskId=data.slice(5), td=+to[1], ts=+to[2], W=destWeek;
     const t=S.tasks.find(x=>x.id===taskId); if(!t)return;
     const dstBl=realBlockAt(W,td,ts);
     if(dstBl&&hasBlockTodoItems(dstBl)){
@@ -4976,7 +5041,7 @@ document.addEventListener('drop',e=>{
     detachItemEverywhere('task',taskId,W,td,ts);
     t.planned={wk:W,day:td,slot:ts};
     setBlockW(W,td,ts,{id:uid(),kind:'task',taskId:t.id,typeId:null,title:t.title,ampel:'none',note:t.firstStep||'',done:!!t.done});
-    save(); render(); toast('„'+t.title+'“ geplant: '+fmtDaySlot(td,ts));
+    save(); render(); toast('„'+t.title+'“ geplant: '+fmtDaySlotW(W,td,ts));
   }else if(drop==='g'&&data.startsWith('gtodo:')){
     const tid=data.slice(6).split('|')[1];
     const f=findTodo(tid);
@@ -5001,12 +5066,14 @@ document.addEventListener('drop',e=>{
       }
     }
   }
-});
+}
 
 
 /* ================= Start ================= */
 const savedState=load();
 S=(savedState&&savedState.meta&&savedState.meta.v===4)?normalizeState(savedState):seedFrom(savedState);
+ui.standaloneAdmin=typeof location!=='undefined'&&/^\/admin\/?$/.test(location.pathname||'');
+if(ui.standaloneAdmin)ui.route={view:'admin'};
 ui.year=new Date().getFullYear();
 ui.mobileDay=dayIdx(new Date());
 render();
