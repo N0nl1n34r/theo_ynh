@@ -171,7 +171,7 @@ body.dragging-ev .mobTrashWrap{display:flex; justify-content:flex-start}
 .agRow:hover{background:#FAF7F0}
 .uprow[draggable="true"]:hover{background:#FAF7F0; border-radius:9px}
 .touchGrip{display:none}.touchDragging{opacity:.45}.touchGhost{position:fixed;z-index:9999;pointer-events:none;background:#363b36;color:white;border-radius:8px;padding:7px 11px;font-size:13px;box-shadow:0 3px 12px #0005}.touchDrop{outline:3px solid #5b9b73!important;outline-offset:-3px}
-@media (pointer:coarse){.touchGrip,.upGrip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;touch-action:none;user-select:none;cursor:grab;color:#526b5c;font-size:20px}.swipeHint:after{content:" Zum Verschieben am ⠿ ziehen."}}
+@media (pointer:coarse){.touchGrip,.upGrip{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px;touch-action:none;user-select:none;cursor:grab;color:#526b5c;font-size:20px}.swipeHint:after{content:" Zum Verschieben ⠿ ziehen oder Karte halten."}}
 .upGrip{color:#C1BAAB; cursor:grab; user-select:none; font-size:13px; padding:0 2px}
 .wmobile{display:none}
 .daychips{display:flex; gap:6px; overflow-x:auto; padding:2px 0 8px}
@@ -415,6 +415,10 @@ body.auth-gated #topbar{display:none}
 :root[data-theme="nacht"] :where(a){color:#b7d9cc}
 :root[data-theme="nacht"] :where(.trow,.uprow,.agRow,.pickRow,.grow,.gday,.gcell){border-color:var(--line)}
 :root[data-theme="nacht"] :where(.colorInp){background:var(--panel)}
+:root[data-theme="nacht"] .slot.free:hover,:root[data-theme="nacht"] .slot.free:active,:root[data-theme="nacht"] .uprow[draggable="true"]:hover,:root[data-theme="nacht"] .agRow:hover,:root[data-theme="nacht"] .apRow:hover{background:#3b484d;border-color:#78958a;color:var(--ink)}
+:root[data-theme="nacht"] .touchDrop,:root[data-theme="nacht"] .slot.drop{background:#354b40;outline-color:#a4d6b3!important;color:var(--ink)}
+:root[data-theme="nacht"] .upGrip,:root[data-theme="nacht"] .touchGrip{color:#c4d8ce}
+@media (pointer:coarse){.wmobile [data-drag],.wgrid [data-drag],.uprow[data-drag],.kcard[data-drag],.agRow[data-drag]{touch-action:none;-webkit-touch-callout:none;user-select:none}}
 :root[data-theme="nacht"] .inp::placeholder{color:#a0b0ae;opacity:1}
 
 
@@ -2271,12 +2275,12 @@ function renderAgenda(){
     if(it.bl){
       const ty=it.bl.typeId?typeOf(it.bl.typeId):null;
       const blTitle=it.bl.kind==='projekt'&&projOf(it.bl.projectId)?projOf(it.bl.projectId).name:(it.bl.title||'Block');
-      h+='<div class="agRow" data-act="jumpApptWeek" data-w="'+it.w+'" data-day="'+it.day+'" title="Zur Woche dieses Termins springen"><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+(ty?ty.emoji+' ':'')+esc(blTitle)+'</span>'+ampDot(it.bl.ampel)+'<span class="pc">'+(it.bl.t0?esc(apTimeStr(it.bl.t0,it.bl.t1)):SLOTS[it.slot].ico+' '+slotWin(it.slot).s+'–'+slotWin(it.slot).e)+(it.bl.span>1?' · '+it.bl.span+' Blöcke':'')+'</span><button class="xbtn" data-act="openBlockW" data-w="'+it.w+'" data-day="'+it.day+'" data-slot="'+it.slot+'" title="Bearbeiten">✎</button></div>';
+      h+='<div class="agRow" draggable="true" data-drag="block:'+it.day+'|'+it.slot+'" data-drag-week="'+it.w+'" data-act="jumpApptWeek" data-w="'+it.w+'" data-day="'+it.day+'" title="Zur Woche springen oder Termin verschieben"><span class="touchGrip" aria-label="Termin ziehen">⠿</span><span class="agD">'+esc(fmtDate(parseISO(it.date)))+'</span><span class="agT">'+(ty?ty.emoji+' ':'')+esc(blTitle)+'</span>'+ampDot(it.bl.ampel)+'<span class="pc">'+(it.bl.t0?esc(apTimeStr(it.bl.t0,it.bl.t1)):SLOTS[it.slot].ico+' '+slotWin(it.slot).s+'–'+slotWin(it.slot).e)+(it.bl.span>1?' · '+it.bl.span+' Blöcke':'')+'</span><button class="xbtn" data-act="openBlockW" data-w="'+it.w+'" data-day="'+it.day+'" data-slot="'+it.slot+'" title="Bearbeiten">✎</button></div>';
     }else{
       const isMulti=it.endDate&&it.endDate>it.date;
       const dLbl=isMulti?(fmtDate(parseISO(it.date))+' – '+fmtDate(parseISO(it.endDate))):fmtDate(parseISO(it.date));
       const meta=isMulti?(it.multiTotal+' Tage'):(esc(it.ap.time||'')+(it.ap.span>1?' · '+it.ap.span+' Blöcke':''));
-      h+='<div class="agRow" data-act="jumpApptWeek" data-w="'+it.w+'" data-day="'+it.day+'" title="Zur Woche dieses Termins springen"><span class="agD"'+(isMulti?' style="width:auto;min-width:88px"':'')+'>'+esc(dLbl)+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+meta+'</span><button class="xbtn" data-act="openAppt" data-id="'+it.ap.id+'" title="Termin bearbeiten">✎</button></div>';
+      h+='<div class="agRow" '+(isMulti?'':'draggable="true" data-drag="appt:'+esc(it.ap.id)+'" data-drag-week="'+it.w+'" ')+'data-act="jumpApptWeek" data-w="'+it.w+'" data-day="'+it.day+'" title="Zur Woche dieses Termins springen">'+(isMulti?'':'<span class="touchGrip" aria-label="Termin ziehen">⠿</span>')+'<span class="agD"'+(isMulti?' style="width:auto;min-width:88px"':'')+'>'+esc(dLbl)+'</span><span class="agT">'+esc(it.ap.title)+'</span>'+ampDot(it.ap.ampel)+'<span class="pc">'+meta+'</span><button class="xbtn" data-act="openAppt" data-id="'+it.ap.id+'" title="Termin bearbeiten">✎</button></div>';
     }
   });
   h+='<div class="sheetBtns"><button class="btn" data-act="newAppt">＋ Termin (auch später)</button><button class="btn" data-act="openSeminar" data-day="0" data-slot="0">📆 Mehrtägiger Zeitraum</button></div></div>';
@@ -2350,7 +2354,7 @@ function slotApptDisplayList(w,d,s){
   return list;
 }
 function apptRowHtml(ap){
-  const mb=ap.multiTotal>1?'<span class="apBadge">↔ '+ap.multiIdx+'/'+ap.multiTotal+'</span>':'';
+  const mb=ap.multiTotal>1?'<span class="apBadge">↔ '+ap.multiIdx+'/'+ap.multiTotal+'</span>':(ap.seriesId?'<span class="apBadge">↔ Serie</span>':'');
   const ty=ap.typeId?typeOf(ap.typeId):null;
   const actAttr=ap._asBl?'draggable="true" data-drag="block:'+ap.day+'|'+ap.slot+'" data-act="openBlock" data-day="'+ap.day+'" data-slot="'+ap.slot+'"':'draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'"';
   return '<div class="apRow" '+actAttr+' title="'+esc(ap.title+(ap.time?' ('+ap.time+')':''))+' — klicken zum Bearbeiten, ziehen zum Verschieben">'+
@@ -2397,7 +2401,7 @@ function slotCell(d,s,cur,tI,mobile){
 function apptCard(ap){
   const ar=ap.areaId?areaOfId(ap.areaId):null;
   const ty=ap.typeId?typeOf(ap.typeId):null;
-  const mb=ap.multiTotal>1?' <span class="apBadge">↔ Tag '+ap.multiIdx+'/'+ap.multiTotal+'</span>':'';
+  const mb=ap.multiTotal>1?' <span class="apBadge">↔ Tag '+ap.multiIdx+'/'+ap.multiTotal+'</span>':(ap.seriesId?' <span class="apBadge">↔ Serie</span>':'');
   const actAttr=ap._asBl?'draggable="true" data-drag="block:'+ap.day+'|'+ap.slot+'" data-act="openBlock" data-day="'+ap.day+'" data-slot="'+ap.slot+'"':'draggable="true" data-drag="appt:'+ap.id+'" data-act="openAppt" data-id="'+ap.id+'"';
   return '<div class="card appt'+(ap.done?' done':'')+'" '+actAttr+'>'+
     '<div class="brow"><span class="touchGrip" aria-label="Termin ziehen">⠿</span><span class="btime">🕐 '+esc(ap.time)+(ap.span>1?' · '+ap.span+' Blöcke':'')+'</span>'+mb+(ampDot(ap.ampel)||'<span class="noampDot" title="Ampel im Termin setzen"></span>')+'</div>'+
@@ -2432,7 +2436,7 @@ function blockCard(bl,d,s){
     h+='<button class="bRetBtn" data-act="bundleReturnOpen" data-day="'+d+'" data-slot="'+s+'" title="Nicht geschaffte Aufgaben wieder zurück in die offenen To-dos legen">↩ Offene zurück ('+openCnt+')</button>';
   }
   if(bl.note)h+='<div class="bnote">→ '+esc(bl.note)+'</div>';
-  h+='<div class="bsrc">'+(bl.kind==='bundle'||items.length>=2?'To-do-Bündel ('+(items.length-openCnt)+'/'+items.length+' erledigt)':(bl.kind==='projekt'?'Projektblock':'Block'+(bl.done?' · erledigt':'')))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+(bl.fb?' · '+FBL[bl.fb]:'')+'</div></div>';
+  h+='<div class="bsrc">'+(bl.seriesId?'↔ Serie · ':'')+(bl.kind==='bundle'||items.length>=2?'To-do-Bündel ('+(items.length-openCnt)+'/'+items.length+' erledigt)':(bl.kind==='projekt'?'Projektblock':'Block'+(bl.done?' · erledigt':'')))+(bl.span>1?' · über '+bl.span+' Blöcke':'')+(bl.fb?' · '+FBL[bl.fb]:'')+'</div></div>';
   return h;
 }
 
@@ -2849,6 +2853,19 @@ function sheetProj(d,s,pid){
   openSheet(h);
 }
 
+function blockSeriesRoom(w,d,s,span,ignoreKey){
+  if(!blockSpanRoomW(w,d,s,span,ignoreKey))return false;
+  for(let i=0;i<span;i++){const key=d+'|'+(s+i);if(key!==ignoreKey&&blocksFor(w)[key])return false}
+  return true;
+}
+function blockSeriesMembers(id){
+  const result=[];if(!id)return result;
+  for(const w of Object.keys(S.blocks||{}))for(const key of Object.keys(S.blocks[w]||{})){
+    const bl=S.blocks[w][key];if(!bl||bl.seriesId!==id)continue;
+    const [day,slot]=key.split('|').map(Number);result.push({w,day,slot,bl,date:iso(addDays(parseISO(w),day))});
+  }
+  return result.sort((a,b)=>a.date.localeCompare(b.date)||a.slot-b.slot);
+}
 function sheetBlock(d,s,w,focusTitle){
   const W=w||wk();
   const bl=blocksFor(W)[d+'|'+s]; if(!bl)return;
@@ -2877,6 +2894,10 @@ function sheetBlock(d,s,w,focusTitle){
   }
   h+='<label class="f">Blocktyp / Vorlage (optional — beim Speichern gibt er einen Ampel-Vorschlag)</label><select class="inp" id="b-type"><option value="">— frei definiert —</option>'+S.types.map(t=>'<option value="'+t.id+'"'+(bl.typeId===t.id?' selected':'')+'>'+t.emoji+' '+esc(t.name)+(t.asAppt?' (wie Termin)':'')+'</option>').join('')+'</select>';
   h+='<label class="f">Dauer</label><select class="inp slim" id="b-span">'+[1,2,3].map(v=>'<option value="'+v+'"'+((bl.span||1)===v?' selected':'')+'>'+(v===1?'1 Block':(v===2?'2 Blöcke':'3 Blöcke — ganzer Tag'))+'</option>').join('')+'</select>';
+  const series=blockSeriesMembers(bl.seriesId), currentDate=iso(addDays(parseISO(W),d));
+  const lastDate=series.length?series[series.length-1].date:currentDate;
+  h+='<div class="repBox"><label class="f" for="b-extend-end">📆 Über weitere Tage verlängern – bis einschließlich</label><input class="inp slim" type="date" id="b-extend-end" min="'+lastDate+'" value="'+lastDate+'"><div class="sub">An jedem weiteren Tag derselbe Tagesabschnitt. Belegte Ziele verhindern die Verlängerung; bestehende Einträge bleiben erhalten. Verknüpfte Aufgaben bleiben nur im ursprünglichen Block.</div>'+(series.length?'<label class="checkrow"><input type="checkbox" id="b-series-update" checked><span>Titel, Notiz, Typ, Dauer und Ampel für alle '+series.length+' Serientage übernehmen</span></label>':'')+'</div>';
+
   if(isTA||bl.t0||bl.t1){
     h+='<label class="f">Start-/Endzeit im 15-Min-Raster (optional — ohne Angabe zählt das Blockfenster)</label><div class="row2">'+timePickHtml(bl.t0||'','id="b-t0" style="flex:1;min-width:125px"','— Start —')+'<span class="pc">–</span>'+timePickHtml(bl.t1||'','id="b-t1" style="flex:1;min-width:125px"','— Ende —')+'</div>';
   }
@@ -2916,7 +2937,7 @@ function sheetBlock(d,s,w,focusTitle){
     (items.length===1&&items[0].kind==='todo'?'':'<button class="btn" data-act="blockDone" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">'+(bl.done?'Wieder öffnen':'Als erledigt markieren')+'</button>')+
     (isTA&&(bl.span||1)===1?'<button class="btn" data-act="openSlotW" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">＋ Block dazulegen</button>':'')+
     '<button class="btn" data-act="moveBlock" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">Verschieben</button>'+
-    '<button class="btn danger" data-act="freeSlot" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">🗑 Löschen</button></div>';
+    '<button class="btn danger" data-act="freeSlot" data-day="'+d+'" data-slot="'+s+'" data-w="'+W+'">🗑 '+(bl.seriesId?'Diesen Tag löschen':'Löschen')+'</button></div>';
     h+='<div class="sheetBtns"><button class="btn ghost" data-act="closeModal">Schließen</button></div>';
   ui.ampCtx={t:'block',d:d,s:s,w:W};
   openSheet(h);
@@ -3437,8 +3458,8 @@ const ACT={
     }
     /* R11: Ampel ist Formularfeld — Auswahl markiert nur, Speichern übernimmt */
     ui.ampSel=a.v; ui.ampSelK=a.k;
-    if(ui.ampCtx&&ui.ampCtx.t==='block')sheetBlock(ui.ampCtx.d,ui.ampCtx.s,ui.ampCtx.w);
-    else if(ui.ampCtx&&ui.ampCtx.t==='appt')sheetAppt(ui.ampCtx.id);
+    const row=t&&t.closest&&t.closest('.ampRow');
+    if(row){row.querySelectorAll('.ampB').forEach(b=>b.classList.remove('sel'));t.classList.add('sel')}
   },
   confirmProj(a){
     const d=+a.day, s=+a.slot, p=projOf(a.pid); if(!p)return;
@@ -3791,46 +3812,47 @@ const ACT={
   openBlockW(a){sheetBlock(+a.day,+a.slot,a.w)},
   openAppt(a){sheetAppt(a.id)},
   blockSave(a){
-    const W=a.w||wk();
-    const bl=blocksFor(W)[a.day+'|'+a.slot]; if(!bl)return;
-    const tt=document.getElementById('b-title');
-    if(tt&&tt.value.trim()){
-      const nv=tt.value.trim();
-      if(nv!==bl.title)bl._customTitle=true;
-      bl.title=nv;
+    const W=a.w||wk(), d=+a.day, slot=+a.slot, bl=blocksFor(W)[d+'|'+slot]; if(!bl)return;
+    const members=blockSeriesMembers(bl.seriesId), currentDate=iso(addDays(parseISO(W),d));
+    const last=members.length?members[members.length-1]:{w:W,day:d,slot,bl,date:currentDate};
+    const endEl=document.getElementById('b-extend-end'), end=endEl&&endEl.value||last.date;
+    const validDate=/^\d{4}-\d{2}-\d{2}$/.test(end)&&!isNaN(parseISO(end).getTime())&&iso(parseISO(end))===end;
+    if(!validDate||end<last.date){toast('Bitte ein gültiges Enddatum ab dem letzten Serientag wählen.');return}
+    const n=Math.round((parseISO(end)-parseISO(last.date))/86400000);
+    if(n>90){toast('Bitte höchstens 90 weitere Tage auf einmal hinzufügen.');return}
+    const spanEl=document.getElementById('b-span'), wantSp=spanEl?Math.max(1,Math.min(3,parseInt(spanEl.value,10)||1)):(bl.span||1);
+    const allEl=document.getElementById('b-series-update'), updateAll=!!(allEl&&allEl.checked);
+    const affected=updateAll?members:[{w:W,day:d,slot,bl}];
+    for(const x of affected){
+      if(wantSp!==(x.bl.span||1)&&!blockSeriesRoom(x.w,x.day,x.slot,wantSp,x.day+'|'+x.slot)) {toast('Dauer passt nicht für alle ausgewählten Serientage.');return}
     }
-    const nt=document.getElementById('b-note');
-    if(nt)bl.note=nt.value.trim();
-    const spEl=document.getElementById('b-span');
-    if(spEl){
-      const wantSp=Math.max(1,Math.min(3,parseInt(spEl.value,10)||1));
-      const d0=+a.day, s0=+a.slot;
-      if(wantSp!==(bl.span||1)){
-        if(wantSp>3-s0||!blockSpanRoomW(W,d0,s0,wantSp,d0+'|'+s0)){
-          toast('Für '+wantSp+' Blöcke ist ab hier nicht genug Platz.');
-          return;
-        }
-        bl.span=wantSp;
+    const newDays=[];
+    for(let i=1;i<=n;i++){
+      const date=iso(addDays(parseISO(last.date),i)), w=iso(mondayOf(parseISO(date))), day=dayIdx(parseISO(date)), s=last.slot;
+      if(!blockSeriesRoom(w,day,s,wantSp,null)){
+        toast('Keine Verlängerung: '+fmtDate(parseISO(date))+' ist belegt.');return;
       }
+      newDays.push({w,day,slot:s});
     }
-    const tyEl=document.getElementById('b-type');
-    if(tyEl){
-      bl.typeId=tyEl.value||null;
-      if(bl.typeId&&(!bl.ampel||bl.ampel==='none')){const ty2=typeOf(bl.typeId); if(ty2&&ty2.ampel&&ty2.ampel!=='none')bl.ampel=ty2.ampel}
+    const title=document.getElementById('b-title'),note=document.getElementById('b-note'),type=document.getElementById('b-type');
+    const t0=document.getElementById('b-t0'),t1=document.getElementById('b-t1'),fn=document.getElementById('b-fbnote');
+    const patch={span:wantSp};
+    if(title&&title.value.trim()){patch.title=title.value.trim();if(patch.title!==bl.title)patch._customTitle=true}
+    if(note)patch.note=note.value.trim();
+    if(type){patch.typeId=type.value||null;const ty=typeOf(patch.typeId);if(ty&&ty.ampel&&ty.ampel!=='none'&&(!bl.ampel||bl.ampel==='none'))patch.ampel=ty.ampel}
+    if(ui.ampSel!=null&&ui.ampSelK==='block')patch.ampel=ui.ampSel==='none'?null:ui.ampSel;
+    for(const x of affected){
+      Object.assign(x.bl,patch);
+      if(t0){if(t0.value){x.bl.t0=t0.value;if(t1&&t1.value)x.bl.t1=t1.value;else delete x.bl.t1}else{delete x.bl.t0;delete x.bl.t1}}
     }
-    const t0el=document.getElementById('b-t0'), t1el=document.getElementById('b-t1');
-    if(t0el){
-      if(t0el.value){bl.t0=t0el.value; if(t1el&&t1el.value)bl.t1=t1el.value; else delete bl.t1}
-      else{delete bl.t0; delete bl.t1}
-    }
-    if(ui.ampSel!=null&&ui.ampSelK==='block'){
-      bl.ampel=ui.ampSel==='none'?null:ui.ampSel;
-      if(ui.ampSel==='rot'){const dd=+a.day, ss=+a.slot; setTimeout(()=>offerRegen(dd,ss),50)}
-    }
-    ui.ampSel=null; ui.ampSelK=null;
-    const fn=document.getElementById('b-fbnote');
     if(fn)bl.fbNote=fn.value.trim();
-    save(); closeModal(); render(); toast('Block gespeichert.');
+    if(newDays.length){
+      const id=bl.seriesId||uid();bl.seriesId=id;
+      for(const x of newDays){const copy=cloneBlockClean(bl);copy.seriesId=id;clearTomb(itemUid('block',x.w+'-'+x.day+'-'+x.slot));blocksFor(x.w)[x.day+'|'+x.slot]=copy}
+    }
+    if(patch.ampel==='rot'&&W===wk())setTimeout(()=>offerRegen(d,slot),50);
+    ui.ampSel=null;ui.ampSelK=null;
+    save();closeModal();render();toast(newDays.length?'Block um '+newDays.length+' Tage verlängert.':'Block gespeichert.');
   },
   apptSave(a){
     const f=findAppt(a.id);
@@ -3868,17 +3890,17 @@ const ACT={
     save(); closeModal(); render();
     toast('Termin gespeichert.');
   },
-  fbSet(a){
+  fbSet(a,t){
     const c=ui.ampCtx||{};
     if(c.t==='block'){
       const bl=blocksFor(c.w||wk())[c.d+'|'+c.s]; if(!bl)return;
       bl.fb=bl.fb===a.v?null:a.v;
-      save(); sheetBlock(c.d,c.s,c.w);
+      save(); if(t&&t.closest){const row=t.closest('.ampRow');if(row)row.querySelectorAll('.ampB').forEach(b=>b.classList.toggle('sel',b.dataset.v===bl.fb))}
       toast(bl.fb?'Rückmeldung: '+FBL[bl.fb]:'Rückmeldung entfernt.');
     }else if(c.t==='appt'){
       const f=findAppt(c.id); if(!f)return;
       f.ap.fb=f.ap.fb===a.v?null:a.v;
-      save(); sheetAppt(c.id);
+      save(); if(t&&t.closest){const row=t.closest('.ampRow');if(row)row.querySelectorAll('.ampB').forEach(b=>b.classList.toggle('sel',b.dataset.v===f.ap.fb))}
       toast(f.ap.fb?'Rückmeldung: '+FBL[f.ap.fb]:'Rückmeldung entfernt.');
     }
   },
@@ -4692,7 +4714,7 @@ const ACT={
     save(); render();
   },
   exportJson(){sheetExport()},
-  
+
   copyExport(){
     const ta=document.getElementById('exp-ta');
     if(!ta)return;
@@ -4717,7 +4739,7 @@ function moveApptTo(apId,dstW,td,ts,quiet){
   const ap=f.ap, srcW=f.w, oldDay=ap.day, oldSlot=ap.slot;
   if(srcW===dstW&&oldDay===td&&oldSlot===ts)return false;
   moveApptClean(f,dstW,td,ts);
-  
+
   save(); render();
   if(!quiet)toast('Termin verschoben nach '+fmtDaySlotW(dstW,td,ts));
   return true;
@@ -4727,7 +4749,9 @@ function moveApptTo(apId,dstW,td,ts,quiet){
 let mobileTouch=null;
 document.addEventListener('touchstart',e=>{const grid=closestEl(e.target,'.mobileDays'); if(grid&&e.touches.length===1)mobileTouch={x:e.touches[0].clientX,y:e.touches[0].clientY}; else mobileTouch=null},{passive:true});
 document.addEventListener('touchend',e=>{if(!mobileTouch||!e.changedTouches.length)return; const dx=e.changedTouches[0].clientX-mobileTouch.x,dy=e.changedTouches[0].clientY-mobileTouch.y; mobileTouch=null; if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5){dragEndTs=Date.now(); ACT.mobileShift({step:dx<0?1:-1})}},{passive:true});
-// Only the grip captures touch: ordinary scrolling, taps and day swipes remain available.
+// A grip starts dragging immediately; holding a card starts dragging after a short delay.
+// Before that delay we preserve taps and implement scroll because touch-action:none
+// prevents the browser from taking over the pointer and cancelling an active drag.
 let touchDrag=null;
 function touchTarget(x,y){return closestEl(document.elementFromPoint(x,y),'[data-drop]')}
 function touchUpdate(){
@@ -4745,35 +4769,47 @@ function touchScroll(){
   if(scroller){const r=scroller.getBoundingClientRect();if(t.y>=r.top&&t.y<=r.bottom){if(t.x<r.left+35)scroller.scrollLeft-=10;else if(t.x>r.right-35)scroller.scrollLeft+=10}}
   touchUpdate(); t.frame=requestAnimationFrame(touchScroll);
 }
+function activateTouchDrag(t){
+  if(touchDrag!==t||t.active||t.scrolling)return;
+  t.active=true;mobileTouch=null;t.source.classList.add('touchDragging');
+  t.ghost=document.createElement('div');t.ghost.className='touchGhost';t.ghost.textContent='Verschieben';document.body.appendChild(t.ghost);
+  touchUpdate();t.frame=requestAnimationFrame(touchScroll);
+}
 document.addEventListener('touchstart',e=>{
   const grip=closestEl(e.target,'.touchGrip,.upGrip');
-  const source=grip&&closestEl(grip,'[data-drag]');
-  if(!source||e.touches.length!==1)return;
+  const source=closestEl(e.target,'[data-drag]');
+  if(!source||e.touches.length!==1||(!grip&&closestEl(e.target,'button,input,select,textarea,a,label')))return;
   const p=e.touches[0], cell=closestEl(source,'.mdayView[data-mobile-week]');
-  touchDrag={id:p.identifier,x:p.clientX,y:p.clientY,startX:p.clientX,startY:p.clientY,source:source,data:source.dataset.drag,week:cell?cell.dataset.mobileWeek:wk(),active:false};
-  mobileTouch=null;
-  e.preventDefault();
+  const t=touchDrag={id:p.identifier,x:p.clientX,y:p.clientY,startX:p.clientX,startY:p.clientY,source:source,data:source.dataset.drag,week:cell?cell.dataset.mobileWeek:(source.dataset.dragWeek||wk()),active:false,grip:!!grip,scrolling:false};
+  if(grip){mobileTouch=null;e.preventDefault()}else t.timer=setTimeout(()=>activateTouchDrag(t),400);
 },{passive:false});
 document.addEventListener('touchmove',e=>{
   if(!touchDrag)return;
   const p=Array.from(e.touches).find(x=>x.identifier===touchDrag.id);if(!p)return;
-  e.preventDefault(); const t=touchDrag;t.x=p.clientX;t.y=p.clientY;
-  if(!t.active&&Math.hypot(t.x-t.startX,t.y-t.startY)>8){
-    t.active=true;t.source.classList.add('touchDragging');
-    t.ghost=document.createElement('div');t.ghost.className='touchGhost';t.ghost.textContent='Verschieben';document.body.appendChild(t.ghost);
-    touchUpdate();t.frame=requestAnimationFrame(touchScroll);
-  }else if(t.active)touchUpdate();
+  const t=touchDrag, prevX=t.x, prevY=t.y;t.x=p.clientX;t.y=p.clientY;
+  const dx=t.x-t.startX,dy=t.y-t.startY;
+  if(!t.active&&Math.hypot(dx,dy)>8){
+    if(t.grip)activateTouchDrag(t);
+    else {clearTimeout(t.timer);t.scrolling=true}
+  }
+  if(t.active){e.preventDefault();touchUpdate()}
+  else if(t.scrolling){
+    e.preventDefault();
+    if(Math.abs(dy)>Math.abs(dx))window.scrollBy(0,prevY-t.y);
+    else {const scroll=closestEl(t.source,'.kscroll');if(scroll)scroll.scrollLeft+=prevX-t.x}
+  }
 },{passive:false});
 function finishTouchDrag(e,cancelled){
   if(!touchDrag)return;
   const t=touchDrag, p=Array.from(e.changedTouches).find(x=>x.identifier===t.id);if(!p&&!cancelled)return;
-  if(p){t.x=p.clientX;t.y=p.clientY}
+  clearTimeout(t.timer);if(p){t.x=p.clientX;t.y=p.clientY}
   if(t.frame)cancelAnimationFrame(t.frame);
   if(t.active)touchUpdate();
   const target=t.target;
   if(target)target.classList.remove('touchDrop');
   t.source.classList.remove('touchDragging');if(t.ghost)t.ghost.remove();
-  touchDrag=null;mobileTouch=null;dragEndTs=Date.now();
+  touchDrag=null;
+  if(t.active||t.scrolling||t.grip)dragEndTs=Date.now();
   if(t.active&&!cancelled&&target)performDrop(target,t.data,t.week);
 }
 document.addEventListener('touchend',e=>finishTouchDrag(e,false),{passive:true});
@@ -4898,7 +4934,7 @@ document.addEventListener('dragstart',e=>{
   const el=closestEl(e.target,'[data-drag]');
   if(!el)return;
   dragPayload=el.dataset.drag||'';
-  const src=closestEl(el,'.mdayView[data-mobile-week]'); dragSourceWeek=src?src.dataset.mobileWeek:wk();
+  const src=closestEl(el,'.mdayView[data-mobile-week]'); dragSourceWeek=src?src.dataset.mobileWeek:(el.dataset.dragWeek||wk());
   if(dragPayload.startsWith('block:')||dragPayload.startsWith('appt:')){
     try{document.body.classList.add('dragging-ev')}catch(x){}
   }

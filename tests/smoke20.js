@@ -164,7 +164,7 @@ function bootAppInstance(opts = {}) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/education.js'), 'utf8'), sandbox);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/presets.js'), 'utf8'), sandbox);
   vm.runInContext(
-    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle,yearDayCounts,capsulePayloadFromState,applyLiveItem,normalizeState,performDrop,parseISO};',
+    mainScript + '\nglobalThis.__EX={S:()=>S,ui,ACT,AUTH,SYNC,render,wk,blocksFor,apsFor,kanOf,setKan,KCOLS,estDays,renderMd,timePickHtml,itemColor,themePalette,phaseBgStyle,yearDayCounts,capsulePayloadFromState,applyLiveItem,normalizeState,performDrop,parseISO,blockSeriesMembers,collectCurrentItemsMap};',
     sandbox
   );
   return { ex: sandbox.__EX, els, store, handlers };
@@ -215,6 +215,24 @@ function bootAppInstance(opts = {}) {
   dragTest.ex.performDrop(dest,'task:no-date','2026-11-23');
   ok(ds.tasks[0].planned.wk==='2026-11-30'&&ds.tasks[0].planned.day===0&&ds.tasks[0].planned.slot===0,'Drop plant Aufgabe in der Zielwoche');
   ok(appHtml.includes("closestEl(e.target,'.touchGrip,.upGrip')")&&appHtml.includes('touchcancel')&&appHtml.includes('touchScroll()'),'Touch-Griffe unterstützen Scrollen und Abbrechen');
+
+  // A linked daily block series extends atomically across weeks and synchronizes as normal blocks.
+  const seriesTest=bootAppInstance({protocol:'https:',search:'?mode=demo'});
+  await new Promise(r=>setTimeout(r,25));seriesTest.ex.ACT.enterDemo();
+  const bs=seriesTest.ex.S();bs.blocks={'2026-11-23':{'6|1':{id:'block',kind:'typ',title:'Original',span:1}}};
+  seriesTest.els['b-title']={value:'Original'};seriesTest.els['b-note']={value:''};
+  seriesTest.els['b-span']={value:'1'};seriesTest.els['b-type']={value:''};
+  seriesTest.els['b-extend-end']={value:'2026-12-02'};seriesTest.els['b-series-update']={checked:false};
+  seriesTest.ex.ACT.blockSave({w:'2026-11-23',day:6,slot:1});
+  const mid=bs.blocks['2026-11-23']['6|1'].seriesId;
+  ok(!!mid&&seriesTest.ex.blockSeriesMembers(mid).length===4&&seriesTest.ex.collectCurrentItemsMap()['theo-block-2026-11-30-0-1@theo-app'].payload.block.seriesId===mid,'Tagesblock-Serie über Wochenwechsel bleibt verknüpft und synchronisierbar');
+  seriesTest.els['b-title'].value='Gemeinsam';seriesTest.els['b-series-update'].checked=true;
+  seriesTest.ex.ACT.blockSave({w:'2026-11-30',day:1,slot:1});
+  ok(seriesTest.ex.blockSeriesMembers(mid).every(x=>x.bl.title==='Gemeinsam'),'Titel einer Serie gemeinsam bearbeiten');
+  bs.blocks['2026-11-30']['3|1']={id:'taken',kind:'typ',title:'Belegt'};
+  seriesTest.els['b-title'].value='Darf nicht gespeichert werden';seriesTest.els['b-extend-end'].value='2026-12-03';
+  seriesTest.ex.ACT.blockSave({w:'2026-11-30',day:1,slot:1});
+  ok(bs.blocks['2026-11-30']['3|1'].title==='Belegt'&&seriesTest.ex.blockSeriesMembers(mid).every(x=>x.bl.title==='Gemeinsam'),'Belegtes Ziel verhindert Verlängerung und Änderungen ohne Überschreiben');
 
   // Responsive login layout and optional discovery survey, with no remote persistence.
   ok(appHtml.includes('#wrap.auth-gated{display:block}') && gateHtml1.includes('auth-password') && gateHtml1.includes('placeholder="Passwort eingeben"') && gateHtml1.includes('authPassword'),
